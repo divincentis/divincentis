@@ -7,6 +7,8 @@
 	<title>Matt D.</title>
 </head>
 
+<!--Hi Clayton/Chris :-)  There's a typo on your website - Anomaly is misspelled on the energy management page.-->
+
 <body>
 	<header>
 		<h1>Matt DiVincentis</h1>
@@ -15,14 +17,14 @@
 		
 		<h2>Interests and hobbies:</h2>
 		
-		<p>Above all, I'm a curious person.  My desire to learn and understand the world around me has lead me into many areas beyond my construction focused careeer:</p>
+		<p>Above all, I'm a curious person.  My desire to learn and understand the world around me has lead me into many areas beyond my construction focused career:</p>
 		
 		<ul>
-			<li>Amateur radio - FCC General class license since 2015 with callsign W0DVO. The peculiarities of RF make for an interesting puzzle.</li>
-			<li>Welding and fabrication.  Have been fascinated with welding since I was a kid, and made a living with it for a while.</li>
+			<li>Amateur radio - FCC General class license since 2015 with callsign W0DVO. RF peculiarities continue to fascinate me.</li>
+			<li>Welding and fabrication.  Have been interested in welding since I was a kid, and made a living with it for a while.</li>
 			<li>Programming. I know enough to know I don't know much. Played with Python a bit, JS a tiny bit.</li>
 			<li>Woodworking, mostly in a meta sense. I enjoy making things that make my workshop nicer to use.</li>
-			<li>Anything tech related. I'm typically an early adopter. I've owned <i>$lastname</i>.com for 13 years now and use it for my (grandfathered-in and still free) Google Workspace account through which I provide email and Google's other services to my family.</li>
+			<li>Anything tech related. I'm typically an early adopter. I've owned this domain for 13 years now and use it for my <sup><sub><sub>(grandfathered-in and still free)</sub></sub></sup> Google Workspace account through which I provide email and Google's other services to my family.</li>
 			<li>Blacksmithing.</li>
 			<li>Electronics.</li>
 			<li>Metrology.</li>
@@ -33,29 +35,34 @@
 		
 		<p>Software: Windows, Linux, MS Office, Bluebeam, CAD/BIM, quick to pick up new tools.</p>
 		
-		<p>Physical world: Metalworking, woodworking, electrical wiring, machining, building science, networking, </p>
+		<p>Physical world: Metalworking, woodworking, electrical wiring, machining, building science, networking, building codes, FAA Certified Part 107 UAS Operator.</p>
 		
 		<p>Soft: Leadership, empathy, networking, sales, deescalation, </p>
 		
-		<h2>Quick work history:</h2>
-		<aside><a href="https://www.linkedin.com/in/mattdivincentis/">see linkedin for details</a>
+		<h2>Work history</h2>
+		<aside><a href="https://www.linkedin.com/in/mattdivincentis/" style="text-decoration:none">see linkedin for details</a>
 		
 		<dl>
-			<dt>Tecta America (2011-present)</dt>
-				<dd>Project manager, estimator, resident Excel dev and tech support.</dd>
-			<dt>The Roofing Company (2006-2011)</dt>
-				<dd>General manager, project manager, estimator, resident Excel dev and tech support, CAD guy.</dd>
-			<dt>Pole Creek Fabrication (2000-2005)</dt>
-				<dd>Shop foreman, fabricator.</dt>
-			<dt>Eisenhart Enterprises (1996-2000)</dt>
-				<dd>Racecar mechanic.</dd>
+			<dt><strong>Tecta America (2011-present)</strong></dt>
+				<dd>-Project manager, estimator, resident Excel dev and tech support.</dd>
+			<dt><strong>The Roofing Company (2006-2011)</strong></dt>
+				<dd>-General manager, project manager, estimator, resident Excel dev and tech support, CAD guy.</dd>
+			<dt><strong>Pole Creek Fabrication (2000-2005)</strong></dt>
+				<dd>-Shop foreman, fabricator.</dt>
+			<dt><strong>Eisenhart Enterprises (1996-2000)</strong></dt>
+				<dd>-Racecar mechanic.</dd>
 		</dl>
 		
 		<h2>Personal projects relevant to IOT/monitoring:</h2>
 		
 		<ul>
 			<li>Utility trailer temp monitor.</li>
+				<aside>Using an ESP8266, DHT22 temp sensor, and a couple relays, I built a temperature monitor for a utility trailer that needed to stay above 10&deg;C. In addition to transmitting temperature and humidity data to adafruit.io for display on a dashboard, the system drives red and green indicator lights mounted outside the trailer to provide fast visual indication of temperature status.  ESP code and relay logic is set up to indicate red in the event of a failure of any component in the sensor system.</aside>
 			<li>Well flow tester and data logger.</li>
+				<aside>My dad, who's a home inspector, needed a device to test and log water flow from residential wells. There are commercial solutions, but they're far to expensive for this application. As a rapid proof of concept, I created a <a href="/wellflowtest.jpg"style="text-decoration:none">logging device</a> using an inexpensive water meter, LogAlert for data acquisition, rechargable USB power, and a toolbox with 3d printed mounts.
+				<br>
+				Utimately I would like to automate the report generation using Python.  But for now, the data is exported from LogAlert and dumped into an Excel template which auto-adjusts for test duration and presents the data in a <a href="samplereport.jpg"style="text-decoration:none">usable format</a> for customers.  Pump current logging is another feature that is currently manually acquired and entered but I would like to automate this as well with a CT that the LogAlert can read and log.</aside>
+		</ul>
 	<br>
 	<hr>
 	
