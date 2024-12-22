@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="styles.css">
+    <title>Brown Butter Chocolate Chip Cookies</title>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="recipes.html">Recipes</a></li>
+            <li><a href="about.html">About</a></li>
+        </ul>
+    </nav>
+
+    <article class="recipe-card">
+        <h1>Brown Butter Chocolate Chip Cookies</h1>
+        
+        <div class="meta">
+            Prep Time: 25 mins | Cook Time: 12-14 mins per batch | Yield: 16 large cookies
+            <button onclick="resetCheckboxes()" class="reset-button">Reset Checkboxes</button>
+        </div>
+
+        <h2>Equipment Needed</h2>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>10-inch skillet (for browning butter)</label></li>
+            <li><input type="checkbox"><label>2 large baking sheets (18x12 inches)</label></li>
+            <li><input type="checkbox"><label>Parchment paper</label></li>
+            <li><input type="checkbox"><label>Medium mixing bowl</label></li>
+            <li><input type="checkbox"><label>Large heatproof bowl</label></li>
+            <li><input type="checkbox"><label>Whisk</label></li>
+            <li><input type="checkbox"><label>Rubber spatula or wooden spoon</label></li>
+            <li><input type="checkbox"><label>Measuring cups and spoons</label></li>
+            <li><input type="checkbox"><label>Kitchen scale (recommended)</label></li>
+            <li><input type="checkbox"><label>#24 cookie scoop (optional)</label></li>
+            <li><input type="checkbox"><label>Wire cooling rack</label></li>
+        </ul>
+
+        <h2>Ingredients</h2>
+        
+        <h3>Dry Ingredients</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>248g (1¾ cups) unbleached all-purpose flour</label></li>
+            <li><input type="checkbox"><label>4g (½ teaspoon) baking soda</label></li>
+            <li><input type="checkbox"><label>8g (1 teaspoon) table salt</label></li>
+        </ul>
+
+        <h3>Wet Ingredients</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>14 tablespoons (1¾ sticks) unsalted butter, divided</label></li>
+            <li><input type="checkbox"><label>99g (½ cup) granulated sugar</label></li>
+            <li><input type="checkbox"><label>149g (¾ cup) packed dark brown sugar</label></li>
+            <li><input type="checkbox"><label>2 teaspoons vanilla extract</label></li>
+            <li><input type="checkbox"><label>1 large egg</label></li>
+            <li><input type="checkbox"><label>1 large egg yolk</label></li>
+        </ul>
+
+        <h3>Mix-ins</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>??g (1¼ cups) semisweet chocolate chips or chunks</label></li>
+            <li><input type="checkbox"><label>??g (¾ cup chopped pecans or walnuts), toasted (optional)</label></li>
+        </ul>
+
+        <h2>Instructions</h2>
+        <ol class="checklist">
+            <li><input type="checkbox"><label>Prepare oven and pans: Adjust oven rack to middle position and preheat to 375°F. Line 2 large baking sheets with parchment paper.</label></li>
+            <li><input type="checkbox"><label>Mix dry ingredients: In a medium bowl, whisk together flour and baking soda. Set aside.</label></li>
+            <li><input type="checkbox"><label>Brown the butter: Heat 10 tablespoons butter in 10-inch skillet over medium-high heat until melted (about 2 minutes). Continue cooking, swirling pan constantly, until butter is dark golden brown and has a nutty aroma (1-3 minutes). Immediately remove from heat.</label></li>
+            <li><input type="checkbox"><label>Combine butters: Transfer browned butter to large heatproof bowl. Stir remaining 4 tablespoons butter into hot butter until completely melted.</label></li>
+            <li><input type="checkbox"><label>Mix wet ingredients: Add both sugars, salt, and vanilla to butter; whisk until fully incorporated. Add egg and yolk; whisk until mixture is smooth with no sugar lumps (about 30 seconds).</label></li>
+            <li><input type="checkbox"><label>Rest and whisk: Let mixture stand 3 minutes, then whisk 30 seconds. Repeat this rest-and-whisk process 2 more times until mixture is thick, smooth, and shiny.</label></li>
+            <li><input type="checkbox"><label>Combine mixtures: Using rubber spatula or wooden spoon, stir flour mixture into wet ingredients until just combined (about 1 minute).</label></li>
+            <li><input type="checkbox"><label>Add mix-ins: Stir in chocolate chips and nuts (if using). Give dough final stir to ensure no flour pockets remain.</label></li>
+            <li><input type="checkbox"><label>Portion dough: Divide into 16 portions (about 3 tablespoons each). Arrange 2 inches apart on prepared sheets, 8 per sheet.</label></li>
+            <li><input type="checkbox"><label>Bake cookies: Bake 1 tray at a time until cookies are golden brown, still puffy, and edges have begun to set but centers are soft (10-14 minutes). Rotate sheet halfway through baking.</label></li>
+            <li><input type="checkbox"><label>Cool: Transfer baking sheet to wire rack. Cool cookies completely before serving.</label></li>
+        </ol>
+
+        <h2>Notes</h2>
+        <ul>
+            <li>The 3-minute rest periods in step 6 are crucial for texture - don't skip them!</li>
+            <li>Watch the butter carefully when browning - it can go from perfect to burnt quickly.</li>
+            <li>For consistent sizing, use a #24 cookie scoop or weigh portions to about 45g each.</li>
+            <li>Cookies will look slightly underbaked in centers when done - they'll set up as they cool.</li>
+        </ul>
+    </article>
+
+    <footer class="text-center text-muted">
+        <hr>
+        <p class="text-small">Last updated: December 2024</p>
+    </footer>
+  
+    <script>
+    function resetCheckboxes() {
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    }
+    </script>
+      
+</body>
+</html>
