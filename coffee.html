@@ -22,6 +22,7 @@
             The way we do it, anyway.
             <br>
             Prep Time: 5 mins | Yield: 1 cup | Ratio: 15:1 water:coffee
+            <button onclick="resetCheckboxes()" class="reset-button">Reset Checkboxes</button>
         </div>
 
         <h2>Aeropress</h2>
@@ -66,5 +67,12 @@
         <hr>
         <p class="text-small">Last updated: December 2024</p>
     </footer>
+    <script>
+    function resetCheckboxes() {
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    }
+    </script>
 </body>
 </html>
