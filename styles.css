@@ -90,10 +90,28 @@ ul.checklist {
 }
 
 ol.checklist {
-    padding-left: 2.5rem;
+    list-style: none;
+    counter-reset: item;
+    padding-left: 0.5rem;
 }
 
-.checklist li {
+ol.checklist > li {
+    counter-increment: item;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    position: relative;
+    padding-left: 2rem;
+}
+
+ol.checklist > li::before {
+    content: counter(item) ".";
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+ul.checklist li {
     display: flex;
     align-items: flex-start;
     gap: 0.5rem;
