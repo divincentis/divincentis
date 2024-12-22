@@ -80,6 +80,27 @@ ul, ol {
 
 li {
     margin-bottom: 0.5rem;
+    list-style-position: outside;
+}
+
+/* Checkable lists */
+.checklist {
+    list-style: none;
+    padding-left: 0.5rem;
+}
+
+.checklist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.checklist input[type="checkbox"] {
+    margin-top: 0.3rem;
+}
+
+.checklist li.checked {
+    color: #666;
 }
 
 /* Tables */
