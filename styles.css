@@ -84,9 +84,13 @@ li {
 }
 
 /* Checkable lists */
-.checklist {
+ul.checklist {
     list-style: none;
     padding-left: 0.5rem;
+}
+
+ol.checklist {
+    padding-left: 2.5rem;
 }
 
 .checklist li {
@@ -97,6 +101,7 @@ li {
 
 .checklist input[type="checkbox"] {
     margin-top: 0.3rem;
+    min-width: 1.2rem;
 }
 
 .checklist li.checked {
