@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="styles.css">
+    <title>Katsudon - Japanese Pork Cutlet Bowl 🍜</title>
+</head>
+<body>
+    <div class="site-corner">divincentis.com</div>
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="recipes.html">Recipes</a></li>
+            <li><a href="about.html">About</a></li>
+        </ul>
+    </nav>
+
+    <article class="recipe-card">
+        <h1>Katsudon - Japanese Pork Cutlet and Egg Rice Bowl 🍜</h1>
+        
+        <div class="meta">
+            Prep Time: 20 mins | Cook Time: 25 mins | Yield: 4 servings
+            <button onclick="resetCheckboxes()" class="reset-button">Reset Checkboxes</button>
+        </div>
+
+        <h2>Equipment Needed</h2>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>Meat mallet or rolling pin</label></li>
+            <li><input type="checkbox"><label>Cast iron pan or large skillet</label></li>
+            <li><input type="checkbox"><label>Paper towels</label></li>
+            <li><input type="checkbox"><label>2 shallow bowls (for breading)</label></li>
+            <li><input type="checkbox"><label>Small bowl (for sauce)</label></li>
+            <li><input type="checkbox"><label>Sharp knife</label></li>
+            <li><input type="checkbox"><label>Rice cooker or pot for rice</label></li>
+        </ul>
+
+        <h2>Ingredients</h2>
+        
+        <h3>For the Pork Cutlet (Tonkatsu)</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>4 center-cut boneless pork chops, pounded to 1cm thick</label></li>
+            <li><input type="checkbox"><label>Salt and pepper, to taste</label></li>
+            <li><input type="checkbox"><label>All-purpose flour, for dusting</label></li>
+            <li><input type="checkbox"><label>2 large eggs</label></li>
+            <li><input type="checkbox"><label>2 cups panko breadcrumbs</label></li>
+            <li><input type="checkbox"><label>Neutral oil for frying</label></li>
+        </ul>
+
+        <h3>For the Sauce and Bowl</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>1 cup dashi stock (or chicken stock)</label></li>
+            <li><input type="checkbox"><label>4 teaspoons sugar</label></li>
+            <li><input type="checkbox"><label>2 tablespoons soy sauce</label></li>
+            <li><input type="checkbox"><label>4 teaspoons mirin</label></li>
+            <li><input type="checkbox"><label>4 large eggs</label></li>
+            <li><input type="checkbox"><label>2 medium onions, thinly sliced</label></li>
+        </ul>
+
+        <h3>For Serving</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>4 servings steamed white rice</label></li>
+            <li><input type="checkbox"><label>2 scallions, chopped</label></li>
+        </ul>
+
+        <h2>Instructions</h2>
+        <ol class="checklist">
+            <li><input type="checkbox"><label>Prepare the pork: Season the pounded pork chops with salt and pepper, and dust with a light, even coating of flour. In one shallow bowl, beat 2 eggs. Put the panko into another shallow bowl.</label></li>
+            
+            <li><input type="checkbox"><label>Heat oil: Add a thin, even layer of oil to a cast iron pan or skillet over medium heat. Test oil temperature by dropping a panko breadcrumb - it should sizzle immediately.</label></li>
+            
+            <li><input type="checkbox"><label>Bread the pork: Dip each pork chop in beaten egg, then transfer to panko, pressing the breadcrumbs evenly into the meat for thorough coating.</label></li>
+            
+            <li><input type="checkbox"><label>Fry cutlets: Carefully lay the pork chops in hot oil and cook for 5-6 minutes on each side until golden brown. Transfer to paper towel-lined plate to drain.</label></li>
+            
+            <li><input type="checkbox"><label>Prepare sauce: In a small bowl, combine dashi stock, sugar, soy sauce, and mirin. In another bowl, lightly beat remaining 4 eggs.</label></li>
+            
+            <li><input type="checkbox"><label>Cook onions: Add a tablespoon of oil to a clean pan over medium heat. Add sliced onions and fry until translucent and slightly caramelized.</label></li>
+            
+            <li><input type="checkbox"><label>Assemble: Pour the stock mixture over the onions. Slice tonkatsu into pieces and arrange on top of the onions.</label></li>
+            
+            <li><input type="checkbox"><label>Add egg: Drizzle beaten eggs over everything. Cook over medium-low heat until eggs are just set.</label></li>
+            
+            <li><input type="checkbox"><label>Serve: Place steamed rice in bowls, top with the katsudon mixture, and garnish with chopped scallions.</label></li>
+        </ol>
+
+        <h2>Notes</h2>
+        <ul>
+            <li>For best results, pound the pork chops to an even thickness to ensure uniform cooking.</li>
+            <li>The oil temperature is crucial - too hot will burn the coating, too cool will make the cutlet greasy.</li>
+            <li>Don't overcook the eggs at the end - they should be soft and slightly runny when served.</li>
+            <li>Traditional dashi stock will give the most authentic flavor, but chicken stock works well as a substitute.</li>
+        </ul>
+    </article>
+
+    <footer class="text-center text-muted">
+        <hr>
+        <p class="text-small">Last updated: December 2024</p>
+    </footer>
+  
+    <script>
+    function resetCheckboxes() {
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    }
+    </script>
+      
+</body>
+</html>
