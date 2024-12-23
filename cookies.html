@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="styles.css">
+    <title>Thick and Chewy Chocolate Chip Cookies 🍪</title>
+</head>
+<body>
+    <div class="site-corner">divincentis.com</div>
+    <nav>
+        <ul>
+            <li><a href="recipes.html">Home</a></li>
+            <li><a href="recipes.html">Recipes</a></li>
+            <li><a href="about.html">About</a></li>
+        </ul>
+    </nav>
+
+    <article class="recipe-card">
+        <h1>Thick and Chewy Chocolate Chip Cookies 🍪</h1>
+        
+        <div class="meta">
+            Prep Time: 20 mins | Cook Time: 15-18 mins per batch | Yield: 18 large cookies
+            <button onclick="resetCheckboxes()" class="reset-button">Reset Checkboxes</button>
+        </div>
+
+        <p class="text-muted">These oversized cookies are chewy and thick, like many of the chocolate chip cookies sold in gourmet shops and cookie stores. They rely on melted butter and an extra egg yolk to keep their texture soft. These cookies are best served warm from the oven but will retain their texture even when cooled. To ensure the proper texture, cool the cookies on the baking sheet. Oversized baking sheets allow you to get all the dough into the oven at one time. If you're using smaller baking sheets, put fewer cookies on each sheet and bake them in batches.</p>
+
+        <h2>Equipment Needed</h2>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>2 large baking sheets</label></li>
+            <li><input type="checkbox"><label>Parchment paper</label></li>
+            <li><input type="checkbox"><label>Medium mixing bowl</label></li>
+            <li><input type="checkbox"><label>Electric mixer (optional)</label></li>
+            <li><input type="checkbox"><label>Wide metal spatula</label></li>
+            <li><input type="checkbox"><label>Measuring cups and spoons</label></li>
+        </ul>
+
+        <h2>Ingredients</h2>
+        
+        <h3>Dry Ingredients</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>2 cups plus 2 tablespoons (10⅔ ounces) unbleached all-purpose flour (add up to 2 more Tbsp if too wet)</label></li>
+            <li><input type="checkbox"><label>½ teaspoon baking soda</label></li>
+            <li><input type="checkbox"><label>½ teaspoon salt</label></li>
+        </ul>
+
+        <h3>Wet Ingredients</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>12 tablespoons (1½ sticks) unsalted butter, melted and cooled until warm</label></li>
+            <li><input type="checkbox"><label>1 cup packed (7 ounces) light or dark brown sugar</label></li>
+            <li><input type="checkbox"><label>½ cup (3½ ounces) granulated sugar</label></li>
+            <li><input type="checkbox"><label>1 large egg plus 1 egg yolk</label></li>
+            <li><input type="checkbox"><label>2 teaspoons vanilla extract</label></li>
+        </ul>
+
+        <h3>Mix-ins</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>1-1½ cups semisweet chocolate chips</label></li>
+        </ul>
+
+        <h2>Instructions</h2>
+        <ol class="checklist">
+            <li><input type="checkbox"><label>Adjust the oven racks to the upper- and lower-middle positions and heat the oven to 325 degrees. Line 2 large baking sheets with parchment paper.</label></li>
+            <li><input type="checkbox"><label>Whisk the flour, baking soda, and salt together in a medium bowl; set aside.</label></li>
+            <li><input type="checkbox"><label>Either by hand or with an electric mixer, mix the butter and sugars until thoroughly blended. Beat in the egg, yolk, and vanilla until combined. Add the dry ingredients and beat at low speed just until combined. Stir in the chips to taste.</label></li>
+            <li><input type="checkbox"><label>Roll a scant ¼ cup of the dough into a ball. Hold the dough ball with the fingertips of both hands and pull into 2 equal halves. Rotate the halves 90 degrees and, with jagged surfaces facing up, join the halves together at their base, again forming a single ball, being careful not to smooth the dough's uneven surface.</label></li>
+            <li><input type="checkbox"><label>Place the formed dough balls on the prepared baking sheets, jagged surface up, spacing them 2½ inches apart.</label></li>
+            <li><input type="checkbox"><label>Bake until the cookies are light golden brown and the outer edges start to harden yet the centers are still soft and puffy, 15 to 18 minutes, rotating the baking sheets front to back and top to bottom halfway through the baking time.</label></li>
+            <li><input type="checkbox"><label>Cool the cookies on the sheets. Remove the cooled cookies from the baking sheets with a wide metal spatula.</label></li>
+        </ol>
+
+        <h2>Notes</h2>
+        <ul>
+            <li>Watch carefully during baking as the bottoms can brown quickly at this temperature.</li>
+            <li>The jagged surface technique creates a rustic, bakery-style appearance.</li>
+            <li>Cookies will look slightly underbaked in centers when done - they'll set up as they cool.</li>
+        </ul>
+    </article>
+
+    <footer class="text-center text-muted">
+        <hr>
+        <p class="text-small">Recipe adapted from Baking Illustrated with Kate's improvements</p>
+    </footer>
+  
+    <script>
+    function resetCheckboxes() {
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    }
+    </script>
+      
+</body>
+</html>
