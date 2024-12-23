@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="styles.css">
+    <title>Danish Pancakes 🥞</title>
+</head>
+<body>
+    <div class="site-corner">divincentis.com</div>
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="recipes.html">Recipes</a></li>
+            <li><a href="about.html">About</a></li>
+        </ul>
+    </nav>
+
+    <article class="recipe-card">
+        <h1>Danish Pancakes 🥞</h1>
+        
+        <div class="meta">
+            Prep Time: 5 mins | Cook Time: 20 mins | Yield: 8-10 thin pancakes
+            <button onclick="resetCheckboxes()" class="reset-button">Reset Checkboxes</button>
+        </div>
+
+        <h2>Equipment Needed</h2>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>Large mixing bowl</label></li>
+            <li><input type="checkbox"><label>Whisk</label></li>
+            <li><input type="checkbox"><label>Measuring cups and spoons</label></li>
+            <li><input type="checkbox"><label>Large non-stick skillet or crepe pan</label></li>
+            <li><input type="checkbox"><label>Spatula</label></li>
+            <li><input type="checkbox"><label>¼ cup measure or ladle for portioning</label></li>
+        </ul>
+
+        <h2>Ingredients</h2>
+        
+        <h3>For the Pancakes</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>4 large eggs</label></li>
+            <li><input type="checkbox"><label>2 tablespoons sugar</label></li>
+            <li><input type="checkbox"><label>½ teaspoon salt</label></li>
+            <li><input type="checkbox"><label>1 dash vanilla extract</label></li>
+            <li><input type="checkbox"><label>1 cup all-purpose flour</label></li>
+            <li><input type="checkbox"><label>1½-2 cups milk</label></li>
+        </ul>
+
+        <h3>For Serving</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>Butter, softened</label></li>
+            <li><input type="checkbox"><label>Granulated sugar, for sprinkling</label></li>
+        </ul>
+
+        <h2>Instructions</h2>
+        <ol class="checklist">
+            <li><input type="checkbox"><label>In a large bowl, whisk together eggs, sugar, salt, and vanilla until well combined.</label></li>
+            
+            <li><input type="checkbox"><label>Gradually whisk in flour until smooth.</label></li>
+            
+            <li><input type="checkbox"><label>Slowly add milk while whisking until the batter is thin and smooth, like heavy cream consistency. Start with 1½ cups and add more if needed.</label></li>
+            
+            <li><input type="checkbox"><label>Heat a large non-stick skillet or crepe pan over medium heat. Lightly butter the surface if needed.</label></li>
+            
+            <li><input type="checkbox"><label>Pour about ¼ cup batter into the pan, quickly tilting and rotating to spread into a thin circle.</label></li>
+            
+            <li><input type="checkbox"><label>Cook until the top looks set and the bottom is lightly golden, about 1-2 minutes.</label></li>
+            
+            <li><input type="checkbox"><label>Flip and cook the other side briefly, about 30 seconds.</label></li>
+            
+            <li><input type="checkbox"><label>Transfer to a plate and repeat with remaining batter.</label></li>
+            
+            <li><input type="checkbox"><label>To serve: Spread each pancake with butter while still warm, sprinkle with sugar, and roll up.</label></li>
+        </ol>
+
+        <h2>Notes</h2>
+        <ul>
+            <li>The batter should be quite thin - thinner than American pancake batter. Add milk gradually until you reach the right consistency.</li>
+            <li>These pancakes are meant to be thin, more like crepes than thick American-style pancakes.</li>
+            <li>The first pancake often doesn't turn out perfect - this is normal and helps season the pan!</li>
+            <li>You can keep the cooked pancakes warm in a low oven (200°F) while making the rest.</li>
+            <li>These are best enjoyed fresh and warm, rolled up with butter and sugar as per family tradition.</li>
+        </ul>
+    </article>
+
+    <footer class="text-center text-muted">
+        <hr>
+        <p class="text-small">A cherished family recipe, passed down from Grandpa Lee</p>
+    </footer>
+  
+    <script>
+    function resetCheckboxes() {
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    }
+    </script>
+      
+</body>
+</html>
