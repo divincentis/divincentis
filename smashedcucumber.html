@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="styles.css">
+    <title>Smashed Cucumber Salad 🥒</title>
+</head>
+<body>
+    <div class="site-corner">divincentis.com</div>
+    <nav>
+        <ul>
+            <li><a href="recipes.html">Home</a></li>
+            <li><a href="recipes.html">Recipes</a></li>
+            <li><a href="about.html">About</a></li>
+        </ul>
+    </nav>
+
+    <article class="recipe-card">
+        <h1>Smashed Cucumber Salad 🥒</h1>
+        
+        <div class="meta">
+            Prep Time: 15 mins | Chill Time: 60-90 mins | Yield: 4-6 servings
+            <button onclick="resetCheckboxes()" class="reset-button">Reset Checkboxes</button>
+        </div>
+
+        <h2>Equipment Needed</h2>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>Plastic wrap</label></li>
+            <li><input type="checkbox"><label>Meat pounder (ಠ_ಠ) or flat object</label></li>
+            <li><input type="checkbox"><label>Cutting board</label></li>
+            <li><input type="checkbox"><label>Sharp knife</label></li>
+            <li><input type="checkbox"><label>Strainer</label></li>
+            <li><input type="checkbox"><label>Large bowl</label></li>
+            <li><input type="checkbox"><label>Whisk</label></li>
+            <li><input type="checkbox"><label>Measuring spoons</label></li>
+            <li><input type="checkbox"><label>Serving bowl</label></li>
+        </ul>
+
+        <h2>Ingredients</h2>
+        
+        <h3>Main Ingredients</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>2 English cucumbers</label></li>
+            <li><input type="checkbox"><label>1½ teaspoons kosher salt, plus more as needed</label></li>
+            <li><input type="checkbox"><label>1 teaspoon white sugar</label></li>
+        </ul>
+
+        <h3>Dressing</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>2 cloves garlic, finely crushed</label></li>
+            <li><input type="checkbox"><label>2 tablespoons seasoned rice vinegar</label></li>
+            <li><input type="checkbox"><label>1 teaspoon soy sauce</label></li>
+            <li><input type="checkbox"><label>1 teaspoon sesame oil</label></li>
+            <li><input type="checkbox"><label>Red pepper flakes to taste</label></li>
+        </ul>
+
+        <h3>Garnish</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>2 teaspoons toasted sesame seeds</label></li>
+        </ul>
+
+        <h2>Instructions</h2>
+        <ol class="checklist">
+            <li><input type="checkbox"><label>Prepare cucumbers: Wrap each cucumber in plastic wrap to minimize splattering. Place on a work surface and pound with a flat object (like a meat pounder) until cucumbers crack and are slightly flattened.</label></li>
+            <li><input type="checkbox"><label>Cut cucumbers: Remove from plastic. Cut cucumbers in half; halve each side lengthwise. Slice into 1- to 1½-inch wide slices. Transfer to a strainer set over a bowl.</label></li>
+            <li><input type="checkbox"><label>Salt cucumbers: Sprinkle cucumber with salt and sugar; mix until well combined. Refrigerate the bowl and strainer for 30 to 60 minutes so cucumber pieces can drain.</label></li>
+            <li><input type="checkbox"><label>Make dressing: Place garlic, seasoned rice vinegar, soy sauce, sesame oil, and red pepper flakes in a large bowl; whisk together thoroughly.</label></li>
+            <li><input type="checkbox"><label>Combine: Transfer drained cucumbers into the bowl with dressing. Toss to coat.</label></li>
+            <li><input type="checkbox"><label>Chill: Cover with plastic wrap; refrigerate for about 30 minutes to allow flavors to mingle.</label></li>
+            <li><input type="checkbox"><label>Serve: Place cucumbers in a serving bowl and sprinkle with sesame seeds.</label></li>
+        </ol>
+
+        <h2>Notes</h2>
+        <ul>
+            <li>English cucumbers are preferred as they have fewer seeds and thinner skin than regular cucumbers.</li>
+            <li>Don't skip the salting step - it helps remove excess water and creates a crunchier texture.</li>
+            <li>Adjust the amount of red pepper flakes based on your preferred level of heat.</li>
+        </ul>
+    </article>
+
+    <footer class="text-center text-muted">
+        <hr>
+        <p class="text-small">Last updated: December 2024</p>
+    </footer>
+  
+    <script>
+    function resetCheckboxes() {
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    }
+    </script>
+      
+</body>
+</html>
