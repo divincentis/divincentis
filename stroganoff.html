@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="styles.css">
+    <title>Easy Beef Stroganoff 🥩</title>
+</head>
+<body>
+    <div class="site-corner">divincentis.com</div>
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="recipes.html">Recipes</a></li>
+            <li><a href="about.html">About</a></li>
+        </ul>
+    </nav>
+
+    <article class="recipe-card">
+        <h1>Easy Beef Stroganoff 🥩</h1>
+        <p class="text-muted">Бефстроганов (Befstróganov)</p>
+        
+        <div class="meta">
+            Prep Time: 15 mins | Cook Time: 25 mins | Yield: 4-6 servings
+            <button onclick="resetCheckboxes()" class="reset-button">Reset Checkboxes</button>
+        </div>
+
+        <h2>Equipment Needed</h2>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>Large soup pot or dutch oven with lid</label></li>
+            <li><input type="checkbox"><label>Cutting board</label></li>
+            <li><input type="checkbox"><label>Sharp knife</label></li>
+            <li><input type="checkbox"><label>Measuring cups and spoons</label></li>
+            <li><input type="checkbox"><label>Whisk</label></li>
+            <li><input type="checkbox"><label>Wooden spoon or spatula</label></li>
+            <li><input type="checkbox"><label>Garlic press (optional)</label></li>
+        </ul>
+
+        <h2>Ingredients</h2>
+        
+        <h3>Base Ingredients</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>2 tablespoons unsalted butter</label></li>
+            <li><input type="checkbox"><label>12 ounces cremini mushrooms, thickly sliced</label></li>
+            <li><input type="checkbox"><label>½ medium onion, diced</label></li>
+            <li><input type="checkbox"><label>1 pound lean ground beef</label></li>
+            <li><input type="checkbox"><label>4 cloves garlic, minced or pressed</label></li>
+            <li><input type="checkbox"><label>½ teaspoon dried thyme</label></li>
+            <li><input type="checkbox"><label>3 tablespoons all-purpose flour</label></li>
+        </ul>
+
+        <h3>Sauce and Pasta</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>¼ cup dry white wine or mirin</label></li>
+            <li><input type="checkbox"><label>4 cups beef stock</label></li>
+            <li><input type="checkbox"><label>1 tablespoon Worcestershire sauce</label></li>
+            <li><input type="checkbox"><label>1 tablespoon Dijon mustard</label></li>
+            <li><input type="checkbox"><label>8 ounces egg noodles, uncooked</label></li>
+            <li><input type="checkbox"><label>½ cup sour cream</label></li>
+        </ul>
+
+        <h3>Seasonings and Garnish</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>Kosher salt and freshly ground black pepper, to taste</label></li>
+            <li><input type="checkbox"><label>2 tablespoons chopped fresh parsley leaves</label></li>
+        </ul>
+
+        <h2>Instructions</h2>
+        <ol class="checklist">
+            <li><input type="checkbox"><label>Sauté vegetables: Melt butter in a large skillet over medium heat. Add mushrooms and onion, and cook, stirring occasionally, until mushrooms are tender and browned, about 3-5 minutes; season with salt and pepper to taste.</label></li>
+            <li><input type="checkbox"><label>Cook beef: Add ground beef and cook until browned, about 3-5 minutes, making sure to crumble the beef as it cooks. Stir in garlic and thyme until fragrant, about 1 minute.</label></li>
+            <li><input type="checkbox"><label>Make roux: Whisk in flour until lightly browned, about 1 minute.</label></li>
+            <li><input type="checkbox"><label>Deglaze: Stir in wine or mirin, scraping any browned bits from the bottom of the skillet.</label></li>
+            <li><input type="checkbox"><label>Cook pasta: Stir in beef stock, Worcestershire, Dijon and egg noodles; season with salt and pepper, to taste. Bring to a boil; cover, reduce heat and simmer until pasta is cooked through, about 9-10 minutes.</label></li>
+            <li><input type="checkbox"><label>Finish: Stir in sour cream until heated through, about 1-2 minutes.</label></li>
+            <li><input type="checkbox"><label>Serve: Garnish with parsley and serve immediately.</label></li>
+        </ol>
+
+        <h2>Notes</h2>
+        <ul>
+            <li>If sauce becomes too thick, thin with additional beef stock or pasta water.</li>
+            <li>Cremini mushrooms can be substituted with white button mushrooms.</li>
+            <li>Traditional Stroganoff uses sliced beef instead of ground beef - feel free to substitute with 1 pound of sliced beef sirloin.</li>
+            <li>This is a traditional Russian dish named after the Stroganov family, a prominent aristocratic family in Russia during the 18th and 19th centuries. A French chef working for the Stroganov family is often credited with creating the dish, blending French cooking techniques with Russian ingredients.</li>
+        </ul>
+    </article>
+
+    <footer class="text-center text-muted">
+        <hr>
+        <p class="text-small">Last updated: December 2024</p>
+    </footer>
+  
+    <script>
+    function resetCheckboxes() {
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    }
+    </script>
+      
+</body>
+</html>
