@@ -57,6 +57,12 @@ nav ul {
     gap: 1rem;
 }
 
+.site-corner {
+    padding: 0.5rem 1rem;
+    color: #666;
+    font-size: 0.9rem;
+}
+
 /* Recipe Elements */
 .recipe-card {
     background: white;
