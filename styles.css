@@ -186,3 +186,7 @@ th, td {
         margin: 0.5rem 0;
     }
 }
+/* Indent */
+.indented {
+    margin-left: 2rem;
+}
