@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="styles.css">
+    <title>Creamy Tomato Orzo Soup with Turkey 🍜</title>
+</head>
+<body>
+    <div class="site-corner">divincentis.com</div>
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="recipes.html">Recipes</a></li>
+            <li><a href="about.html">About</a></li>
+        </ul>
+    </nav>
+
+    <article class="recipe-card">
+        <h1>Creamy Tomato Orzo Soup with Turkey 🍜</h1>
+        
+        <div class="meta">
+            Prep Time: 10 mins | Cook Time: 30 mins | Yield: 6 servings
+            <button onclick="resetCheckboxes()" class="reset-button">Reset Checkboxes</button>
+        </div>
+
+        <p>A deliciously creamy orzo tomato soup with protein-packed ground turkey simmered in a flavorful coconut milk tomato broth. This satisfying, healthy soup packs in protein & veggies from spinach and carrots and is delicious with a touch of basil pesto!</p>
+
+        <h2>Equipment Needed</h2>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>Large pot</label></li>
+            <li><input type="checkbox"><label>Large skillet</label></li>
+            <li><input type="checkbox"><label>Measuring cups and spoons</label></li>
+            <li><input type="checkbox"><label>Sharp knife and cutting board</label></li>
+            <li><input type="checkbox"><label>Wooden spoon or spatula</label></li>
+        </ul>
+
+        <h2>Ingredients</h2>
+        
+        <h3>For the Turkey</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>1 pound 93% lean ground turkey</label></li>
+            <li><input type="checkbox"><label>1 teaspoon Italian seasoning</label></li>
+            <li><input type="checkbox"><label>½ teaspoon garlic powder</label></li>
+            <li><input type="checkbox"><label>1 teaspoon red pepper flakes</label></li>
+            <li><input type="checkbox"><label>2 tablespoons basil pesto</label></li>
+            <li><input type="checkbox"><label>Salt and pepper to taste</label></li>
+            <li><input type="checkbox"><label>1 tablespoon olive oil, for cooking</label></li>
+        </ul>
+
+        <h3>For the Soup</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>1/2 tablespoon olive oil</label></li>
+            <li><input type="checkbox"><label>3 cloves garlic, minced</label></li>
+            <li><input type="checkbox"><label>1 yellow onion, diced</label></li>
+            <li><input type="checkbox"><label>1 large carrot, sliced</label></li>
+            <li><input type="checkbox"><label>1 (28 ounce) can crushed tomatoes</label></li>
+            <li><input type="checkbox"><label>1 (15 ounce) can light coconut milk</label></li>
+            <li><input type="checkbox"><label>4 cups low sodium chicken broth</label></li>
+            <li><input type="checkbox"><label>1 teaspoon Italian seasoning</label></li>
+            <li><input type="checkbox"><label>170g uncooked orzo</label></li>
+            <li><input type="checkbox"><label>1/2 teaspoon salt</label></li>
+            <li><input type="checkbox"><label>Freshly ground black pepper</label></li>
+        </ul>
+
+        <h3>Mix-ins and Toppings</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>2-3 cups organic spinach</label></li>
+            <li><input type="checkbox"><label>Fresh shredded parmesan cheese</label></li>
+            <li><input type="checkbox"><label>Extra basil pesto for serving</label></li>
+        </ul>
+
+        <h2>Instructions</h2>
+        <ol class="checklist">
+            <li><input type="checkbox"><label>Heat a large skillet over medium-high heat and add 1 tablespoon olive oil. Add ground turkey and season with Italian seasoning, garlic powder, red pepper flakes, salt, and pepper. Break up the meat and cook until browned and cooked through, about 5-7 minutes. Stir in 2 tablespoons pesto and set aside.</label></li>
+            <li><input type="checkbox"><label>In a large pot, add ½ tablespoon olive oil and place over medium heat. Add garlic, onion, and carrot; sauté until vegetables slightly soften, about 3-5 minutes.</label></li>
+            <li><input type="checkbox"><label>Add crushed tomatoes, coconut milk, chicken broth, Italian seasoning, orzo, salt, and pepper to the pot. Stir well.</label></li>
+            <li><input type="checkbox"><label>Add the cooked turkey mixture to the soup. Bring to a boil, then reduce heat and simmer for 15-20 minutes, stirring occasionally.</label></li>
+            <li><input type="checkbox"><label>Stir in spinach and cook for another minute or until spinach wilts.</label></li>
+            <li><input type="checkbox"><label>Taste and adjust seasonings as needed, adding more salt and pepper if desired.</label></li>
+            <li><input type="checkbox"><label>Serve immediately, topped with extra basil pesto swirled in and shredded parmesan cheese.</label></li>
+        </ol>
+
+        <h2>Notes</h2>
+        <ul>
+            <li>This simplified version skips the step of forming meatballs, making it perfect for busy weeknights while maintaining all the flavor.</li>
+            <li>The soup will thicken as it stands due to the orzo absorbing liquid. Add more broth when reheating leftovers if needed.</li>
+            <li>Light coconut milk keeps this creamy but lighter - you can use full-fat for an even richer soup.</li>
+            <li>Try adding other vegetables like bell peppers or mushrooms for extra nutrients.</li>
+        </ul>
+    </article>
+
+    <footer class="text-center text-muted">
+        <hr>
+        <p class="text-small">Last updated: December 2024</p>
+    </footer>
+  
+    <script>
+    function resetCheckboxes() {
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    }
+    </script>
+      
+</body>
+</html>
