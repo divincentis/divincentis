@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="styles.css">
+    <title>Maple Dijon Roasted Carrots 🥕</title>
+</head>
+<body>
+    <div class="site-corner">divincentis.com</div>
+    <nav>
+        <ul>
+            <li><a href="recipes.html">Home</a></li>
+            <li><a href="recipes.html">Recipes</a></li>
+            <li><a href="about.html">About</a></li>
+        </ul>
+    </nav>
+
+    <article class="recipe-card">
+        <h1>Maple Dijon Roasted Carrots 🥕</h1>
+        
+        <div class="meta">
+            Prep Time: 5 mins | Cook Time: 25 mins | Total Time: 30 mins | Servings: 6
+            <button onclick="resetCheckboxes()" class="reset-button">Reset Checkboxes</button>
+        </div>
+
+        <p>Sweet and tender roasted carrots in a tasty maple dijon glaze, perfectly caramelized and flavored with a hint of umami from miso paste.</p>
+
+        <h2>Equipment Needed</h2>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>Large baking sheet</label></li>
+            <li><input type="checkbox"><label>Mixing bowl</label></li>
+            <li><input type="checkbox"><label>Measuring spoons</label></li>
+            <li><input type="checkbox"><label>Grater (for garlic)</label></li>
+            <li><input type="checkbox"><label>Cutting board and knife</label></li>
+        </ul>
+
+        <h2>Ingredients</h2>
+        
+        <h3>Main Ingredient</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>2 pounds young carrots, well scrubbed or peeled (about ¾ inch thick)</label></li>
+        </ul>
+
+        <h3>Maple Dijon Glaze</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>2 tablespoons oil</label></li>
+            <li><input type="checkbox"><label>2 tablespoons maple syrup</label></li>
+            <li><input type="checkbox"><label>½ tablespoon grainy mustard</label></li>
+            <li><input type="checkbox"><label>½ tablespoon dijon mustard</label></li>
+            <li><input type="checkbox"><label>½ tablespoon white miso paste</label></li>
+            <li><input type="checkbox"><label>½ tablespoon rice vinegar</label></li>
+            <li><input type="checkbox"><label>2 teaspoons soy sauce (or tamari for gluten-free)</label></li>
+            <li><input type="checkbox"><label>1 small clove garlic, grated</label></li>
+        </ul>
+
+        <h3>Garnish</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>1 tablespoon fresh parsley, chopped (optional)</label></li>
+        </ul>
+
+        <h2>Instructions</h2>
+        <ol class="checklist">
+            <li><input type="checkbox"><label>Preheat oven to 400°F (200°C)</label></li>
+            <li><input type="checkbox"><label>In a mixing bowl, combine oil, maple syrup, both mustards, miso paste, rice vinegar, soy sauce, and grated garlic. Mix well until smooth.</label></li>
+            <li><input type="checkbox"><label>Divide the glaze mixture in half, setting aside one portion for later.</label></li>
+            <li><input type="checkbox"><label>Toss the prepared carrots in the first half of the glaze mixture until evenly coated.</label></li>
+            <li><input type="checkbox"><label>Arrange the carrots in a single layer on a baking sheet, ensuring they're not overcrowded.</label></li>
+            <li><input type="checkbox"><label>Roast for 20-30 minutes, turning halfway through, until carrots are tender and lightly golden brown.</label></li>
+            <li><input type="checkbox"><label>Remove from oven and immediately toss with the remaining glaze mixture.</label></li>
+            <li><input type="checkbox"><label>Transfer to a serving dish and garnish with chopped parsley if desired.</label></li>
+        </ol>
+
+        <h2>Notes</h2>
+        <ul>
+            <li>Look for young carrots with leaves still attached for best results.</li>
+            <li>Ensure carrots are no thicker than ¾ inch for optimal roasting.</li>
+            <li>If you can't find miso paste (check the Asian section of your grocery store), you can omit it - the dish will still be delicious!</li>
+            <li>For gluten-free version, use tamari instead of soy sauce and verify your miso paste is gluten-free.</li>
+        </ul>
+
+        
+</article>
+
+    <footer class="text-center text-muted">
+        <hr>
+        <p class="text-small">Recipe updated 2024-12</p>
+    </footer>
+  
+    <script>
+    function resetCheckboxes() {
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    }
+    </script>
+      
+</body>
+</html>
