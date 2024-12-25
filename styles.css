@@ -153,6 +153,48 @@ th, td {
     margin: 1rem 0;
 }
 
+/* Search and Tags */
+.search-container {
+    margin: 1rem 0;
+    padding: 1rem;
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.5rem;
+    font-size: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}
+
+.tag {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    margin: 0.2rem;
+    background: #f0f0f0;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.tag.active {
+    background: #0066cc;
+    color: white;
+}
+
+.recipe-tags {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.hidden {
+    display: none;
+}
+
 /* Utility Classes */
 .text-center { text-align: center; }
 .text-small { font-size: 0.9rem; }
@@ -192,6 +234,7 @@ th, td {
         margin: 0.5rem 0;
     }
 }
+
 /* Indent */
 .indented {
     margin-left: 2rem;
