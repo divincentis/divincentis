@@ -156,26 +156,53 @@
         <p class="text-small">Recipe collection maintained with ♥️</p>
     </footer>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.getElementById('searchInput');
-            const tagFilters = document.getElementById('tagFilters');
-            const recipeItems = document.querySelectorAll('.recipe-item');
-            let activeTag = 'all';
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        const tagFilters = document.getElementById('tagFilters');
+        const recipeItems = document.querySelectorAll('.recipe-item');
+        let activeTag = 'all';
 
-            // Search functionality
-            searchInput.addEventListener('input', filterRecipes);
+        // Search functionality
+        searchInput.addEventListener('input', filterRecipes);
 
-            // Tag filtering
-            tagFilters.addEventListener('click', function(e) {
-                if (e.target.classList.contains('tag')) {
-                    // Update active tag
-                    document.querySelectorAll('#tagFilters .tag').forEach(tag => tag.classList.remove('active'));
-                    e.target.classList.add('active');
-                    activeTag = e.target.dataset.tag;
-                    filterRecipes();
+        // Tag filtering
+        tagFilters.addEventListener('click', function(e) {
+            if (e.target.classList.contains('tag')) {
+                // Update active tag
+                document.querySelectorAll('#tagFilters .tag').forEach(tag => tag.classList.remove('active'));
+                e.target.classList.add('active');
+                activeTag = e.target.dataset.tag;
+                filterRecipes();
+            }
+        });
+
+        function filterRecipes() {
+            const searchTerm = searchInput.value.toLowerCase();
+            
+            recipeItems.forEach(item => {
+                const title = item.querySelector('h3').textContent.toLowerCase();
+                const description = item.querySelector('p').textContent.toLowerCase();
+                const tags = item.dataset.tags.split(',');
+                
+                const matchesSearch = searchTerm === '' || 
+                                   title.includes(searchTerm) || 
+                                   description.includes(searchTerm);
+                                   
+                const matchesTag = activeTag === 'all' || tags.includes(activeTag);
+                
+                // Show/hide recipe sections if all their recipes are hidden
+                const section = item.closest('section');
+                item.classList.toggle('hidden', !(matchesSearch && matchesTag));
+                
+                // Check if all recipes in this section are hidden
+                const visibleItems = section.querySelectorAll('.recipe-item:not(.hidden)');
+                if (visibleItems.length === 0) {
+                    section.classList.add('hidden');
+                } else {
+                    section.classList.remove('hidden');
                 }
             });
-
-            function filterRecipes() {
-                const searchTerm
+        }
+    });
+</script>
