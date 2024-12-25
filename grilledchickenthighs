@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="styles.css">
+    <title>Grilled Chicken Thighs with White BBQ Sauce 🍗</title>
+</head>
+<body>
+    <div class="site-corner">divincentis.com</div>
+    <nav>
+        <ul>
+            <li><a href="recipes.html">Home</a></li>
+            <li><a href="recipes.html">Recipes</a></li>
+            <li><a href="about.html">About</a></li>
+        </ul>
+    </nav>
+
+    <article class="recipe-card">
+        <h1>Grilled Chicken Thighs with White BBQ Sauce 🍗</h1>
+        
+        <div class="meta">
+            Prep Time: 20 mins | Marinate: 4 hrs | Cook Time: 16-20 mins | Yield: 10 servings
+            <button onclick="resetCheckboxes()" class="reset-button">Reset Checkboxes</button>
+        </div>
+
+        <h2>Equipment Needed</h2>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>Grill</label></li>
+            <li><input type="checkbox"><label>Small mixing bowl (for spice rub)</label></li>
+            <li><input type="checkbox"><label>Medium mixing bowl (for sauce)</label></li>
+            <li><input type="checkbox"><label>Measuring spoons</label></li>
+            <li><input type="checkbox"><label>Large zip-top plastic bag</label></li>
+            <li><input type="checkbox"><label>Paper towels</label></li>
+            <li><input type="checkbox"><label>Meat thermometer</label></li>
+            <li><input type="checkbox"><label>Airtight container (for sauce storage)</label></li>
+        </ul>
+
+        <h2>Ingredients</h2>
+        
+        <h3>Chicken & Spice Rub</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>10 skin-on, bone-in chicken thighs (about 3 lb.)</label></li>
+            <li><input type="checkbox"><label>1 tablespoon dried thyme</label></li>
+            <li><input type="checkbox"><label>1 tablespoon dried oregano</label></li>
+            <li><input type="checkbox"><label>1 tablespoon ground cumin</label></li>
+            <li><input type="checkbox"><label>1 tablespoon paprika</label></li>
+            <li><input type="checkbox"><label>1 teaspoon onion powder</label></li>
+            <li><input type="checkbox"><label>½ teaspoon salt</label></li>
+            <li><input type="checkbox"><label>½ teaspoon black pepper</label></li>
+        </ul>
+
+        <h3>White BBQ Sauce</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>1½ cups mayonnaise</label></li>
+            <li><input type="checkbox"><label>¼ cup white wine vinegar</label></li>
+            <li><input type="checkbox"><label>1 garlic clove, minced</label></li>
+            <li><input type="checkbox"><label>1 tablespoon coarse ground pepper</label></li>
+            <li><input type="checkbox"><label>1 tablespoon spicy brown mustard</label></li>
+            <li><input type="checkbox"><label>1 teaspoon sugar</label></li>
+            <li><input type="checkbox"><label>1 teaspoon salt</label></li>
+            <li><input type="checkbox"><label>2 teaspoons horseradish</label></li>
+        </ul>
+
+        <h2>Instructions</h2>
+        <ol class="checklist">
+            <li><input type="checkbox"><label>Make the BBQ sauce (can be done up to 1 week ahead): In a medium bowl, combine mayonnaise, vinegar, minced garlic, pepper, mustard, sugar, salt, and horseradish. Whisk until well blended. Cover and refrigerate for 2-4 hours to allow flavors to meld.</label></li>
+            <li><input type="checkbox"><label>Prepare the spice rub: In a small bowl, combine thyme, oregano, cumin, paprika, onion powder, salt, and pepper. Mix well.</label></li>
+            <li><input type="checkbox"><label>Prepare the chicken: Rinse chicken thighs and pat thoroughly dry with paper towels.</label></li>
+            <li><input type="checkbox"><label>Season chicken: Rub the spice mixture evenly over all surfaces of the chicken thighs.</label></li>
+            <li><input type="checkbox"><label>Marinate: Place seasoned chicken in a zip-top plastic bag, seal, and refrigerate for 4 hours.</label></li>
+            <li><input type="checkbox"><label>Prepare grill: When ready to cook, preheat grill to medium-high heat (350° to 400°F).</label></li>
+            <li><input type="checkbox"><label>Remove chicken from refrigerator and discard the bag.</label></li>
+            <li><input type="checkbox"><label>Grill chicken: Place thighs on the preheated grill, skin-side down. Cover with grill lid.</label></li>
+            <li><input type="checkbox"><label>Cook for 8-10 minutes, then flip chicken thighs.</label></li>
+            <li><input type="checkbox"><label>Continue grilling, covered, for another 8-10 minutes or until internal temperature reaches 180°F when tested with a meat thermometer in the thickest part.</label></li>
+            <li><input type="checkbox"><label>Serve: Transfer chicken to serving plates and serve with the chilled White BBQ Sauce.</label></li>
+        </ol>
+
+        <h2>Notes</h2>
+        <ul>
+            <li>The White BBQ Sauce can be made up to a week in advance and stored in an airtight container in the refrigerator.</li>
+            <li>For best results, bring chicken to room temperature for 20-30 minutes before grilling.</li>
+            <li>If you don't have a grill, you can use a grill pan or broil in the oven.</li>
+            <li>Pat the chicken extra dry before seasoning to help the rub adhere better.</li>
+        </ul>
+    </article>
+
+    <footer class="text-center text-muted">
+        <hr>
+        <p class="text-small">Last updated: December 2024</p>
+    </footer>
+  
+    <script>
+    function resetCheckboxes() {
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    }
+    </script>
+      
+</body>
+</html>
