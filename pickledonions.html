@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="styles.css">
+    <title>Quick Pickled Red Onions 🧅</title>
+</head>
+<body>
+    <div class="site-corner">divincentis.com</div>
+    <nav>
+        <ul>
+            <li><a href="recipes.html">Home</a></li>
+            <li><a href="recipes.html">Recipes</a></li>
+            <li><a href="about.html">About</a></li>
+        </ul>
+    </nav>
+
+    <article class="recipe-card">
+        <h1>Quick Pickled Red Onions 🧅</h1>
+        
+        <div class="meta">
+            Prep Time: 10 mins | Brine Time: 30 mins | Yield: 2 cups
+            <button onclick="resetCheckboxes()" class="reset-button">Reset Checkboxes</button>
+        </div>
+
+        <h2>Equipment Needed</h2>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>16 oz mason jar or similar heat-safe container</label></li>
+            <li><input type="checkbox"><label>Small saucepan</label></li>
+            <li><input type="checkbox"><label>Sharp knife</label></li>
+            <li><input type="checkbox"><label>Cutting board</label></li>
+            <li><input type="checkbox"><label>Measuring cups and spoons</label></li>
+        </ul>
+
+        <h2>Ingredients</h2>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>1 medium red onion, very thinly sliced</label></li>
+            <li><input type="checkbox"><label>½ cup water</label></li>
+            <li><input type="checkbox"><label>¼ cup distilled white vinegar</label></li>
+            <li><input type="checkbox"><label>¼ cup apple cider vinegar or additional white vinegar</label></li>
+            <li><input type="checkbox"><label>1½ tablespoons honey</label></li>
+            <li><input type="checkbox"><label>1½ teaspoons salt</label></li>
+            <li><input type="checkbox"><label>¼ teaspoon red pepper flakes (optional, for heat)</label></li>
+        </ul>
+
+        <h2>Instructions</h2>
+        <ol class="checklist">
+            <li><input type="checkbox"><label>Prepare onions: Slice the red onion very thinly and pack the slices into a 1-pint mason jar.</label></li>
+            <li><input type="checkbox"><label>Make brine: In a small saucepan, combine water, both vinegars, honey, salt, and red pepper flakes (if using). Bring the mixture to a gentle simmer over medium heat.</label></li>
+            <li><input type="checkbox"><label>Add brine: Carefully pour the hot brine mixture over the onions in the jar.</label></li>
+            <li><input type="checkbox"><label>Press onions: Use a butter knife or spoon to press the onions down into the vinegar.</label></li>
+            <li><input type="checkbox"><label>Cool and rest: Let the pickled onions cool to room temperature (about 20 to 30 minutes) until sufficiently pickled for serving.</label></li>
+        </ol>
+
+        <h2>Notes</h2>
+        <ul>
+            <li>Quick-pickled onions are best consumed within three days but will keep for a few weeks in the refrigerator.</li>
+            <li>For best results, slice the onions as thinly as possible.</li>
+            <li>The jar needs to be heat-safe as you'll be adding hot vinegar mixture.</li>
+            <li>Perfect for tacos, salads, sandwiches, or any dish that needs a tangy crunch.</li>
+            <li>Store covered in the refrigerator after cooling to room temperature.</li>
+        </ul>
+    </article>
+
+    <footer class="text-center text-muted">
+        <hr>
+        <p class="text-small">Last updated: December 2024</p>
+    </footer>
+  
+    <script>
+    function resetCheckboxes() {
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    }
+    </script>
+      
+</body>
+</html>
