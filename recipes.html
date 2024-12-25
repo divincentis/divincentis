@@ -16,35 +16,60 @@
         </ul>
     </nav>
 
-    <h1>Recipe Collection  🤌</h1>
+    <h1>Recipe Collection 🤌</h1>
     
-    <p>A collection of our favorite recipes and methods, documented for easy reference and sharing.</p>
+    <div class="search-container">
+        <input type="text" class="search-input" placeholder="Search recipes..." id="searchInput">
+        <div id="tagFilters">
+            <span class="tag active" data-tag="all">All</span>
+            <span class="tag" data-tag="beverage">Beverage</span>
+            <span class="tag" data-tag="breakfast">Breakfast</span>
+            <span class="tag" data-tag="main">Main Dish</span>
+            <span class="tag" data-tag="side">Side Dish</span>
+            <span class="tag" data-tag="dessert">Dessert</span>
+            <span class="tag" data-tag="quick">Quick</span>
+            <span class="tag" data-tag="vegetarian">Vegetarian</span>
+        </div>
+    </div>
 
     <section class="recipe-card">
         <h2>Beverages</h2>
         <div class="recipe-grid">
-            <div>
+            <div class="recipe-item" data-tags="beverage,quick">
                 <h3><a href="coffee.html">Coffee</a></h3>
                 <p class="text-muted">Aeropress method for the perfect cup</p>
+                <div class="recipe-tags">
+                    <span class="tag">beverage</span>
+                    <span class="tag">quick</span>
+                </div>
             </div>
-            <!-- Add more beverage recipes here -->
         </div>
     </section>
 
     <section class="recipe-card">
         <h2>Breakfast</h2>
         <div class="recipe-grid">
-            <div>
+            <div class="recipe-item" data-tags="breakfast">
                 <h3><a href="oatmealpancakes.html">Oatmeal Pancakes</a></h3>
                 <p class="text-muted">Easy and hearty pancakes with optional banana</p>
+                <div class="recipe-tags">
+                    <span class="tag">breakfast</span>
+                    <span class="tag">quick</span>
+                </div>
             </div>
-            <div>
+            <div class="recipe-item" data-tags="breakfast">
                 <h3><a href="danishpancakes.html">Danish Pancakes</a></h3>
                 <p class="text-muted">The ones Grandpa used to make</p>
+                <div class="recipe-tags">
+                    <span class="tag">breakfast</span>
+                </div>
             </div>
-            <div>
+            <div class="recipe-item" data-tags="breakfast">
                 <h3><a href="frenchtoastcasserole.html">French Toast Casserole</a></h3>
                 <p class="text-muted">A casserole of the breakfast classic with raspberries</p>
+                <div class="recipe-tags">
+                    <span class="tag">breakfast</span>
+                </div>
             </div>
         </div>
     </section>
@@ -52,21 +77,33 @@
     <section class="recipe-card">
         <h2>Main Dishes</h2>
         <div class="recipe-grid">
-            <div>
+            <div class="recipe-item" data-tags="main">
                 <h3><a href="tomatoorzosoup.html">Creamy Tomato Orzo Soup</a></h3>
                 <p class="text-muted">With coconut milk and turkey</p>
+                <div class="recipe-tags">
+                    <span class="tag">main</span>
+                </div>
             </div>
-            <div>
+            <div class="recipe-item" data-tags="main">
                 <h3><a href="katsudon.html">Katsudon</a></h3>
                 <p class="text-muted">Japanese pork cutlet and rice bowl</p>
+                <div class="recipe-tags">
+                    <span class="tag">main</span>
+                </div>
             </div>
-            <div>
+            <div class="recipe-item" data-tags="main">
                 <h3><a href="stroganoff.html">Beef Stroganoff</a></h3>
                 <p class="text-muted">or Бефстроганов</p>
+                <div class="recipe-tags">
+                    <span class="tag">main</span>
+                </div>
             </div>
-            <div>
+            <div class="recipe-item" data-tags="main">
                 <h3><a href="gumbo.html">Gumbo</a></h3>
                 <p class="text-muted">Traditional Louisiana gumbo</p>
+                <div class="recipe-tags">
+                    <span class="tag">main</span>
+                </div>
             </div>
         </div>
     </section>
@@ -74,17 +111,29 @@
     <section class="recipe-card">
         <h2>Side Dishes</h2>
         <div class="recipe-grid">
-            <div>
+            <div class="recipe-item" data-tags="side,vegetarian">
                 <h3><a href="mapledijoncarrots.html">Maple Dijon Roasted Carrots</a></h3>
                 <p class="text-muted">With miso paste</p>
+                <div class="recipe-tags">
+                    <span class="tag">side</span>
+                    <span class="tag">vegetarian</span>
+                </div>
             </div>
-            <div>
+            <div class="recipe-item" data-tags="side,vegetarian,quick">
                 <h3><a href="smashedcucumber.html">Smashed Cucumber Salad (拍黄瓜)</a></h3>
                 <p class="text-muted">Best way to prepare cucumbers</p>
+                <div class="recipe-tags">
+                    <span class="tag">side</span>
+                    <span class="tag">vegetarian</span>
+                    <span class="tag">quick</span>
+                </div>
             </div>
-            <div>
+            <div class="recipe-item" data-tags="side">
                 <h3><a href="peppercookies.html">Nana's Pepper Cookies</a></h3>
                 <p class="text-muted">Also known as Taralli, a savory snack</p>
+                <div class="recipe-tags">
+                    <span class="tag">side</span>
+                </div>
             </div>
         </div>
     </section>
@@ -92,9 +141,12 @@
     <section class="recipe-card">
         <h2>Desserts</h2>
         <div class="recipe-grid">
-            <div>
+            <div class="recipe-item" data-tags="dessert">
                 <h3><a href="cookies.html">Chocolate Chip Cookies</a></h3>
                 <p class="text-muted">Standard but perfect</p>
+                <div class="recipe-tags">
+                    <span class="tag">dessert</span>
+                </div>
             </div>
         </div>
     </section>
@@ -103,5 +155,27 @@
         <hr>
         <p class="text-small">Recipe collection maintained with ♥️</p>
     </footer>
-</body>
-</html>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            const tagFilters = document.getElementById('tagFilters');
+            const recipeItems = document.querySelectorAll('.recipe-item');
+            let activeTag = 'all';
+
+            // Search functionality
+            searchInput.addEventListener('input', filterRecipes);
+
+            // Tag filtering
+            tagFilters.addEventListener('click', function(e) {
+                if (e.target.classList.contains('tag')) {
+                    // Update active tag
+                    document.querySelectorAll('#tagFilters .tag').forEach(tag => tag.classList.remove('active'));
+                    e.target.classList.add('active');
+                    activeTag = e.target.dataset.tag;
+                    filterRecipes();
+                }
+            });
+
+            function filterRecipes() {
+                const searchTerm
