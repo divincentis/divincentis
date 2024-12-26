@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="styles.css">
+    <title>Banana Cookies 🍌</title>
+</head>
+<body>
+    <div class="site-corner">divincentis.com</div>
+    <nav>
+        <ul>
+            <li><a href="recipes.html">Home</a></li>
+            <li><a href="recipes.html">Recipes</a></li>
+            <li><a href="about.html">About</a></li>
+        </ul>
+    </nav>
+
+    <article class="recipe-card">
+        <h1>Banana Cookies 🍌</h1>
+        
+        <div class="meta">
+            Prep Time: 15 mins | Cook Time: 11-13 mins per batch | Yield: 24 cookies
+            <button onclick="resetCheckboxes()" class="reset-button">Reset Checkboxes</button>
+        </div>
+
+        <h2>Equipment Needed</h2>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>Large mixing bowl</label></li>
+            <li><input type="checkbox"><label>Medium mixing bowl</label></li>
+            <li><input type="checkbox"><label>Electric mixer (or strong arm for hand mixing)</label></li>
+            <li><input type="checkbox"><label>Whisk</label></li>
+            <li><input type="checkbox"><label>Rubber spatula or wooden spoon</label></li>
+            <li><input type="checkbox"><label>Measuring cups and spoons</label></li>
+            <li><input type="checkbox"><label>Kitchen scale (recommended)</label></li>
+            <li><input type="checkbox"><label>2 large baking sheets</label></li>
+            <li><input type="checkbox"><label>Parchment paper</label></li>
+            <li><input type="checkbox"><label>Wire cooling rack</label></li>
+        </ul>
+
+        <h2>Ingredients</h2>
+        
+        <h3>Dry Ingredients</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>240g (2 cups) all-purpose flour</label></li>
+            <li><input type="checkbox"><label>5g (1 teaspoon) baking soda</label></li>
+            <li><input type="checkbox"><label>Pinch of salt</label></li>
+            <li><input type="checkbox"><label>2.5g (½ teaspoon) ground cinnamon</label></li>
+            <li><input type="checkbox"><label>2.5g (½ teaspoon) ground nutmeg or mace</label></li>
+            <li><input type="checkbox"><label>2.5g (½ teaspoon) ground cloves</label></li>
+        </ul>
+
+        <h3>Wet Ingredients</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>113g (½ cup/1 stick) unsalted butter, room temperature</label></li>
+            <li><input type="checkbox"><label>200g (1 cup) granulated sugar</label></li>
+            <li><input type="checkbox"><label>1 large egg, room temperature</label></li>
+            <li><input type="checkbox"><label>240g (1 cup) mashed ripe bananas (about 2½ large bananas)</label></li>
+        </ul>
+
+        <h3>Mix-ins</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>120g (1 cup) chopped pecans (or walnuts/chocolate chips)</label></li>
+        </ul>
+
+        <h2>Instructions</h2>
+        <ol class="checklist">
+            <li><input type="checkbox"><label>Prepare oven and pans: Adjust oven rack to middle position and preheat to 350°F. Line 2 large baking sheets with parchment paper.</label></li>
+            <li><input type="checkbox"><label>Mix dry ingredients: In a medium bowl, whisk together flour, salt, cinnamon, nutmeg, and cloves. Set aside.</label></li>
+            <li><input type="checkbox"><label>Prepare banana mixture: In a separate bowl, mix mashed bananas and baking soda. Let stand for 2 minutes to allow the chemical reaction that will help the cookies rise.</label></li>
+            <li><input type="checkbox"><label>Cream butter and sugar: In a large bowl, beat butter and sugar together until light and fluffy (about 3 minutes).</label></li>
+            <li><input type="checkbox"><label>Add egg: Beat in the egg until mixture is light and fluffy (about 1 minute).</label></li>
+            <li><input type="checkbox"><label>Combine mixtures: Add banana mixture to the butter mixture. Note: mixture may look curdled - this is normal!</label></li>
+            <li><input type="checkbox"><label>Add dry ingredients: Gradually stir flour mixture into wet ingredients until just combined.</label></li>
+            <li><input type="checkbox"><label>Add mix-ins: Fold in pecans (or chosen alternative) until evenly distributed.</label></li>
+            <li><input type="checkbox"><label>Portion dough: Drop rounded tablespoons of dough onto prepared baking sheets, spacing 2 inches apart.</label></li>
+            <li><input type="checkbox"><label>Bake cookies: Bake one sheet at a time until cookies are golden brown around edges, 11-13 minutes. Rotate sheet halfway through baking.</label></li>
+            <li><input type="checkbox"><label>Cool: Let cookies cool on baking sheets for 5 minutes, then transfer to wire rack to cool completely.</label></li>
+        </ol>
+
+        <h2>Notes</h2>
+        <ul>
+            <li>Use very ripe bananas for the best flavor - they should be spotty and soft.</li>
+            <li>Don't worry if the batter looks curdled after adding the banana mixture - this is normal!</li>
+            <li>These cookies will be soft and cake-like due to the banana content.</li>
+            <li>Store in an airtight container at room temperature for up to 3 days.</li>
+        </ul>
+    </article>
+
+    <footer class="text-center text-muted">
+        <hr>
+        <p class="text-small">Last updated: December 2024</p>
+    </footer>
+  
+    <script>
+    function resetCheckboxes() {
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    }
+    </script>
+      
+</body>
+</html>
