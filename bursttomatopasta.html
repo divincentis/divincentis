@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="styles.css">
+    <title>Burst Cherry Tomato Pasta 🍝</title>
+</head>
+<body>
+    <div class="site-corner">divincentis.com</div>
+    <nav>
+        <ul>
+            <li><a href="recipes.html">Home</a></li>
+            <li><a href="recipes.html">Recipes</a></li>
+            <li><a href="about.html">About</a></li>
+        </ul>
+    </nav>
+
+    <article class="recipe-card">
+        <h1>Burst Cherry Tomato Pasta 🍝</h1>
+        
+        <div class="meta">
+            Prep Time: 10 mins | Cook Time: 20 mins | Yield: 4 servings
+            <button onclick="resetCheckboxes()" class="reset-button">Reset Checkboxes</button>
+        </div>
+
+        <h2>Equipment Needed</h2>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>Large rimmed baking sheet or oven-safe skillet</label></li>
+            <li><input type="checkbox"><label>Large pot for pasta</label></li>
+            <li><input type="checkbox"><label>Colander</label></li>
+            <li><input type="checkbox"><label>Small saucepan (optional)</label></li>
+            <li><input type="checkbox"><label>Measuring cups and spoons</label></li>
+            <li><input type="checkbox"><label>Sharp knife and cutting board</label></li>
+        </ul>
+
+        <h2>Ingredients</h2>
+        
+        <h3>Main Ingredients</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>3 cups (about 2 pints) cherry tomatoes</label></li>
+            <li><input type="checkbox"><label>6 cloves garlic, thinly sliced</label></li>
+            <li><input type="checkbox"><label>10 ounces pasta (any shape)</label></li>
+            <li><input type="checkbox"><label>¼ cup plus 2 tablespoons olive oil, divided</label></li>
+            <li><input type="checkbox"><label>Kosher salt, to taste</label></li>
+            <li><input type="checkbox"><label>Black pepper, to taste</label></li>
+        </ul>
+
+        <h3>For Serving</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>Fresh basil leaves, slivered</label></li>
+            <li><input type="checkbox"><label>Parmesan cheese, freshly grated</label></li>
+        </ul>
+
+        <h2>Instructions</h2>
+        <ol class="checklist">
+            <li><input type="checkbox"><label>Preheat oven to 450°F (230°C). On a rimmed baking sheet or oven-safe skillet, toss together tomatoes, sliced garlic, and 2 tablespoons olive oil.</label></li>
+            <li><input type="checkbox"><label>Roast tomato mixture for 10 minutes, until tomatoes are wrinkled and just beginning to burst. Remove from oven and set aside.</label></li>
+            <li><input type="checkbox"><label>While tomatoes roast, bring a large pot of water to boil. Add a generous pinch of salt followed by the pasta.</label></li>
+            <li><input type="checkbox"><label>Cook pasta to al dente according to package instructions. Before draining, reserve ¾ cup of the cooking water. Drain pasta and set aside.</label></li>
+            <li><input type="checkbox"><label>In either a small saucepan or the now-empty pasta pot, combine the ¾ cup reserved pasta water and ¼ cup olive oil. Bring mixture to a rapid boil over medium-high heat.</label></li>
+            <li><input type="checkbox"><label>Let sauce bubble for 4 minutes to emulsify, making it smooth and light.</label></li>
+            <li><input type="checkbox"><label>Reduce heat and combine sauce with the drained pasta. Toss to coat evenly.</label></li>
+            <li><input type="checkbox"><label>Add the roasted tomatoes and garlic, slivered basil, salt, and pepper to taste. Toss once more to combine.</label></li>
+            <li><input type="checkbox"><label>Serve immediately, topped with freshly grated Parmesan and additional basil as desired.</label></li>
+        </ol>
+
+        <h2>Notes</h2>
+        <ul>
+            <li>For best results, use high-quality olive oil as it's a key flavor component.</li>
+            <li>The pasta cooking water is crucial for the sauce - don't forget to reserve it before draining!</li>
+            <li>Any pasta shape works well, but shorter shapes like penne or orecchiette are particularly good at catching the burst tomatoes.</li>
+            <li>For extra depth of flavor, add a pinch of red pepper flakes with the garlic.</li>
+        </ul>
+    </article>
+
+    <footer class="text-center text-muted">
+        <hr>
+        <p class="text-small">Last updated: December 2024</p>
+    </footer>
+  
+    <script>
+    function resetCheckboxes() {
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    }
+    </script>
+      
+</body>
+</html>
