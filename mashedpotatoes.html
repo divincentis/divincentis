@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="styles.css">
+    <title>Ultra-Fluffy Mashed Potatoes 🥔</title>
+</head>
+<body>
+    <div class="site-corner">divincentis.com</div>
+    <nav>
+        <ul>
+            <li><a href="recipes.html">Home</a></li>
+            <li><a href="recipes.html">Recipes</a></li>
+            <li><a href="about.html">About</a></li>
+        </ul>
+    </nav>
+
+    <article class="recipe-card">
+        <h1>Mashed Potatoes 🥔</h1>
+        
+        <div class="meta">
+            Prep Time: 10 mins | Cook Time: 35 mins | Active Time: 15 mins | Total: 45 mins | Serves: 4-6
+            <button onclick="resetCheckboxes()" class="reset-button">Reset Checkboxes</button>
+        </div>
+
+        <h2>Equipment Needed</h2>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>Large pot</label></li>
+            <li><input type="checkbox"><label>Colander</label></li>
+            <li><input type="checkbox"><label>Measuring cups and spoons</label></li>
+            <li><input type="checkbox"><label>Kitchen scale (optional)</label></li>
+            <li><input type="checkbox"><label>Rubber spatula or wooden spoon</label></li>
+        </ul>
+
+        <h2>Ingredients</h2>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>2 pounds (900g) russet potatoes</label></li>
+            <li><input type="checkbox"><label>Kosher salt</label></li>
+            <li><input type="checkbox"><label>1/2 cup (120ml) whole milk, plus more as needed</label></li>
+            <li><input type="checkbox"><label>6 tablespoons unsalted butter (85g), room temperature, cut into 1/2-inch pats</label></li>
+            <li><input type="checkbox"><label>Freshly ground black pepper</label></li>
+        </ul>
+
+        <h2>Instructions</h2>
+        <ol class="checklist">
+            <li><input type="checkbox"><label>Peel potatoes and cut into 1- or 2-inch cubes. Transfer to a pot of cold water and rinse, changing water 2 or 3 times until it runs clear. Cover potatoes with fresh cold water and season generously with salt.</label></li>
+            <li><input type="checkbox"><label>Set potatoes over medium-high heat and bring to a boil, then reduce heat to maintain a gentle simmer. Cook until potatoes are completely tender, about 15 minutes after reaching a simmer.</label></li>
+            <li><input type="checkbox"><label>Drain potatoes in a colander and rinse under hot running water for 30 seconds to wash away excess starch. Allow potatoes to steam for 1 minute to remove excess moisture.</label></li>
+            <li><input type="checkbox"><label>Set a ricer or food mill over now-empty pot and pass potatoes through. Alternatively, put potatoes in the pot and mash them by hand.</label></li>
+            <li><input type="checkbox"><label>Add butter and gently fold into potatoes.</label></li>
+            <li><input type="checkbox"><label>Mound potatoes into the center of the pot and pour milk all around. Set over medium heat and bring milk to a simmer before gently folding it into the potatoes. If looser potatoes are desired, add additional milk in a similar fashion around the mashed potato mass and bring it to a simmer before folding into potatoes. Season with salt and pepper, then serve.</label></li>
+        </ol>
+
+        <h2>Notes</h2>
+        <ul>
+            <li>Using a ricer or food mill is crucial for achieving the ultra-fluffy texture.</li>
+            <li>Rinsing the potatoes before and after cooking removes excess starch for fluffier results.</li>
+            <li>Make sure to heat the milk before incorporating it into the potatoes.</li>
+            <li>For extra richness, you can substitute some or all of the milk with heavy cream.</li>
+        </ul>
+    </article>
+
+    <footer class="text-center text-muted">
+        <hr>
+        <p class="text-small">Last updated: December 2024</p>
+    </footer>
+  
+    <script>
+    function resetCheckboxes() {
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    }
+    </script>
+      
+</body>
+</html>
