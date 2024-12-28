@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="styles.css">
+    <title>Cheesy Beef and Rice Casserole 🍚</title>
+</head>
+<body>
+    <div class="site-corner">divincentis.com</div>
+    <nav>
+        <ul>
+            <li><a href="recipes.html">Home</a></li>
+            <li><a href="recipes.html">Recipes</a></li>
+            <li><a href="about.html">About</a></li>
+        </ul>
+    </nav>
+
+    <article class="recipe-card">
+        <h1>Cheesy Beef and Rice Casserole 🍚</h1>
+        
+        <div class="meta">
+            Prep Time: 15 mins | Cook Time: 30 mins | Yield: 6-8 servings
+            <button onclick="resetCheckboxes()" class="reset-button">Reset Checkboxes</button>
+        </div>
+
+        <h2>Equipment Needed</h2>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>Large skillet</label></li>
+            <li><input type="checkbox"><label>9x13 inch casserole dish</label></li>
+            <li><input type="checkbox"><label>Colander</label></li>
+            <li><input type="checkbox"><label>Measuring cups and spoons</label></li>
+            <li><input type="checkbox"><label>Cutting board and knife</label></li>
+            <li><input type="checkbox"><label>Aluminum foil</label></li>
+        </ul>
+
+        <h2>Ingredients</h2>
+        
+        <h3>Main Ingredients</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>1 tablespoon vegetable oil</label></li>
+            <li><input type="checkbox"><label>1 pound ground beef</label></li>
+            <li><input type="checkbox"><label>2 cloves garlic, minced</label></li>
+            <li><input type="checkbox"><label>4 cups cooked rice</label></li>
+            <li><input type="checkbox"><label>1 (15 oz) can black beans</label></li>
+            <li><input type="checkbox"><label>8 oz salsa</label></li>
+            <li><input type="checkbox"><label>4 green onions, divided</label></li>
+            <li><input type="checkbox"><label>½ tablespoon chili powder</label></li>
+            <li><input type="checkbox"><label>Salt, to taste</label></li>
+            <li><input type="checkbox"><label>4 oz cream cheese</label></li>
+            <li><input type="checkbox"><label>1 cup shredded cheddar cheese</label></li>
+        </ul>
+
+        <h2>Instructions</h2>
+        <ol class="checklist">
+            <li><input type="checkbox"><label>Preheat oven to 350°F (175°C). Spray a 9x13 inch casserole dish with non-stick cooking spray.</label></li>
+            <li><input type="checkbox"><label>Heat vegetable oil in a large skillet over medium heat. Add ground beef, minced garlic, and a pinch of salt. Cook until beef is fully browned, breaking it up as it cooks.</label></li>
+            <li><input type="checkbox"><label>While beef cooks, rinse and drain the black beans in a colander. Slice the green onions, reserving some for garnish.</label></li>
+            <li><input type="checkbox"><label>To the skillet with browned beef, add the cooked rice, drained black beans, salsa, half of the sliced green onions, and chili powder. Stir until well combined.</label></li>
+            <li><input type="checkbox"><label>Spread half of the rice and beef mixture into the prepared casserole dish. Drop small dollops of cream cheese evenly across the surface.</label></li>
+            <li><input type="checkbox"><label>Cover with remaining rice and beef mixture. Cover dish tightly with aluminum foil.</label></li>
+            <li><input type="checkbox"><label>Bake covered for 20 minutes.</label></li>
+            <li><input type="checkbox"><label>Remove foil, top with shredded cheddar cheese, and bake uncovered for an additional 10 minutes or until cheese is melted and bubbly.</label></li>
+            <li><input type="checkbox"><label>Garnish with remaining green onions before serving.</label></li>
+        </ol>
+
+        <h2>Notes</h2>
+        <ul>
+            <li>Rice can be cooked ahead of time and refrigerated.</li>
+            <li>Any type of salsa works - choose mild, medium, or hot based on preference.</li>
+            <li>For extra heat, add diced jalapeños or increase the chili powder.</li>
+            <li>Leftovers keep well refrigerated for up to 4 days.</li>
+        </ul>
+    </article>
+
+    <footer class="text-center text-muted">
+        <hr>
+        <p class="text-small">Last updated: December 2024</p>
+    </footer>
+  
+    <script>
+    function resetCheckboxes() {
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    }
+    </script>
+      
+</body>
+</html>
