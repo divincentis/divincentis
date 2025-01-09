@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="../styles.css">
+    <title>Morrow's White Chicken Chili 🌶️</title>
+</head>
+<body>
+    <div class="site-corner">divincentis.com</div>
+    <nav>
+        <ul>
+            <li><a href="../recipes.html">Home</a></li>
+            <li><a href="../recipes.html">Recipes</a></li>
+            <li><a href="../about.html">About</a></li>
+        </ul>
+    </nav>
+
+    <article class="recipe-card">
+        <h1>Morrow's White Chicken Chili 🌶️</h1>
+        
+        <div class="meta">
+            Prep Time: 10 mins | Cook Time: 15-20 mins | Yield: 6-8 servings
+            <button onclick="resetCheckboxes()" class="reset-button">Reset Checkboxes</button>
+        </div>
+
+        <p class="text-muted">A comforting and flavorful white chicken chili that comes together quickly using pantry staples and rotisserie chicken. This hearty soup is perfect for weeknight dinners.</p>
+
+        <h2>Equipment Needed</h2>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>4-quart stock pot</label></li>
+            <li><input type="checkbox"><label>Fork (for mashing beans)</label></li>
+            <li><input type="checkbox"><label>Measuring cups</label></li>
+            <li><input type="checkbox"><label>Cutting board and knife</label></li>
+            <li><input type="checkbox"><label>Can opener</label></li>
+        </ul>
+
+        <h2>Ingredients</h2>
+        
+        <h3>Main Ingredients</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>2 cans (15.5 oz / 440g each) Bush's White Chili Beans, undrained</label></li>
+            <li><input type="checkbox"><label>1 can (10 oz / 283g) Rotel or similar diced tomatoes and green chiles, undrained</label></li>
+            <li><input type="checkbox"><label>1 can (14 oz / 414ml) chicken broth</label></li>
+            <li><input type="checkbox"><label>1 can (10.5 oz / 298g) cream of chicken soup</label></li>
+            <li><input type="checkbox"><label>1-2 medium jalapeños (about 28-56g), seeded and diced</label></li>
+            <li><input type="checkbox"><label>1 cooked rotisserie chicken, meat removed and diced (about 450g meat)</label></li>
+        </ul>
+
+        <h3>Optional Toppings</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>Shredded cheese</label></li>
+            <li><input type="checkbox"><label>Sour cream</label></li>
+            <li><input type="checkbox"><label>Diced avocado</label></li>
+            <li><input type="checkbox"><label>Tortilla strips or chips</label></li>
+            <li><input type="checkbox"><label>Lime wedges</label></li>
+        </ul>
+
+        <h2>Instructions</h2>
+        <ol class="checklist">
+            <li><input type="checkbox"><label>In a 4-quart stock pot, add 1½ cans of Bush's White Chili Beans. Take the remaining ½ can of beans and mash them with a fork until mostly smooth, then add to the pot.</label></li>
+            <li><input type="checkbox"><label>Add the diced tomatoes and green chiles, chicken broth, and cream of chicken soup to the pot. Stir to combine.</label></li>
+            <li><input type="checkbox"><label>Add the diced jalapeños and shredded rotisserie chicken to the mixture.</label></li>
+            <li><input type="checkbox"><label>Bring the mixture to a boil over medium-high heat.</label></li>
+            <li><input type="checkbox"><label>Reduce heat to low and simmer for 10-15 minutes, stirring occasionally, until heated through and flavors are well combined.</label></li>
+            <li><input type="checkbox"><label>Serve hot and garnish with optional toppings as desired.</label></li>
+        </ol>
+
+        <h2>Notes</h2>
+        <ul>
+            <li>Mashing some of the beans helps thicken the chili and creates a creamier texture.</li>
+            <li>Adjust the amount of jalapeños to your preferred level of heat.</li>
+            <li>For a milder version, substitute the Rotel with regular diced tomatoes.</li>
+            <li>Leftover chili can be stored in an airtight container in the refrigerator for up to 4 days.</li>
+        </ul>
+    </article>
+
+    <footer class="text-center text-muted">
+        <hr>
+        <p class="text-small">Recipe adapted from Bush's Beans</p>
+    </footer>
+  
+    <script>
+    function resetCheckboxes() {
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    }
+    </script>
+      
+</body>
+</html>
