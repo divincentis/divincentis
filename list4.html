@@ -52,6 +52,28 @@
             border-bottom: 2px solid #f0f0f0;
         }
 
+        .category-header-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .clear-checks {
+            padding: 4px 8px;
+            background: #e0e0e0;
+            color: #666;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .clear-checks:hover {
+            background: #d0d0d0;
+            color: #444;
+        }
+
         .category-header h3 {
             margin: 0;
             color: #2c3e50;
@@ -370,14 +392,33 @@
                 const header = document.createElement('div');
                 header.className = 'category-header';
                 
+                const headerContent = document.createElement('div');
+                headerContent.className = 'category-header-content';
+
                 const title = document.createElement('h3');
                 title.textContent = category;
                 
                 const progress = document.createElement('span');
                 progress.className = 'progress';
                 progress.textContent = '0/0 packed';
+
+                const clearBtn = document.createElement('button');
+                clearBtn.className = 'clear-checks';
+                clearBtn.textContent = 'Clear Checks';
+                clearBtn.addEventListener('click', () => {
+                    const categoryCheckboxes = categoryDiv.querySelectorAll('input[type="checkbox"]');
+                    categoryCheckboxes.forEach(checkbox => {
+                        checkbox.checked = false;
+                        checkbox.nextElementSibling.classList.remove('checked');
+                        delete checkedItems[checkbox.id];
+                    });
+                    saveToStorage(customItems, checkedItems);
+                    updateProgress(categoryDiv);
+                });
                 
-                header.appendChild(title);
+                headerContent.appendChild(title);
+                headerContent.appendChild(clearBtn);
+                header.appendChild(headerContent);
                 header.appendChild(progress);
                 categoryDiv.appendChild(header);
 
