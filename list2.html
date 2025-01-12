@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Packing Lists</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .packing-lists {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .list-selector {
+            margin-bottom: 20px;
+        }
+
+        .list-selector select {
+            padding: 8px 12px;
+            font-size: 16px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            background-color: white;
+        }
+
+        .list-container {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .category {
+            margin-bottom: 24px;
+            background: white;
+            border-radius: 6px;
+            padding: 16px;
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .category-header h3 {
+            margin: 0;
+            color: #2c3e50;
+        }
+
+        .progress {
+            font-size: 0.9em;
+            color: #666;
+            background: #f5f5f5;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .category-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .item:hover {
+            background-color: #f5f5f5;
+        }
+
+        .item.custom-item {
+            background-color: #f0f7f0;
+        }
+
+        .item.custom-item:hover {
+            background-color: #e5f2e5;
+        }
+
+        .item label {
+            flex-grow: 1;
+            cursor: pointer;
+        }
+
+        .checked {
+            text-decoration: line-through;
+            color: #666;
+        }
+
+        .delete-btn {
+            opacity: 0;
+            padding: 4px 8px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: opacity 0.2s;
+        }
+
+        .item:hover .delete-btn {
+            opacity: 1;
+        }
+
+        .add-item-form {
+            display: flex;
+            gap: 8px;
+            padding: 8px;
+            background: #f5f5f5;
+            border-radius: 4px;
+        }
+
+        .add-item-form input {
+            flex-grow: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .add-item-form input:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+        }
+
+        .add-item-form button {
+            padding: 8px 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+
+        .add-item-form button:hover {
+            background: #45a049;
+        }
+
+        @media (max-width: 600px) {
+            .category-items {
+                grid-template-columns: 1fr;
+            }
+            
+            body {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="packing-lists">
+        <div class="list-selector">
+            <select id="tripType">
+                <option value="weekend">Weekend Trip</option>
+                <option value="beach">Beach Vacation</option>
+                <option value="business">Business Trip</option>
+                <option value="camping">Camping Trip</option>
+            </select>
+        </div>
+
+        <div id="listContainer" class="list-container">
+            <!-- Lists will be dynamically populated here -->
+        </div>
+    </div>
+
+    <script>
+        // Store custom items separately from the base lists
+        const customItems = {
+            weekend: {},
+            beach: {},
+            business: {},
+            camping: {}
+        };
+
+        const packingLists = {
+            weekend: {
+                'Clothes': [
+                    '2-3 casual outfits',
+                    'Pajamas',
+                    'Underwear',
+                    'Socks',
+                    'Comfortable shoes'
+                ],
+                'Toiletries': [
+                    'Toothbrush',
+                    'Toothpaste',
+                    'Deodorant',
+                    'Shower supplies',
+                    'Medications'
+                ],
+                'Electronics': [
+                    'Phone charger',
+                    'Portable battery',
+                    'Headphones'
+                ]
+            },
+            beach: {
+                'Beach Essentials': [
+                    'Swimsuits',
+                    'Beach towels',
+                    'Sunscreen',
+                    'Sunglasses',
+                    'Beach umbrella',
+                    'Beach chairs'
+                ],
+                'Clothes': [
+                    'Cover-ups',
+                    'Casual outfits',
+                    'Sandals',
+                    'Hat'
+                ],
+                'Electronics': [
+                    'Phone charger',
+                    'Camera',
+                    'Waterproof phone case'
+                ]
+            },
+            business: {
+                'Clothes': [
+                    'Business suits/attire',
+                    'Dress shoes',
+                    'Dress socks',
+                    'Ties/accessories',
+                    'Casual outfit for after hours'
+                ],
+                'Business Items': [
+                    'Laptop',
+                    'Charger',
+                    'Business cards',
+                    'Notebook',
+                    'Presentation materials'
+                ],
+                'Toiletries': [
+                    'Toothbrush',
+                    'Toothpaste',
+                    'Deodorant',
+                    'Shaving kit',
+                    'Hair products'
+                ]
+            },
+            camping: {
+                'Shelter': [
+                    'Tent',
+                    'Sleeping bag',
+                    'Sleeping pad',
+                    'Tarp',
+                    'Stakes and rope'
+                ],
+                'Cooking': [
+                    'Stove',
+                    'Fuel',
+                    'Cookware',
+                    'Utensils',
+                    'Water filter'
+                ],
+                'Clothes': [
+                    'Weather-appropriate layers',
+                    'Rain gear',
+                    'Hiking boots',
+                    'Warm socks',
+                    'Hat and gloves'
+                ],
+                'Safety': [
+                    'First aid kit',
+                    'Flashlight/headlamp',
+                    'Multi-tool',
+                    'Map and compass',
+                    'Fire starter'
+                ]
+            }
+        };
+
+        function createItemElement(type, category, item, isCustom = false) {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'item' + (isCustom ? ' custom-item' : '');
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `${type}-${category}-${item}`.replace(/\s+/g, '-');
+
+            const label = document.createElement('label');
+            label.htmlFor = checkbox.id;
+            label.textContent = item;
+
+            checkbox.addEventListener('change', () => {
+                label.classList.toggle('checked', checkbox.checked);
+                updateProgress(itemDiv.closest('.category'));
+            });
+
+            itemDiv.appendChild(checkbox);
+            itemDiv.appendChild(label);
+
+            if (isCustom) {
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.textContent = '×';
+                deleteBtn.title = 'Delete item';
+                deleteBtn.addEventListener('click', () => {
+                    const index = customItems[type][category].indexOf(item);
+                    if (index > -1) {
+                        customItems[type][category].splice(index, 1);
+                    }
+                    itemDiv.remove();
+                    updateProgress(itemDiv.closest('.category'));
+                });
+                itemDiv.appendChild(deleteBtn);
+            }
+
+            return itemDiv;
+        }
+
+        function createList(type) {
+            const container = document.getElementById('listContainer');
+            container.innerHTML = '';
+
+            const list = packingLists[type];
+            for (const [category, items] of Object.entries(list)) {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'category';
+
+                const header = document.createElement('div');
+                header.className = 'category-header';
+                
+                const title = document.createElement('h3');
+                title.textContent = category;
+                
+                const progress = document.createElement('span');
+                progress.className = 'progress';
+                progress.textContent = '0/0 packed';
+                
+                header.appendChild(title);
+                header.appendChild(progress);
+                categoryDiv.appendChild(header);
+
+                const itemsDiv = document.createElement('div');
+                itemsDiv.className = 'category-items';
+
+                // Add default items
+                items.forEach(item => {
+                    const itemDiv = createItemElement(type, category, item);
+                    itemsDiv.appendChild(itemDiv);
+                });
+
+                // Add existing custom items
+                if (customItems[type][category]) {
+                    customItems[type][category].forEach(item => {
+                        const itemDiv = createItemElement(type, category, item, true);
+                        itemsDiv.appendChild(itemDiv);
+                    });
+                }
+
+                categoryDiv.appendChild(itemsDiv);
+
+                // Add the "Add Item" form
+                const addItemForm = document.createElement('form');
+                addItemForm.className = 'add-item-form';
+                
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.placeholder = 'Add new item...';
+                input.required = true;
+                
+                const addButton = document.createElement('button');
+                addButton.type = 'submit';
+                addButton.textContent = 'Add';
+                
+                addItemForm.appendChild(input);
+                addItemForm.appendChild(addButton);
+                
+                addItemForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const newItemText = input.value.trim();
+                    if (newItemText) {
+                        if (!customItems[type][category]) {
+                            customItems[type][category] = [];
+                        }
+                        
+                        customItems[type][category].push(newItemText);
+                        const itemDiv = createItemElement(type, category, newItemText, true);
+                        itemsDiv.appendChild(itemDiv);
+                        
+                        input.value = '';
+                        updateProgress(categoryDiv);
+                    }
+                });
+
+                categoryDiv.appendChild(addItemForm);
+                container.appendChild(categoryDiv);
+                updateProgress(categoryDiv);
+            }
+        }
+
+        function updateProgress(categoryDiv) {
+            const checkboxes = categoryDiv.querySelectorAll('input[type="checkbox"]');
+            const checked = categoryDiv.querySelectorAll('input[type="checkbox"]:checked');
+            const progress = categoryDiv.querySelector('.progress');
+            progress.textContent = `${checked.length}/${checkboxes.length} packed`;
+        }
+
+        // Initialize the first list
+        document.getElementById('tripType').addEventListener('change', (e) => {
+            createList(e.target.value);
+        });
+        createList('weekend');
+    </script>
+</body>
+</html>
