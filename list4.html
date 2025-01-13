@@ -64,16 +64,12 @@
         }
 
         .category-content {
-            transition: all 0.3s ease-out;
-            opacity: 1;
+            display: block;
             margin-top: 16px;
         }
 
         .category.collapsed .category-content {
-            opacity: 0;
-            margin-top: 0;
-            height: 0;
-            overflow: hidden;
+            display: none;
         }
 
         .category-toggle {
