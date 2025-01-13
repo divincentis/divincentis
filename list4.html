@@ -64,13 +64,16 @@
         }
 
         .category-content {
-            max-height: 1000px;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out;
+            transition: all 0.3s ease-out;
+            opacity: 1;
+            margin-top: 16px;
         }
 
-        .category-content.collapsed {
-            max-height: 0;
+        .category.collapsed .category-content {
+            opacity: 0;
+            margin-top: 0;
+            height: 0;
+            overflow: hidden;
         }
 
         .category-toggle {
@@ -465,7 +468,6 @@
                 // Add click handler for collapse/expand
                 header.addEventListener('click', () => {
                     categoryDiv.classList.toggle('collapsed');
-                    categoryContent.classList.toggle('collapsed');
                 });
 
                 const itemsDiv = document.createElement('div');
