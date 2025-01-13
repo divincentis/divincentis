@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="../styles.css">
+    <title>West African Peanut Soup 🥜</title>
+</head>
+<body>
+    <div class="site-corner">divincentis.com</div>
+    <nav>
+        <ul>
+            <li><a href="../recipes.html">Home</a></li>
+            <li><a href="../recipes.html">Recipes</a></li>
+            <li><a href="../about.html">About</a></li>
+        </ul>
+    </nav>
+
+    <article class="recipe-card">
+        <h1>West African Peanut Soup 🥜</h1>
+        
+        <div class="meta">
+            Prep Time: 15 mins | Cook Time: 45 mins | Yield: 6 servings
+            <button onclick="resetCheckboxes()" class="reset-button">Reset Checkboxes</button>
+        </div>
+
+        <p class="text-muted">A rich, creamy vegetarian soup that combines the heartiness of peanut butter with the nutritious punch of collard greens. This warming soup can be served over rice for a complete meal, with just the right amount of heat from jalapeño and hot sauce.</p>
+
+        <h2>Equipment Needed</h2>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>Dutch oven or large soup pot</label></li>
+            <li><input type="checkbox"><label>Medium mixing bowl</label></li>
+            <li><input type="checkbox"><label>Measuring cups and spoons</label></li>
+            <li><input type="checkbox"><label>Sharp knife and cutting board</label></li>
+            <li><input type="checkbox"><label>Whisk</label></li>
+        </ul>
+
+        <h2>Ingredients</h2>
+        
+        <h3>Base</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>30ml (2 tablespoons) extra-virgin olive oil</label></li>
+            <li><input type="checkbox"><label>1 medium red onion, chopped</label></li>
+            <li><input type="checkbox"><label>1 medium jalapeño, seeded and finely chopped (optional, for heat)</label></li>
+            <li><input type="checkbox"><label>5g (1 teaspoon) fine salt, plus more to taste</label></li>
+            <li><input type="checkbox"><label>30g (2 tablespoons) fresh ginger, finely grated or minced</label></li>
+            <li><input type="checkbox"><label>4 medium cloves garlic, pressed or minced</label></li>
+        </ul>
+
+        <h3>Liquid and Base</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>946ml (4 cups/32 ounces) vegetable broth</label></li>
+            <li><input type="checkbox"><label>473ml (2 cups) water</label></li>
+            <li><input type="checkbox"><label>190g (¾ cup) creamy peanut butter</label></li>
+            <li><input type="checkbox"><label>170g (6 ounces) tomato paste</label></li>
+        </ul>
+
+        <h3>Greens and Seasonings</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>225g (8 ounces) collard greens or kale, tough ribs removed and chopped into bite-size pieces</label></li>
+            <li><input type="checkbox"><label>Hot sauce, preferably Sriracha, to taste</label></li>
+        </ul>
+
+        <h3>For Serving (Optional)</h3>
+        <ul class="checklist">
+            <li><input type="checkbox"><label>1 batch cooked brown rice</label></li>
+            <li><input type="checkbox"><label>35g (¼ cup) roasted peanuts, roughly chopped</label></li>
+        </ul>
+
+        <h2>Instructions</h2>
+        <ol class="checklist">
+            <li><input type="checkbox"><label>In a Dutch oven or soup pot, warm the olive oil over medium heat until shimmering. Add the onion, jalapeño (if using), and a dash of salt. Cook, stirring occasionally, until the onions are translucent, about 5 to 8 minutes.</label></li>
+            <li><input type="checkbox"><label>Add the ginger, garlic, and salt. Cook, stirring frequently, until fragrant, about 1 minute.</label></li>
+            <li><input type="checkbox"><label>Pour in the vegetable broth and water, increase the heat to medium-high, and bring the mixture to a simmer. Cook for 15 minutes, stirring occasionally and reducing the heat as necessary to maintain a gentle simmer.</label></li>
+            <li><input type="checkbox"><label>Meanwhile, in a heatproof medium bowl, combine the peanut butter and tomato paste. Transfer 1 to 2 cups of hot broth from the pot to the bowl. Whisk the mixture until smooth, then pour the peanut mixture into the soup and mix well.</label></li>
+            <li><input type="checkbox"><label>Stir the collard greens into the soup and continue cooking until the soup is nice and thick, with sufficiently softened greens, 15 to 25 minutes longer.</label></li>
+            <li><input type="checkbox"><label>Season the soup with hot sauce to taste (starting with 1 tablespoon Sriracha for medium heat). Remove the pot from the heat and add more salt to taste, if necessary (up to additional ½ teaspoon).</label></li>
+            <li><input type="checkbox"><label>Serve the soup in bowls, optionally over cooked rice, garnished with chopped peanuts. Serve with additional hot sauce on the side.</label></li>
+        </ol>
+
+        <h2>Notes</h2>
+        <ul>
+            <li>For best results, use natural peanut butter with no added sugars or oils.</li>
+            <li>The soup will thicken as it cools; thin with additional broth if needed when reheating.</li>
+            <li>Leftovers will keep in the refrigerator for up to 4 days.</li>
+        </ul>
+    </article>
+
+    <footer class="text-center text-muted">
+        <hr>
+        <p class="text-small">Recipe adapted for the family collection</p>
+    </footer>
+  
+    <script>
+    function resetCheckboxes() {
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    }
+    </script>
+      
+</body>
+</html>
