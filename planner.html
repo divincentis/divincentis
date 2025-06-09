@@ -264,8 +264,8 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useCallback } = React;
         
-        // In-memory storage simulation (replace with localStorage in production)
-        const storage = {
+        // In-memory localStorage simulation (replace with locallocalStorage in production)
+        const locallocalStorage = {
             data: {},
             getItem: function(key) {
                 return this.data[key] || null;
@@ -275,7 +275,7 @@
             }
         };
         
-        // Note: In production, replace 'storage' with 'localStorage'
+        // Note: In production, replace 'localStorage' with 'locallocalStorage'
         
         function DeadlinePlanner() {
             const [targetTime, setTargetTime] = useState('17:00');
@@ -287,7 +287,7 @@
             
             // Load saved data on mount
             useEffect(() => {
-                const savedData = storage.getItem('deadlinePlannerData');
+                const savedData = localStorage.getItem('deadlinePlannerData');
                 if (savedData) {
                     try {
                         const parsed = JSON.parse(savedData);
@@ -307,7 +307,7 @@
                     bufferMinutes,
                     steps
                 };
-                storage.setItem('deadlinePlannerData', JSON.stringify(dataToSave));
+                localStorage.setItem('deadlinePlannerData', JSON.stringify(dataToSave));
             }, [targetTime, bufferMinutes, steps]);
             
             // Update current time every minute
@@ -742,7 +742,7 @@
                     </div>
                     
                     <div className="card" style={{ marginTop: '20px', fontSize: '14px', color: '#6b7280' }}>
-                        <p><strong>Note:</strong> This demo uses in-memory storage. In production, replace 'storage' with 'localStorage' in the code for persistent data storage across sessions.</p>
+                        <p><strong>Note:</strong> This demo uses in-memory localStorage. In production, replace 'localStorage' with 'locallocalStorage' in the code for persistent data localStorage across sessions.</p>
                     </div>
                 </div>
             );
