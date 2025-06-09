@@ -264,17 +264,6 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useCallback } = React;
         
-        // In-memory localStorage simulation (replace with locallocalStorage in production)
-        const locallocalStorage = {
-            data: {},
-            getItem: function(key) {
-                return this.data[key] || null;
-            },
-            setItem: function(key, value) {
-                this.data[key] = value;
-            }
-        };
-        
         // Note: In production, replace 'localStorage' with 'locallocalStorage'
         
         function DeadlinePlanner() {
@@ -340,7 +329,7 @@
                     const stepStartTime = new Date(currentEndTime.getTime() - stepDuration * 60000);
                     
                     calculatedSteps.unshift({
-                        ..,
+                        ...step,
                         plannedStart: stepStartTime,
                         plannedEnd: currentEndTime
                     });
