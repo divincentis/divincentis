@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deadline Planner</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #4c1d95;
+            margin-bottom: 8px;
+        }
+        
+        .input-group {
+            margin-bottom: 16px;
+        }
+        
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #4c1d95;
+            margin-bottom: 6px;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #7c3aed;
+        }
+        
+        .button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .button-primary {
+            background: #7c3aed;
+            color: white;
+        }
+        
+        .button-primary:hover {
+            background: #6d28d9;
+        }
+        
+        .button-secondary {
+            background: #e5e7eb;
+            color: #4b5563;
+        }
+        
+        .button-secondary:hover {
+            background: #d1d5db;
+        }
+        
+        .button-success {
+            background: #10b981;
+            color: white;
+        }
+        
+        .button-success:hover {
+            background: #059669;
+        }
+        
+        .status-panel {
+            background: rgba(124, 58, 237, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(124, 58, 237, 0.1);
+        }
+        
+        .status-item:last-child {
+            border-bottom: none;
+        }
+        
+        .status-label {
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        .status-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .status-behind {
+            color: #dc2626;
+        }
+        
+        .status-on-track {
+            color: #10b981;
+        }
+        
+        .step-item {
+            border: 3px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+        }
+        
+        .step-item.pending {
+            border-color: #e5e7eb;
+            background: white;
+        }
+        
+        .step-item.in-progress {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.05);
+        }
+        
+        .step-item.completed {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.05);
+        }
+        
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .step-inputs {
+            display: flex;
+            gap: 8px;
+            flex: 1;
+        }
+        
+        .step-name {
+            flex: 0 0 80%;
+        }
+        
+        .step-minutes {
+            flex: 0 0 20%;
+        }
+        
+        .step-controls {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .icon-button {
+            padding: 6px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+        
+        .icon-button:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        
+        .step-times {
+            font-size: 13px;
+            color: #6b7280;
+            margin-top: 8px;
+            line-height: 1.6;
+        }
+        
+        .step-times strong {
+            color: #4b5563;
+        }
+        
+        .step-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .add-step-button {
+            width: 100%;
+            justify-content: center;
+            margin-top: 16px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6b7280;
+        }
+        
+        .dragging {
+            opacity: 0.5;
+        }
+        
+        .drag-over {
+            border-color: #7c3aed;
+            background: rgba(124, 58, 237, 0.05);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useCallback } = React;
+        
+        // In-memory storage simulation (replace with localStorage in production)
+        const storage = {
+            data: {},
+            getItem: function(key) {
+                return this.data[key] || null;
+            },
+            setItem: function(key, value) {
+                this.data[key] = value;
+            }
+        };
+        
+        // Note: In production, replace 'storage' with 'localStorage'
+        
+        function DeadlinePlanner() {
+            const [targetTime, setTargetTime] = useState('17:00');
+            const [bufferMinutes, setBufferMinutes] = useState(30);
+            const [steps, setSteps] = useState([]);
+            const [currentTime, setCurrentTime] = useState(new Date());
+            const [draggedIndex, setDraggedIndex] = useState(null);
+            const [dragOverIndex, setDragOverIndex] = useState(null);
+            
+            // Load saved data on mount
+            useEffect(() => {
+                const savedData = storage.getItem('deadlinePlannerData');
+                if (savedData) {
+                    try {
+                        const parsed = JSON.parse(savedData);
+                        setTargetTime(parsed.targetTime || '17:00');
+                        setBufferMinutes(parsed.bufferMinutes || 30);
+                        setSteps(parsed.steps || []);
+                    } catch (e) {
+                        console.error('Error loading saved data:', e);
+                    }
+                }
+            }, []);
+            
+            // Save data whenever it changes
+            useEffect(() => {
+                const dataToSave = {
+                    targetTime,
+                    bufferMinutes,
+                    steps
+                };
+                storage.setItem('deadlinePlannerData', JSON.stringify(dataToSave));
+            }, [targetTime, bufferMinutes, steps]);
+            
+            // Update current time every minute
+            useEffect(() => {
+                const timer = setInterval(() => {
+                    setCurrentTime(new Date());
+                }, 60000);
+                
+                return () => clearInterval(timer);
+            }, []);
+            
+            // Calculate times
+            const calculateTimes = useCallback(() => {
+                if (!targetTime || steps.length === 0) return null;
+                
+                const [hours, minutes] = targetTime.split(':').map(Number);
+                const deadlineDate = new Date();
+                deadlineDate.setHours(hours, minutes, 0, 0);
+                
+                // Subtract buffer from deadline
+                const adjustedDeadline = new Date(deadlineDate.getTime() - bufferMinutes * 60000);
+                
+                // Calculate backwards from adjusted deadline
+                let currentEndTime = adjustedDeadline;
+                const calculatedSteps = [];
+                
+                for (let i = steps.length - 1; i >= 0; i--) {
+                    const step = steps[i];
+                    const stepDuration = parseInt(step.minutes) || 0;
+                    const stepStartTime = new Date(currentEndTime.getTime() - stepDuration * 60000);
+                    
+                    calculatedSteps.unshift({
+                        ...step,
+                        plannedStart: stepStartTime,
+                        plannedEnd: currentEndTime
+                    });
+                    
+                    currentEndTime = stepStartTime;
+                }
+                
+                return {
+                    steps: calculatedSteps,
+                    deadline: deadlineDate,
+                    adjustedDeadline,
+                    earliestStart: calculatedSteps[0]?.plannedStart
+                };
+            }, [targetTime, bufferMinutes, steps]);
+            
+            const calculations = calculateTimes();
+            
+            // Calculate status and remaining buffer
+            const getStatus = useCallback(() => {
+                if (!calculations) return { status: 'Not started', eta: null, remainingBuffer: bufferMinutes };
+                
+                const now = currentTime;
+                let eta = calculations.deadline;
+                let remainingBuffer = bufferMinutes;
+                let isUsingActual = false;
+                
+                // Find the first incomplete step
+                const firstIncomplete = calculations.steps.findIndex(s => s.status !== 'completed');
+                
+                if (firstIncomplete === -1) {
+                    // All completed
+                    const lastStep = calculations.steps[calculations.steps.length - 1];
+                    if (lastStep.actualEnd) {
+                        eta = lastStep.actualEnd;
+                        isUsingActual = true;
+                    }
+                } else if (firstIncomplete > 0 || calculations.steps[0]?.status === 'in-progress') {
+                    // Some progress made
+                    isUsingActual = true;
+                    let projectedTime = now;
+                    
+                    // Add time for current in-progress step if any
+                    const inProgressStep = calculations.steps.find(s => s.status === 'in-progress');
+                    if (inProgressStep) {
+                        const remainingMinutes = parseInt(inProgressStep.minutes) - 
+                            Math.floor((now - inProgressStep.actualStart) / 60000);
+                        projectedTime = new Date(now.getTime() + remainingMinutes * 60000);
+                    }
+                    
+                    // Add time for remaining steps
+                    for (let i = firstIncomplete + (inProgressStep ? 1 : 0); i < calculations.steps.length; i++) {
+                        const stepMinutes = parseInt(calculations.steps[i].minutes) || 0;
+                        projectedTime = new Date(projectedTime.getTime() + stepMinutes * 60000);
+                    }
+                    
+                    eta = projectedTime;
+                }
+                
+                // Calculate remaining buffer
+                const minutesOverDeadline = Math.floor((eta - calculations.adjustedDeadline) / 60000);
+                remainingBuffer = Math.max(0, bufferMinutes - Math.max(0, minutesOverDeadline));
+                
+                // Determine status
+                let status = 'On track';
+                if (isUsingActual && eta > calculations.adjustedDeadline) {
+                    const behindMinutes = Math.ceil((eta - calculations.adjustedDeadline) / 60000);
+                    status = `Behind by ${behindMinutes}m`;
+                }
+                
+                return { status, eta, remainingBuffer, isUsingActual };
+            }, [calculations, currentTime, bufferMinutes]);
+            
+            const { status, eta, remainingBuffer } = getStatus();
+            
+            // Get next step start time
+            const getNextStepStartTime = useCallback(() => {
+                if (!calculations) return null;
+                
+                const nextPending = calculations.steps.find(s => s.status === 'pending');
+                if (!nextPending) return null;
+                
+                // If nothing started yet, use planned time
+                const hasStarted = calculations.steps.some(s => s.status !== 'pending');
+                if (!hasStarted) {
+                    return nextPending.plannedStart;
+                }
+                
+                // Otherwise, calculate based on current progress
+                const now = currentTime;
+                const inProgress = calculations.steps.find(s => s.status === 'in-progress');
+                
+                if (inProgress) {
+                    const remainingMinutes = parseInt(inProgress.minutes) - 
+                        Math.floor((now - inProgress.actualStart) / 60000);
+                    return new Date(now.getTime() + remainingMinutes * 60000);
+                }
+                
+                return now;
+            }, [calculations, currentTime]);
+            
+            const nextStepTime = getNextStepStartTime();
+            
+            // Format time
+            const formatTime = (date) => {
+                if (!date) return '--:--';
+                return date.toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    hour12: false 
+                });
+            };
+            
+            // Add step
+            const addStep = () => {
+                const newStep = {
+                    id: Date.now(),
+                    name: '',
+                    minutes: '30',
+                    status: 'pending',
+                    actualStart: null,
+                    actualEnd: null
+                };
+                setSteps([...steps, newStep]);
+            };
+            
+            // Update step
+            const updateStep = (id, field, value) => {
+                setSteps(steps.map(step => 
+                    step.id === id ? { ...step, [field]: value } : step
+                ));
+            };
+            
+            // Delete step
+            const deleteStep = (id) => {
+                setSteps(steps.filter(step => step.id !== id));
+            };
+            
+            // Start step
+            const startStep = (id) => {
+                setSteps(steps.map(step => {
+                    if (step.id === id) {
+                        return { ...step, status: 'in-progress', actualStart: new Date() };
+                    }
+                    // Complete any in-progress steps
+                    if (step.status === 'in-progress') {
+                        return { ...step, status: 'completed', actualEnd: new Date() };
+                    }
+                    return step;
+                }));
+            };
+            
+            // Complete step
+            const completeStep = (id) => {
+                setSteps(steps.map(step => 
+                    step.id === id 
+                        ? { ...step, status: 'completed', actualEnd: new Date() }
+                        : step
+                ));
+            };
+            
+            // Drag handlers
+            const handleDragStart = (e, index) => {
+                setDraggedIndex(index);
+                e.dataTransfer.effectAllowed = 'move';
+            };
+            
+            const handleDragOver = (e, index) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                setDragOverIndex(index);
+            };
+            
+            const handleDragLeave = () => {
+                setDragOverIndex(null);
+            };
+            
+            const handleDrop = (e, dropIndex) => {
+                e.preventDefault();
+                if (draggedIndex === null) return;
+                
+                const draggedStep = steps[draggedIndex];
+                const newSteps = [...steps];
+                
+                // Remove dragged item
+                newSteps.splice(draggedIndex, 1);
+                
+                // Insert at new position
+                const insertIndex = dropIndex > draggedIndex ? dropIndex - 1 : dropIndex;
+                newSteps.splice(insertIndex, 0, draggedStep);
+                
+                setSteps(newSteps);
+                setDraggedIndex(null);
+                setDragOverIndex(null);
+            };
+            
+            const handleDragEnd = () => {
+                setDraggedIndex(null);
+                setDragOverIndex(null);
+            };
+            
+            // Move step
+            const moveStep = (index, direction) => {
+                const newIndex = index + direction;
+                if (newIndex < 0 || newIndex >= steps.length) return;
+                
+                const newSteps = [...steps];
+                [newSteps[index], newSteps[newIndex]] = [newSteps[newIndex], newSteps[index]];
+                setSteps(newSteps);
+            };
+            
+            return (
+                <div className="container">
+                    <div className="card">
+                        <div className="header">
+                            <h1>Deadline Planner</h1>
+                            <p style={{ color: '#6b7280' }}>Plan your day backwards from your deadline</p>
+                        </div>
+                        
+                        <div className="input-group">
+                            <label>Target Deadline Time</label>
+                            <input
+                                type="time"
+                                value={targetTime}
+                                onChange={(e) => setTargetTime(e.target.value)}
+                            />
+                        </div>
+                        
+                        <div className="input-group">
+                            <label>Buffer Minutes</label>
+                            <input
+                                type="number"
+                                value={bufferMinutes}
+                                onChange={(e) => setBufferMinutes(parseInt(e.target.value) || 0)}
+                                min="0"
+                            />
+                        </div>
+                        
+                        {calculations && (
+                            <div className="status-panel">
+                                <div className="status-item">
+                                    <span className="status-label">Current Time</span>
+                                    <span className="status-value">{formatTime(currentTime)}</span>
+                                </div>
+                                <div className="status-item">
+                                    <span className="status-label">Remaining Buffer</span>
+                                    <span className="status-value">{remainingBuffer}m</span>
+                                </div>
+                                <div className="status-item">
+                                    <span className="status-label">Schedule Status</span>
+                                    <span className={`status-value ${status.includes('Behind') ? 'status-behind' : 'status-on-track'}`}>
+                                        {status}
+                                    </span>
+                                </div>
+                                <div className="status-item">
+                                    <span className="status-label">ETA</span>
+                                    <span className="status-value">{formatTime(eta)}</span>
+                                </div>
+                                {nextStepTime && (
+                                    <div className="status-item">
+                                        <span className="status-label">Start Next Step By</span>
+                                        <span className="status-value">{formatTime(nextStepTime)}</span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div className="card">
+                        <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px', color: '#4c1d95' }}>
+                            Steps
+                        </h2>
+                        
+                        {steps.length === 0 ? (
+                            <div className="empty-state">
+                                <p>No steps added yet.</p>
+                                <p>Add steps to start planning!</p>
+                            </div>
+                        ) : (
+                            steps.map((step, index) => {
+                                const calcStep = calculations?.steps.find(s => s.id === step.id);
+                                
+                                return (
+                                    <div
+                                        key={step.id}
+                                        className={`step-item ${step.status} ${draggedIndex === index ? 'dragging' : ''} ${dragOverIndex === index ? 'drag-over' : ''}`}
+                                        draggable
+                                        onDragStart={(e) => handleDragStart(e, index)}
+                                        onDragOver={(e) => handleDragOver(e, index)}
+                                        onDragLeave={handleDragLeave}
+                                        onDrop={(e) => handleDrop(e, index)}
+                                        onDragEnd={handleDragEnd}
+                                    >
+                                        <div className="step-header">
+                                            <div className="step-inputs">
+                                                <input
+                                                    className="step-name"
+                                                    type="text"
+                                                    placeholder="Step name"
+                                                    value={step.name}
+                                                    onChange={(e) => updateStep(step.id, 'name', e.target.value)}
+                                                    style={{
+                                                        padding: '8px 12px',
+                                                        border: '1px solid #e5e7eb',
+                                                        borderRadius: '6px',
+                                                        fontSize: '14px'
+                                                    }}
+                                                />
+                                                <input
+                                                    className="step-minutes"
+                                                    type="number"
+                                                    placeholder="Min"
+                                                    value={step.minutes}
+                                                    onChange={(e) => updateStep(step.id, 'minutes', e.target.value)}
+                                                    min="1"
+                                                    style={{
+                                                        padding: '8px 12px',
+                                                        border: '1px solid #e5e7eb',
+                                                        borderRadius: '6px',
+                                                        fontSize: '14px'
+                                                    }}
+                                                />
+                                            </div>
+                                            <div className="step-controls">
+                                                <button
+                                                    className="icon-button"
+                                                    onClick={() => moveStep(index, -1)}
+                                                    disabled={index === 0}
+                                                >
+                                                    <i data-lucide="chevron-up" style={{ width: '20px', height: '20px' }}></i>
+                                                </button>
+                                                <button
+                                                    className="icon-button"
+                                                    onClick={() => moveStep(index, 1)}
+                                                    disabled={index === steps.length - 1}
+                                                >
+                                                    <i data-lucide="chevron-down" style={{ width: '20px', height: '20px' }}></i>
+                                                </button>
+                                                <button
+                                                    className="icon-button"
+                                                    onClick={() => deleteStep(step.id)}
+                                                >
+                                                    <i data-lucide="trash-2" style={{ width: '20px', height: '20px', color: '#ef4444' }}></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        {calcStep && (
+                                            <div className="step-times">
+                                                <div>
+                                                    <strong>Latest Start:</strong> {formatTime(calcStep.plannedStart)} | 
+                                                    <strong> Latest End:</strong> {formatTime(calcStep.plannedEnd)}
+                                                </div>
+                                                {step.actualStart && (
+                                                    <div>
+                                                        <strong>Actual Start:</strong> {formatTime(step.actualStart)}
+                                                        {step.actualEnd && (
+                                                            <> | <strong>Actual End:</strong> {formatTime(step.actualEnd)}</>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                        
+                                        <div className="step-actions">
+                                            {step.status === 'pending' && (
+                                                <button
+                                                    className="button button-primary"
+                                                    onClick={() => startStep(step.id)}
+                                                >
+                                                    <i data-lucide="play" style={{ width: '16px', height: '16px' }}></i>
+                                                    Start
+                                                </button>
+                                            )}
+                                            {step.status === 'in-progress' && (
+                                                <button
+                                                    className="button button-success"
+                                                    onClick={() => completeStep(step.id)}
+                                                >
+                                                    <i data-lucide="check" style={{ width: '16px', height: '16px' }}></i>
+                                                    Complete
+                                                </button>
+                                            )}
+                                            {step.status === 'completed' && (
+                                                <span style={{ color: '#10b981', fontSize: '14px', fontWeight: '600' }}>
+                                                    <i data-lucide="check-circle" style={{ width: '16px', height: '16px', display: 'inline' }}></i>
+                                                    {' '}Completed
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+                        
+                        <button className="button button-primary add-step-button" onClick={addStep}>
+                            <i data-lucide="plus" style={{ width: '20px', height: '20px' }}></i>
+                            Add Step
+                        </button>
+                    </div>
+                    
+                    <div className="card" style={{ marginTop: '20px', fontSize: '14px', color: '#6b7280' }}>
+                        <p><strong>Note:</strong> This demo uses in-memory storage. In production, replace 'storage' with 'localStorage' in the code for persistent data storage across sessions.</p>
+                    </div>
+                </div>
+            );
+        }
+        
+        // Initialize Lucide icons
+        lucide.createIcons();
+        
+        // Render the app
+        ReactDOM.render(<DeadlinePlanner />, document.getElementById('root'));
+        
+        // Re-initialize icons after each render
+        setInterval(() => {
+            lucide.createIcons();
+        }, 100);
+    </script>
+</body>
+</html>
