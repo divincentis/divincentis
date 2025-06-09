@@ -188,14 +188,17 @@
             display: flex;
             gap: 8px;
             flex: 1;
+            min-width: 0; /* Allow flex items to shrink */
         }
-        
+
         .step-name {
-            flex: 0 0 80%;
+            flex: 1 1 75%; /* Changed from 80% and made flexible */
+            min-width: 0; /* Prevent overflow */
         }
-        
+
         .step-minutes {
-            flex: 0 0 20%;
+            flex: 0 0 60px; /* Fixed width instead of percentage */
+            min-width: 0;
         }
         
         .step-controls {
@@ -337,7 +340,7 @@
                     const stepStartTime = new Date(currentEndTime.getTime() - stepDuration * 60000);
                     
                     calculatedSteps.unshift({
-                        ...step,
+                        ..,
                         plannedStart: stepStartTime,
                         plannedEnd: currentEndTime
                     });
