@@ -22,7 +22,6 @@
         *, *::before, *::after { box-sizing: border-box; }
 
         body {
-            /* REMOVED GOOGLE FONT: Using system fonts for maximum durability */
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
             background: var(--bg-gradient);
             background-attachment: fixed;
@@ -120,7 +119,6 @@
         const { useState, useEffect, useMemo, useCallback, useRef } = React;
 
         // --- SELF-CONTAINED SVG ICONS ---
-        // No external libraries needed. These are embedded directly.
         const Icon = ({ name, size = 16 }) => {
             const iconPaths = {
                 clock: <path d="M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0zM12 6v6l4 2" />,
@@ -130,7 +128,7 @@
                 play: <path d="M5 3l14 9-14 9V3z" />,
                 up: <path d="M18 15l-6-6-6 6" />,
                 down: <path d="M6 9l6 6 6-6" />,
-                check: <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="M22 4L12 14.01l-3-3" />,
+                check: <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="M22 4L12 14.01l-3-3" /></>,
                 trash: <path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m-6 5v6m4-6v6" />,
                 plus: <path d="M12 5v14m-7-7h14" />,
             };
@@ -154,32 +152,62 @@
             now.setHours(hours, minutes, 0, 0);
             return now;
         };
+
+        // Safe localStorage wrapper
+        const storage = {
+            getItem: (key) => {
+                try {
+                    if (typeof window !== 'undefined' && window.localStorage) {
+                        return localStorage.getItem(key);
+                    }
+                } catch (e) {
+                    console.error('localStorage error:', e);
+                }
+                return null;
+            },
+            setItem: (key, value) => {
+                try {
+                    if (typeof window !== 'undefined' && window.localStorage) {
+                        localStorage.setItem(key, value);
+                    }
+                } catch (e) {
+                    console.error('localStorage error:', e);
+                }
+            }
+        };
         
         const DeadlinePlanner = () => {
             const [deadline, setDeadline] = useState('17:00');
             const [buffer, setBuffer] = useState(30);
             const [steps, setSteps] = useState([]);
             const [currentTime, setCurrentTime] = useState(new Date());
-            const [hydrated, setHydrated] = useState(false);
+            const [isInitialized, setIsInitialized] = useState(false);
             const draggedStepRef = useRef(null);
 
+            // Load saved state on mount
             useEffect(() => {
                 try {
-                    const savedState = localStorage.getItem('deadlinePlannerState');
+                    const savedState = storage.getItem('deadlinePlannerState');
                     if (savedState) {
                         const data = JSON.parse(savedState);
                         if(data.deadline) setDeadline(data.deadline);
-                        if(data.buffer) setBuffer(data.buffer);
-                        if(data.steps) setSteps(data.steps);
+                        if(data.buffer !== undefined) setBuffer(data.buffer);
+                        if(data.steps && Array.isArray(data.steps)) setSteps(data.steps);
                     }
-                } catch (error) { console.error("Failed to load state:", error); }
-                setHydrated(true);
+                } catch (error) { 
+                    console.error("Failed to load state:", error); 
+                }
+                setIsInitialized(true);
             }, []);
 
+            // Save state when it changes (but only after initialization)
             useEffect(() => {
-                if(hydrated) localStorage.setItem('deadlinePlannerState', JSON.stringify({ deadline, buffer, steps }));
-            }, [deadline, buffer, steps, hydrated]);
+                if(isInitialized) {
+                    storage.setItem('deadlinePlannerState', JSON.stringify({ deadline, buffer, steps }));
+                }
+            }, [deadline, buffer, steps, isInitialized]);
             
+            // Update current time every 5 seconds
             useEffect(() => {
                 const timer = setInterval(() => setCurrentTime(new Date()), 5000);
                 return () => clearInterval(timer);
@@ -203,12 +231,15 @@
                 const pending = calculatedSteps.filter(s => s.status === 'pending');
                 const lastStep = calculatedSteps[calculatedSteps.length - 1];
 
-                let timeLost = completed.reduce((acc, step) => acc + (((new Date(step.actualEnd) - new Date(step.actualStart)) / 60000) - step.minutes), 0);
+                let timeLost = completed.reduce((acc, step) => {
+                    if (!step.actualStart || !step.actualEnd) return acc;
+                    return acc + (((new Date(step.actualEnd) - new Date(step.actualStart)) / 60000) - step.minutes);
+                }, 0);
                 
                 let eta = lastStep ? new Date(lastStep.plannedEnd) : null;
                 let behindBy = 0;
 
-                if (inProgress) {
+                if (inProgress && inProgress.actualStart) {
                     const slippage = ((currentTime - new Date(inProgress.actualStart)) / 60000) - inProgress.minutes;
                     timeLost += Math.max(0, slippage);
                 }
@@ -225,21 +256,55 @@
                 };
             }, [calculatedSteps, currentTime, buffer]);
 
-            const handleStepChange = useCallback((id, field, value) => setSteps(p => p.map(s => s.id === id ? { ...s, [field]: value } : s)), []);
-            const addStep = useCallback(() => setSteps(p => [...p, { id: Date.now(), name: `New Task`, minutes: 15, status: 'pending' }]), []);
-            const deleteStep = useCallback((id) => setSteps(p => p.filter(s => s.id !== id)), []);
-            const startStep = useCallback((id) => setSteps(p => p.some(s => s.status === 'in-progress') ? p : p.map(s => s.id === id ? { ...s, status: 'in-progress', actualStart: new Date().toISOString() } : s)), []);
-            const completeStep = useCallback((id) => setSteps(p => p.map(s => s.id === id ? { ...s, status: 'completed', actualEnd: new Date().toISOString() } : s)), []);
+            const handleStepChange = useCallback((id, field, value) => {
+                setSteps(prev => prev.map(s => s.id === id ? { ...s, [field]: value } : s));
+            }, []);
+
+            const addStep = useCallback(() => {
+                setSteps(prev => [...prev, { 
+                    id: Date.now(), 
+                    name: `New Task`, 
+                    minutes: 15, 
+                    status: 'pending' 
+                }]);
+            }, []);
+
+            const deleteStep = useCallback((id) => {
+                setSteps(prev => prev.filter(s => s.id !== id));
+            }, []);
+
+            const startStep = useCallback((id) => {
+                setSteps(prev => {
+                    if (prev.some(s => s.status === 'in-progress')) return prev;
+                    return prev.map(s => s.id === id ? { 
+                        ...s, 
+                        status: 'in-progress', 
+                        actualStart: new Date().toISOString() 
+                    } : s);
+                });
+            }, []);
+
+            const completeStep = useCallback((id) => {
+                setSteps(prev => prev.map(s => s.id === id ? { 
+                    ...s, 
+                    status: 'completed', 
+                    actualEnd: new Date().toISOString() 
+                } : s));
+            }, []);
+
             const moveStep = useCallback((fromIndex, toIndex) => {
-                setSteps(p => {
-                    const newSteps = [...p];
+                setSteps(prev => {
+                    const newSteps = [...prev];
                     const [moved] = newSteps.splice(fromIndex, 1);
                     newSteps.splice(toIndex, 0, moved);
                     return newSteps;
                 });
             }, []);
 
-            const onDragStart = (e, index) => { draggedStepRef.current = index; e.currentTarget.classList.add('dragging'); };
+            const onDragStart = (e, index) => { 
+                draggedStepRef.current = index; 
+                e.currentTarget.classList.add('dragging'); 
+            };
             const onDragEnd = (e) => e.currentTarget.classList.remove('dragging');
             const onDragOver = e => e.preventDefault();
             const onDrop = (e, dropIndex) => {
@@ -253,61 +318,151 @@
             };
             const onDragLeave = (e) => e.currentTarget.classList.remove('drop-target');
 
-            if (!hydrated) return null;
-
             return (
                 <>
                     <div className="glass-card">
                         <div className="header-controls">
                             <div className="control-group">
                                 <label htmlFor="deadline">Target Deadline Time</label>
-                                <input id="deadline" type="time" value={deadline} onChange={e => setDeadline(e.target.value)} />
+                                <input 
+                                    id="deadline" 
+                                    type="time" 
+                                    value={deadline} 
+                                    onChange={e => setDeadline(e.target.value)} 
+                                />
                             </div>
                             <div className="control-group">
                                 <label htmlFor="buffer">Buffer (Minutes)</label>
-                                <input id="buffer" type="number" value={buffer} onChange={e => setBuffer(parseInt(e.target.value, 10) || 0)} />
+                                <input 
+                                    id="buffer" 
+                                    type="number" 
+                                    value={buffer} 
+                                    onChange={e => setBuffer(parseInt(e.target.value, 10) || 0)} 
+                                />
                             </div>
                         </div>
                     </div>
                     <div className="glass-card">
                         <div className="status-grid">
-                            <div className="status-item"><div className="label"><Icon name="clock" size={14}/> Current Time</div><div className="value">{formatTime(currentTime)}</div></div>
-                            <div className="status-item"><div className="label"><Icon name="shield" size={14}/> Rem. Buffer</div><div className="value">{statusInfo.remainingBuffer} min</div></div>
-                            <div className="status-item"><div className="label"><Icon name="flag" size={14}/> Final ETA</div><div className="value">{formatTime(statusInfo.eta)}</div></div>
-                            <div className="status-item"><div className="label"><Icon name="activity" size={14}/> Status</div><div className={`value ${statusInfo.behindBy > 0 ? 'behind' : 'on-track'}`}>{statusInfo.scheduleStatus}{statusInfo.behindBy > 0 && ` by ${statusInfo.behindBy} min`}</div></div>
-                            <div className="status-item" style={{ gridColumn: '1 / -1' }}><div className="label"><Icon name="play" size={14}/> Start Next Step By</div><div className="value">{formatTime(statusInfo.nextStepStart)}</div></div>
+                            <div className="status-item">
+                                <div className="label"><Icon name="clock" size={14}/> Current Time</div>
+                                <div className="value">{formatTime(currentTime)}</div>
+                            </div>
+                            <div className="status-item">
+                                <div className="label"><Icon name="shield" size={14}/> Rem. Buffer</div>
+                                <div className="value">{statusInfo.remainingBuffer} min</div>
+                            </div>
+                            <div className="status-item">
+                                <div className="label"><Icon name="flag" size={14}/> Final ETA</div>
+                                <div className="value">{formatTime(statusInfo.eta)}</div>
+                            </div>
+                            <div className="status-item">
+                                <div className="label"><Icon name="activity" size={14}/> Status</div>
+                                <div className={`value ${statusInfo.behindBy > 0 ? 'behind' : 'on-track'}`}>
+                                    {statusInfo.scheduleStatus}{statusInfo.behindBy > 0 && ` by ${statusInfo.behindBy} min`}
+                                </div>
+                            </div>
+                            <div className="status-item" style={{ gridColumn: '1 / -1' }}>
+                                <div className="label"><Icon name="play" size={14}/> Start Next Step By</div>
+                                <div className="value">{formatTime(statusInfo.nextStepStart)}</div>
+                            </div>
                         </div>
                     </div>
                     <div className="steps-list">
                         {calculatedSteps.map((step, index) => (
-                            <div key={step.id} className={`glass-card step-item ${step.status}`} draggable={step.status === 'pending'} onDragStart={e => onDragStart(e, index)} onDragEnd={onDragEnd} onDragOver={onDragOver} onDrop={e => onDrop(e, index)} onDragEnter={e => onDragEnter(e, index)} onDragLeave={onDragLeave}>
+                            <div 
+                                key={step.id} 
+                                className={`glass-card step-item ${step.status}`} 
+                                draggable={step.status === 'pending'} 
+                                onDragStart={e => onDragStart(e, index)} 
+                                onDragEnd={onDragEnd} 
+                                onDragOver={onDragOver} 
+                                onDrop={e => onDrop(e, index)} 
+                                onDragEnter={e => onDragEnter(e, index)} 
+                                onDragLeave={onDragLeave}
+                            >
                                 <div className="reorder-controls">
-                                  <button className="icon-button" onClick={() => moveStep(index, index - 1)} disabled={index === 0}><Icon name="up" size={20}/></button>
-                                  <button className="icon-button" onClick={() => moveStep(index, index + 1)} disabled={index === steps.length - 1}><Icon name="down" size={20}/></button>
+                                    <button 
+                                        className="icon-button" 
+                                        onClick={() => moveStep(index, index - 1)} 
+                                        disabled={index === 0}
+                                    >
+                                        <Icon name="up" size={20}/>
+                                    </button>
+                                    <button 
+                                        className="icon-button" 
+                                        onClick={() => moveStep(index, index + 1)} 
+                                        disabled={index === steps.length - 1}
+                                    >
+                                        <Icon name="down" size={20}/>
+                                    </button>
                                 </div>
                                 <div className="step-content">
                                     <div className="step-inputs">
-                                        <input type="text" value={step.name} onChange={e => handleStepChange(step.id, 'name', e.target.value)} placeholder="Step Name" disabled={step.status !== 'pending'} />
-                                        <input type="number" value={step.minutes} onChange={e => handleStepChange(step.id, 'minutes', parseInt(e.target.value, 10) || 0)} disabled={step.status !== 'pending'} />
+                                        <input 
+                                            type="text" 
+                                            value={step.name} 
+                                            onChange={e => handleStepChange(step.id, 'name', e.target.value)} 
+                                            placeholder="Step Name" 
+                                            disabled={step.status !== 'pending'} 
+                                        />
+                                        <input 
+                                            type="number" 
+                                            value={step.minutes} 
+                                            onChange={e => handleStepChange(step.id, 'minutes', parseInt(e.target.value, 10) || 0)} 
+                                            disabled={step.status !== 'pending'} 
+                                        />
                                     </div>
                                     <div className="step-times">
                                         <p>Plan: <span>{formatTime(step.plannedStart)} - {formatTime(step.plannedEnd)}</span></p>
-                                        {step.actualStart && <p>Actual: <span>{formatTime(step.actualStart)} - {step.actualEnd ? formatTime(step.actualEnd) : '...'}</span></p>}
+                                        {step.actualStart && (
+                                            <p>Actual: <span>{formatTime(step.actualStart)} - {step.actualEnd ? formatTime(step.actualEnd) : '...'}</span></p>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="step-actions">
-                                    {step.status === 'pending' && <button className="action-button start-button" onClick={() => startStep(step.id)} disabled={calculatedSteps.some(s => s.status === 'in-progress')}>Start</button>}
-                                    {step.status === 'in-progress' && <button className="action-button complete-button" onClick={() => completeStep(step.id)}>Complete</button>}
-                                    {step.status === 'completed' && <div className="completed-indicator"><Icon name="check" size={24} color="var(--completed-border)"/></div>}
-                                    <button className="icon-button" onClick={() => deleteStep(step.id)}><Icon name="trash" size={18}/></button>
+                                    {step.status === 'pending' && (
+                                        <button 
+                                            className="action-button start-button" 
+                                            onClick={() => startStep(step.id)} 
+                                            disabled={calculatedSteps.some(s => s.status === 'in-progress')}
+                                        >
+                                            Start
+                                        </button>
+                                    )}
+                                    {step.status === 'in-progress' && (
+                                        <button 
+                                            className="action-button complete-button" 
+                                            onClick={() => completeStep(step.id)}
+                                        >
+                                            Complete
+                                        </button>
+                                    )}
+                                    {step.status === 'completed' && (
+                                        <div className="completed-indicator">
+                                            <Icon name="check" size={24} color="var(--completed-border)"/>
+                                        </div>
+                                    )}
+                                    <button 
+                                        className="icon-button" 
+                                        onClick={() => deleteStep(step.id)}
+                                    >
+                                        <Icon name="trash" size={18}/>
+                                    </button>
                                 </div>
                             </div>
                         ))}
                     </div>
-                    <button onClick={addStep} className="glass-card action-button add-step-button"><Icon name="plus" size={20}/> Add New Step</button>
+                    <button 
+                        onClick={addStep} 
+                        className="glass-card action-button add-step-button"
+                    >
+                        <Icon name="plus" size={20}/> Add New Step
+                    </button>
                 </>
             );
         };
+
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<DeadlinePlanner />);
     </script>
