@@ -30,14 +30,20 @@
             --on-track-color: #22c55e;
         }
 
+        /* Added a small reset for better consistency */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
             background: var(--bg-gradient);
+            background-attachment: fixed; /* Prevents gradient from scrolling with content */
             color: var(--text-color);
             margin: 0;
             padding: 1rem;
             min-height: 100vh;
-            overflow-y: auto;
+            -webkit-font-smoothing: antialiased; /* Smoother fonts */
         }
 
         #root {
@@ -58,27 +64,26 @@
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         }
 
-        .header-controls, .step-item, .status-grid, .step-inputs {
+        .header-controls {
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
             gap: 1rem;
         }
         
-        .header-controls {
-            flex-wrap: wrap;
-        }
-
         .control-group {
             display: flex;
             flex-direction: column;
             gap: 0.25rem;
             flex-grow: 1;
+            min-width: 120px; /* Ensures they don't get too squished */
         }
 
         .control-group label {
             font-size: 0.8rem;
             font-weight: 500;
             color: var(--text-muted);
+            padding-left: 0.25rem;
         }
 
         .control-group input {
@@ -88,12 +93,19 @@
             border-radius: 8px;
             padding: 0.5rem;
             font-size: 1rem;
+            font-family: 'Inter', sans-serif;
             width: 100%;
+        }
+        /* Fix for number input arrows on some browsers */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
         }
 
         .status-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
             gap: 1rem;
         }
 
@@ -109,7 +121,7 @@
             color: var(--text-muted);
             display: flex;
             align-items: center;
-            gap: 0.25rem;
+            gap: 0.35rem;
         }
 
         .status-item .value {
@@ -126,17 +138,22 @@
         }
 
         .step-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem; /* Reduced gap for tighter layout */
             padding: 1rem;
             border-left-width: 5px;
             border-left-style: solid;
             transition: all 0.3s ease;
-            cursor: grab;
         }
         .step-item.pending { border-left-color: var(--pending-border); }
         .step-item.in-progress { border-left-color: var(--inprogress-border); }
-        .step-item.completed { border-left-color: var(--completed-border); background: rgba(34, 197, 94, 0.1); }
-        .step-item.dragging { opacity: 0.5; }
-        .step-item.drop-target { border-top: 2px solid var(--accent-color); }
+        .step-item.completed { border-left-color: var(--completed-border); background: rgba(34, 197, 94, 0.08); }
+        
+        .step-item[draggable="true"] { cursor: grab; }
+        .step-item.dragging { opacity: 0.5; background: var(--card-bg); }
+        .step-item.drop-target { border-top: 2px solid var(--text-color); }
+
 
         .step-content {
             flex-grow: 1;
@@ -146,11 +163,12 @@
         }
         
         .step-inputs {
+            display: flex;
             gap: 0.5rem;
         }
 
-        .step-inputs input[type="text"] { flex-basis: 80%; }
-        .step-inputs input[type="number"] { flex-basis: 20%; }
+        .step-inputs input[type="text"] { flex: 1 1 75%; min-width: 100px; }
+        .step-inputs input[type="number"] { flex: 1 1 25%; }
 
         .step-inputs input {
             background: rgba(0,0,0,0.2);
@@ -158,6 +176,7 @@
             color: var(--text-color);
             border-radius: 6px;
             padding: 0.5rem;
+            font-family: 'Inter', sans-serif;
         }
 
         .step-times {
@@ -167,12 +186,19 @@
             color: var(--text-muted);
             flex-wrap: wrap;
         }
+        .step-times p { margin: 0; }
         .step-times span { font-weight: 600; color: var(--text-color); }
 
         .step-actions {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             gap: 0.5rem;
+            align-items: center;
+        }
+
+        .reorder-controls {
+            display: flex;
+            flex-direction: column;
             align-items: center;
         }
 
@@ -185,6 +211,7 @@
             transition: color 0.2s ease;
         }
         .icon-button:hover { color: var(--text-color); }
+        .icon-button:disabled { opacity: 0.3; cursor: not-allowed; }
 
         .action-button {
             background: rgba(255, 255, 255, 0.15);
@@ -195,12 +222,14 @@
             cursor: pointer;
             font-weight: 500;
             transition: background 0.2s ease;
-            width: 100%;
+            white-space: nowrap;
         }
         .action-button:hover { background: rgba(255, 255, 255, 0.25); }
         
         .start-button { background-color: var(--inprogress-border); }
         .complete-button { background-color: var(--accent-color); }
+        
+        .completed-indicator { display: flex; align-items: center; justify-content: center; width: 80px; }
 
         .add-step-button {
             background: var(--accent-color);
@@ -208,6 +237,10 @@
             padding: 0.75rem;
             font-size: 1rem;
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
         }
     </style>
 </head>
@@ -220,24 +253,19 @@
 
         // --- Helper Functions ---
         const formatTime = (date) => {
-            if (!date) return 'N/A';
-            return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+            if (!date || isNaN(new Date(date))) return 'N/A';
+            return new Date(date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
         };
         
         const parseTimeToDate = (timeString) => {
             if (!timeString) return null;
             const now = new Date();
             const [hours, minutes] = timeString.split(':').map(Number);
+            if(isNaN(hours) || isNaN(minutes)) return null;
             now.setHours(hours, minutes, 0, 0);
             return now;
         };
         
-        const AddStepButton = ({ onClick }) => (
-            <button onClick={onClick} className="glass-card action-button add-step-button">
-                + Add New Step
-            </button>
-        );
-
         // --- Main Application Component ---
         const DeadlinePlanner = () => {
             // --- State Management ---
@@ -248,14 +276,8 @@
             const [hydrated, setHydrated] = useState(false);
             
             const draggedStepRef = useRef(null);
-            const dropTargetRef = useRef(null);
             
             // --- Data Persistence ---
-            // NOTE: This uses localStorage, which works on a live website (like GitHub Pages).
-            // In some local development environments or sandboxes, localStorage might be restricted.
-            // The app is designed to function with in-memory state if localStorage is unavailable.
-            
-            // Load state from localStorage on initial render
             useEffect(() => {
                 try {
                     const savedState = localStorage.getItem('deadlinePlannerState');
@@ -266,25 +288,24 @@
                         if(savedSteps) setSteps(savedSteps);
                     }
                 } catch (error) {
-                    console.error("Failed to load state from localStorage:", error);
+                    console.error("Failed to load state:", error);
                 }
-                setHydrated(true); // Signal that we've attempted to load from storage
+                setHydrated(true);
             }, []);
 
-            // Auto-save state to localStorage whenever it changes
             useEffect(() => {
-                if (!hydrated) return; // Don't save until we've loaded initial state
+                if (!hydrated) return;
                 try {
                     const stateToSave = JSON.stringify({ deadline, buffer, steps });
                     localStorage.setItem('deadlinePlannerState', stateToSave);
                 } catch (error) {
-                    console.error("Failed to save state to localStorage:", error);
+                    console.error("Failed to save state:", error);
                 }
             }, [deadline, buffer, steps, hydrated]);
             
             // --- Real-time Clock ---
             useEffect(() => {
-                const timer = setInterval(() => setCurrentTime(new Date()), 1000); // Update every second for accuracy
+                const timer = setInterval(() => setCurrentTime(new Date()), 5000); // Update every 5 seconds is enough
                 return () => clearInterval(timer);
             }, []);
 
@@ -293,13 +314,13 @@
                 const deadlineDate = parseTimeToDate(deadline);
                 if (!deadlineDate) return steps.map(s => ({ ...s, plannedStart: null, plannedEnd: null }));
 
-                let currentEndTime = new Date(deadlineDate.getTime() - buffer * 60000);
+                let currentEndTime = new Date(deadlineDate.getTime() - (buffer || 0) * 60000);
                 
                 return [...steps].reverse().map(step => {
                     const plannedEnd = new Date(currentEndTime);
                     const plannedStart = new Date(currentEndTime.getTime() - (step.minutes || 0) * 60000);
-                    currentEndTime = plannedStart; // The end time for the next step is the start time of this one
-                    return { ...step, plannedStart, plannedEnd };
+                    currentEndTime = plannedStart;
+                    return { ...step, plannedStart: plannedStart.toISOString(), plannedEnd: plannedEnd.toISOString() };
                 }).reverse();
             }, [deadline, buffer, steps]);
 
@@ -309,53 +330,48 @@
                 const completedSteps = calculatedSteps.filter(s => s.status === 'completed');
                 const pendingSteps = calculatedSteps.filter(s => s.status === 'pending');
                 const lastCompletedStep = completedSteps[completedSteps.length - 1];
+                const lastStep = calculatedSteps[calculatedSteps.length - 1];
 
-                let eta = null;
+                let eta = lastStep ? new Date(lastStep.plannedEnd) : null;
                 let scheduleStatus = 'On track';
                 let behindBy = 0;
-                let remainingBuffer = buffer;
                 
-                // Calculate time lost on completed tasks
                 let timeLost = completedSteps.reduce((acc, step) => {
                     const actualDuration = (new Date(step.actualEnd).getTime() - new Date(step.actualStart).getTime()) / 60000;
                     return acc + (actualDuration - step.minutes);
                 }, 0);
 
                 if (inProgressStep) {
-                    const plannedDurationMillis = inProgressStep.minutes * 60000;
                     const elapsedMillis = currentTime.getTime() - new Date(inProgressStep.actualStart).getTime();
+                    const currentSlippage = (elapsedMillis / 60000) - inProgressStep.minutes;
+                    const totalTimeLost = timeLost + Math.max(0, currentSlippage);
                     
-                    // ETA based on in-progress task
-                    const finalTaskEndTime = calculatedSteps[calculatedSteps.length-1]?.plannedEnd;
-                    const timeFromInProgressToEnd = calculatedSteps.slice(calculatedSteps.indexOf(inProgressStep)).reduce((acc, s) => acc + s.minutes * 60000, 0);
-                    eta = new Date(new Date(inProgressStep.actualStart).getTime() + timeFromInProgressToEnd);
-
-
-                    // Calculate current slippage for the in-progress task
-                    const currentSlippage = (elapsedMillis - plannedDurationMillis) / 60000;
-                    if(elapsedMillis > plannedDurationMillis){
-                        timeLost += (elapsedMillis / 60000) - inProgressStep.minutes;
+                    if (lastStep) {
+                        const originalEta = new Date(lastStep.plannedEnd);
+                        eta = new Date(originalEta.getTime() + totalTimeLost * 60000);
                     }
-
-                    if(currentTime > inProgressStep.plannedEnd) {
-                        behindBy = (currentTime.getTime() - inProgressStep.plannedEnd.getTime()) / 60000;
+                    
+                    if(totalTimeLost > buffer) {
+                        behindBy = totalTimeLost - buffer;
                     }
-
-                } else if (pendingSteps.length > 0) {
-                    const totalPendingMinutes = pendingSteps.reduce((sum, step) => sum + (step.minutes || 0), 0);
-                    const lastStep = calculatedSteps[calculatedSteps.length-1];
-                    eta = lastStep?.plannedEnd || null;
+                } else if(pendingSteps.length > 0 && lastStep) {
+                     const originalEta = new Date(lastStep.plannedEnd);
+                     eta = new Date(originalEta.getTime() + timeLost * 60000);
+                     if(timeLost > buffer) {
+                        behindBy = timeLost - buffer;
+                    }
                 } else if (lastCompletedStep) {
                     eta = new Date(lastCompletedStep.actualEnd);
                 }
-
-                remainingBuffer = Math.max(0, buffer - timeLost);
                 
-                if (timeLost > buffer) {
-                     scheduleStatus = `Behind`;
-                     behindBy = timeLost - buffer;
-                } else if (timeLost > 0) {
-                    scheduleStatus = 'On track'; // Still on track but buffer is shrinking
+                if (behindBy > 0) {
+                    scheduleStatus = `Behind`;
+                }
+                
+                let remainingBuffer = Math.max(0, (buffer || 0) - timeLost);
+                if (inProgressStep) {
+                    const elapsedMinutes = (currentTime.getTime() - new Date(inProgressStep.actualStart).getTime()) / 60000;
+                    remainingBuffer = Math.max(0, remainingBuffer - Math.max(0, elapsedMinutes - inProgressStep.minutes));
                 }
 
                 const nextStepToStart = pendingSteps[0];
@@ -363,7 +379,7 @@
                 return {
                     eta,
                     scheduleStatus,
-                    behindBy: Math.round(behindBy),
+                    behindBy: Math.ceil(behindBy),
                     remainingBuffer: Math.round(remainingBuffer),
                     nextStepStart: nextStepToStart ? nextStepToStart.plannedStart : null,
                 };
@@ -378,31 +394,31 @@
 
             const addStep = useCallback(() => {
                 const newStep = {
-                    id: Date.now(),
-                    name: `New Task ${steps.length + 1}`,
-                    minutes: 15,
-                    status: 'pending',
-                    actualStart: null,
-                    actualEnd: null,
+                    id: Date.now(), name: `New Task`, minutes: 15, status: 'pending',
+                    actualStart: null, actualEnd: null,
                 };
                 setSteps(prev => [...prev, newStep]);
-            }, [steps.length]);
+            }, []);
 
             const deleteStep = useCallback((id) => {
                 setSteps(prev => prev.filter(step => step.id !== id));
             }, []);
             
             const handleStartStep = useCallback((id) => {
-                const now = new Date();
-                setSteps(prev => prev.map(step => 
-                    step.id === id ? { ...step, status: 'in-progress', actualStart: now.toISOString() } : step
-                ));
+                setSteps(prev => {
+                    // Prevent starting a new task if one is already in progress
+                    const isTaskInProgress = prev.some(s => s.status === 'in-progress');
+                    if (isTaskInProgress) return prev;
+                    
+                    return prev.map(step => 
+                        step.id === id ? { ...step, status: 'in-progress', actualStart: new Date().toISOString() } : step
+                    )
+                });
             }, []);
             
             const handleCompleteStep = useCallback((id) => {
-                const now = new Date();
                 setSteps(prev => prev.map(step => 
-                    step.id === id ? { ...step, status: 'completed', actualEnd: now.toISOString() } : step
+                    step.id === id ? { ...step, status: 'completed', actualEnd: new Date().toISOString() } : step
                 ));
             }, []);
             
@@ -412,49 +428,52 @@
                 newSteps.splice(index + direction, 0, movedStep);
                 setSteps(newSteps);
             }, [steps]);
-
+            
             // --- Drag & Drop Handlers ---
-            const onDragStart = (e, id) => {
-                draggedStepRef.current = id;
+            const onDragStart = (e, index) => {
+                draggedStepRef.current = index;
                 e.dataTransfer.effectAllowed = 'move';
-                 e.currentTarget.classList.add('dragging');
+                e.currentTarget.classList.add('dragging');
             };
 
-            const onDragEnter = (e, id) => {
-                e.preventDefault();
-                dropTargetRef.current = id;
-                 e.currentTarget.classList.add('drop-target');
+            const onDrop = (e, dropIndex) => {
+                e.currentTarget.classList.remove('drop-target');
+                const dragIndex = draggedStepRef.current;
+                if (dragIndex === null || dragIndex === dropIndex) return;
+                
+                const newSteps = [...steps];
+                const [draggedItem] = newSteps.splice(dragIndex, 1);
+                newSteps.splice(dropIndex, 0, draggedItem);
+                setSteps(newSteps);
+                draggedStepRef.current = null;
             };
+            
+            const onDragEnd = (e) => {
+                e.currentTarget.classList.remove('dragging');
+                draggedStepRef.current = null;
+                document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
+            };
+            
+            const onDragOver = (e, index) => {
+                 e.preventDefault();
+                 if (index !== draggedStepRef.current) {
+                    document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
+                    e.currentTarget.classList.add('drop-target');
+                 }
+            }
             
             const onDragLeave = (e) => {
                 e.currentTarget.classList.remove('drop-target');
             }
-
-            const onDragEnd = (e) => {
-                e.currentTarget.classList.remove('dragging');
-                
-                if (draggedStepRef.current !== null && dropTargetRef.current !== null) {
-                    const fromId = draggedStepRef.current;
-                    const toId = dropTargetRef.current;
-                    
-                    const fromIndex = steps.findIndex(s => s.id === fromId);
-                    const toIndex = steps.findIndex(s => s.id === toId);
-
-                    const newSteps = [...steps];
-                    const [movedItem] = newSteps.splice(fromIndex, 1);
-                    newSteps.splice(toIndex, 0, movedItem);
-                    setSteps(newSteps);
-                }
-
-                draggedStepRef.current = null;
-                dropTargetRef.current = null;
-                 // Clean up any remaining drop-target classes
-                document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
-            };
-
-            // --- Render ---
-            const L = lucideReact; // Alias for easier use
             
+            // --- Render ---
+            // The key fix is here: The global variable is "LucideReact", not "lucideReact"
+            const L = LucideReact; 
+            
+            if (!hydrated) {
+                return null; // Render nothing until state is loaded to prevent flicker
+            }
+
             return (
                 <>
                     <div className="glass-card">
@@ -465,7 +484,7 @@
                             </div>
                             <div className="control-group">
                                 <label htmlFor="buffer">Buffer (Minutes)</label>
-                                <input id="buffer" type="number" value={buffer} onChange={e => setBuffer(parseInt(e.target.value, 10))} />
+                                <input id="buffer" type="number" value={buffer} onChange={e => setBuffer(parseInt(e.target.value, 10) || 0)} />
                             </div>
                         </div>
                     </div>
@@ -481,11 +500,11 @@
                                 <div className="value">{statusInfo.remainingBuffer} min</div>
                             </div>
                             <div className="status-item">
-                                <div className="label"><L.Flag size={14} /> ETA</div>
+                                <div className="label"><L.Flag size={14} /> Final ETA</div>
                                 <div className="value">{formatTime(statusInfo.eta)}</div>
                             </div>
                             <div className="status-item">
-                                <div className="label"><L.Activity size={14} /> Status</div>
+                                <div className="label"><L.TrendingUp size={14} /> Status</div>
                                 <div className={`value ${statusInfo.behindBy > 0 ? 'behind' : 'on-track'}`}>
                                     {statusInfo.scheduleStatus}
                                     {statusInfo.behindBy > 0 && ` by ${statusInfo.behindBy} min`}
@@ -504,57 +523,45 @@
                                 key={step.id} 
                                 className={`glass-card step-item ${step.status}`}
                                 draggable={step.status === 'pending'}
-                                onDragStart={(e) => onDragStart(e, step.id)}
-                                onDragEnter={(e) => onDragEnter(e, step.id)}
+                                onDragStart={(e) => onDragStart(e, index)}
+                                onDragOver={(e) => onDragOver(e, index)}
                                 onDragLeave={onDragLeave}
-                                onDragOver={(e) => e.preventDefault()}
-                                onDrop={onDragEnd}
+                                onDrop={(e) => onDrop(e, index)}
                                 onDragEnd={onDragEnd}
                             >
+                                <div className="reorder-controls">
+                                  <button className="icon-button" onClick={() => handleMoveStep(index, -1)} disabled={index === 0}>
+                                      <L.ChevronUp size={20} />
+                                  </button>
+                                  <button className="icon-button" onClick={() => handleMoveStep(index, 1)} disabled={index === steps.length - 1}>
+                                      <L.ChevronDown size={20} />
+                                  </button>
+                                </div>
                                 <div className="step-content">
                                     <div className="step-inputs">
-                                        <input 
-                                            type="text" 
-                                            value={step.name} 
-                                            onChange={e => handleStepChange(step.id, 'name', e.target.value)}
-                                            placeholder="Step Name"
-                                            disabled={step.status !== 'pending'}
-                                        />
-                                        <input 
-                                            type="number" 
-                                            value={step.minutes}
-                                            onChange={e => handleStepChange(step.id, 'minutes', parseInt(e.target.value, 10) || 0)}
-                                            disabled={step.status !== 'pending'}
-                                        />
+                                        <input type="text" value={step.name} onChange={e => handleStepChange(step.id, 'name', e.target.value)} placeholder="Step Name" disabled={step.status !== 'pending'} />
+                                        <input type="number" value={step.minutes} onChange={e => handleStepChange(step.id, 'minutes', parseInt(e.target.value, 10) || 0)} disabled={step.status !== 'pending'} />
                                     </div>
                                     <div className="step-times">
                                         <p>Plan: <span>{formatTime(step.plannedStart)} - {formatTime(step.plannedEnd)}</span></p>
                                         {step.actualStart && 
-                                            <p>Actual: <span>{formatTime(new Date(step.actualStart))} - {step.actualEnd ? formatTime(new Date(step.actualEnd)) : '...'}</span></p>
+                                            <p>Actual: <span>{formatTime(step.actualStart)} - {step.actualEnd ? formatTime(step.actualEnd) : '...'}</span></p>
                                         }
                                     </div>
                                 </div>
                                 <div className="step-actions">
-                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                      <button className="icon-button" onClick={() => handleMoveStep(index, -1)} disabled={index === 0}>
-                                          <L.ChevronUp size={20} />
-                                      </button>
-                                      <button className="icon-button" onClick={() => handleMoveStep(index, 1)} disabled={index === steps.length - 1}>
-                                          <L.ChevronDown size={20} />
-                                      </button>
-                                    </div>
-                                    
-                                    {step.status === 'pending' && <button className="action-button start-button" onClick={() => handleStartStep(step.id)}>Start</button>}
+                                    {step.status === 'pending' && <button className="action-button start-button" onClick={() => handleStartStep(step.id)} disabled={calculatedSteps.some(s => s.status === 'in-progress')}>Start</button>}
                                     {step.status === 'in-progress' && <button className="action-button complete-button" onClick={() => handleCompleteStep(step.id)}>Complete</button>}
-                                    {step.status === 'completed' && <L.CheckCircle2 size={24} color="var(--accent-color)" />}
-                                    
+                                    {step.status === 'completed' && <div className="completed-indicator"><L.CheckCircle2 size={24} color="var(--accent-color)" /></div>}
                                     <button className="icon-button" onClick={() => deleteStep(step.id)}><L.Trash2 size={18} /></button>
                                 </div>
                             </div>
                         ))}
                     </div>
                     
-                    <AddStepButton onClick={addStep} />
+                    <button onClick={addStep} className="glass-card action-button add-step-button">
+                        <L.PlusCircle size={20} /> Add New Step
+                    </button>
                 </>
             );
         };
