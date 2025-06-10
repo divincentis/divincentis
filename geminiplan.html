@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Same-Day Deadline Planner</title>
+    
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <script src="https://unpkg.com/lucide-react@0.378.0/dist/lucide-react.js"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            --card-bg: rgba(255, 255, 255, 0.1);
+            --card-border: rgba(255, 255, 255, 0.2);
+            --text-color: #f0f0f0;
+            --text-muted: #a0a0a0;
+            --accent-color: #4CAF50;
+            --pending-border: rgba(255, 255, 255, 0.2);
+            --inprogress-border: #3b82f6; /* Blue 500 */
+            --completed-border: #22c55e; /* Green 500 */
+            --behind-color: #ef4444; /* Red 500 */
+            --on-track-color: #22c55e;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-color);
+            margin: 0;
+            padding: 1rem;
+            min-height: 100vh;
+            overflow-y: auto;
+        }
+
+        #root {
+            max-width: 500px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 1.25rem;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-controls, .step-item, .status-grid, .step-inputs {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .header-controls {
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            flex-grow: 1;
+        }
+
+        .control-group label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .control-group input {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--card-border);
+            color: var(--text-color);
+            border-radius: 8px;
+            padding: 0.5rem;
+            font-size: 1rem;
+            width: 100%;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+        }
+
+        .status-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .status-item .label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .status-item .value {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .status-item .value.on-track { color: var(--on-track-color); }
+        .status-item .value.behind { color: var(--behind-color); }
+
+        .steps-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .step-item {
+            padding: 1rem;
+            border-left-width: 5px;
+            border-left-style: solid;
+            transition: all 0.3s ease;
+            cursor: grab;
+        }
+        .step-item.pending { border-left-color: var(--pending-border); }
+        .step-item.in-progress { border-left-color: var(--inprogress-border); }
+        .step-item.completed { border-left-color: var(--completed-border); background: rgba(34, 197, 94, 0.1); }
+        .step-item.dragging { opacity: 0.5; }
+        .step-item.drop-target { border-top: 2px solid var(--accent-color); }
+
+        .step-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .step-inputs {
+            gap: 0.5rem;
+        }
+
+        .step-inputs input[type="text"] { flex-basis: 80%; }
+        .step-inputs input[type="number"] { flex-basis: 20%; }
+
+        .step-inputs input {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--card-border);
+            color: var(--text-color);
+            border-radius: 6px;
+            padding: 0.5rem;
+        }
+
+        .step-times {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            flex-wrap: wrap;
+        }
+        .step-times span { font-weight: 600; color: var(--text-color); }
+
+        .step-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .icon-button {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+            transition: color 0.2s ease;
+        }
+        .icon-button:hover { color: var(--text-color); }
+
+        .action-button {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid var(--card-border);
+            color: var(--text-color);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s ease;
+            width: 100%;
+        }
+        .action-button:hover { background: rgba(255, 255, 255, 0.25); }
+        
+        .start-button { background-color: var(--inprogress-border); }
+        .complete-button { background-color: var(--accent-color); }
+
+        .add-step-button {
+            background: var(--accent-color);
+            color: white;
+            padding: 0.75rem;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useCallback, useRef } = React;
+
+        // --- Helper Functions ---
+        const formatTime = (date) => {
+            if (!date) return 'N/A';
+            return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+        };
+        
+        const parseTimeToDate = (timeString) => {
+            if (!timeString) return null;
+            const now = new Date();
+            const [hours, minutes] = timeString.split(':').map(Number);
+            now.setHours(hours, minutes, 0, 0);
+            return now;
+        };
+        
+        const AddStepButton = ({ onClick }) => (
+            <button onClick={onClick} className="glass-card action-button add-step-button">
+                + Add New Step
+            </button>
+        );
+
+        // --- Main Application Component ---
+        const DeadlinePlanner = () => {
+            // --- State Management ---
+            const [currentTime, setCurrentTime] = useState(new Date());
+            const [deadline, setDeadline] = useState('17:00');
+            const [buffer, setBuffer] = useState(30);
+            const [steps, setSteps] = useState([]);
+            const [hydrated, setHydrated] = useState(false);
+            
+            const draggedStepRef = useRef(null);
+            const dropTargetRef = useRef(null);
+            
+            // --- Data Persistence ---
+            // NOTE: This uses localStorage, which works on a live website (like GitHub Pages).
+            // In some local development environments or sandboxes, localStorage might be restricted.
+            // The app is designed to function with in-memory state if localStorage is unavailable.
+            
+            // Load state from localStorage on initial render
+            useEffect(() => {
+                try {
+                    const savedState = localStorage.getItem('deadlinePlannerState');
+                    if (savedState) {
+                        const { deadline: savedDeadline, buffer: savedBuffer, steps: savedSteps } = JSON.parse(savedState);
+                        if(savedDeadline) setDeadline(savedDeadline);
+                        if(savedBuffer) setBuffer(savedBuffer);
+                        if(savedSteps) setSteps(savedSteps);
+                    }
+                } catch (error) {
+                    console.error("Failed to load state from localStorage:", error);
+                }
+                setHydrated(true); // Signal that we've attempted to load from storage
+            }, []);
+
+            // Auto-save state to localStorage whenever it changes
+            useEffect(() => {
+                if (!hydrated) return; // Don't save until we've loaded initial state
+                try {
+                    const stateToSave = JSON.stringify({ deadline, buffer, steps });
+                    localStorage.setItem('deadlinePlannerState', stateToSave);
+                } catch (error) {
+                    console.error("Failed to save state to localStorage:", error);
+                }
+            }, [deadline, buffer, steps, hydrated]);
+            
+            // --- Real-time Clock ---
+            useEffect(() => {
+                const timer = setInterval(() => setCurrentTime(new Date()), 1000); // Update every second for accuracy
+                return () => clearInterval(timer);
+            }, []);
+
+            // --- Core Calculation Logic ---
+            const calculatedSteps = useMemo(() => {
+                const deadlineDate = parseTimeToDate(deadline);
+                if (!deadlineDate) return steps.map(s => ({ ...s, plannedStart: null, plannedEnd: null }));
+
+                let currentEndTime = new Date(deadlineDate.getTime() - buffer * 60000);
+                
+                return [...steps].reverse().map(step => {
+                    const plannedEnd = new Date(currentEndTime);
+                    const plannedStart = new Date(currentEndTime.getTime() - (step.minutes || 0) * 60000);
+                    currentEndTime = plannedStart; // The end time for the next step is the start time of this one
+                    return { ...step, plannedStart, plannedEnd };
+                }).reverse();
+            }, [deadline, buffer, steps]);
+
+            // --- Status Panel Calculations ---
+            const statusInfo = useMemo(() => {
+                const inProgressStep = calculatedSteps.find(s => s.status === 'in-progress');
+                const completedSteps = calculatedSteps.filter(s => s.status === 'completed');
+                const pendingSteps = calculatedSteps.filter(s => s.status === 'pending');
+                const lastCompletedStep = completedSteps[completedSteps.length - 1];
+
+                let eta = null;
+                let scheduleStatus = 'On track';
+                let behindBy = 0;
+                let remainingBuffer = buffer;
+                
+                // Calculate time lost on completed tasks
+                let timeLost = completedSteps.reduce((acc, step) => {
+                    const actualDuration = (new Date(step.actualEnd).getTime() - new Date(step.actualStart).getTime()) / 60000;
+                    return acc + (actualDuration - step.minutes);
+                }, 0);
+
+                if (inProgressStep) {
+                    const plannedDurationMillis = inProgressStep.minutes * 60000;
+                    const elapsedMillis = currentTime.getTime() - new Date(inProgressStep.actualStart).getTime();
+                    
+                    // ETA based on in-progress task
+                    const finalTaskEndTime = calculatedSteps[calculatedSteps.length-1]?.plannedEnd;
+                    const timeFromInProgressToEnd = calculatedSteps.slice(calculatedSteps.indexOf(inProgressStep)).reduce((acc, s) => acc + s.minutes * 60000, 0);
+                    eta = new Date(new Date(inProgressStep.actualStart).getTime() + timeFromInProgressToEnd);
+
+
+                    // Calculate current slippage for the in-progress task
+                    const currentSlippage = (elapsedMillis - plannedDurationMillis) / 60000;
+                    if(elapsedMillis > plannedDurationMillis){
+                        timeLost += (elapsedMillis / 60000) - inProgressStep.minutes;
+                    }
+
+                    if(currentTime > inProgressStep.plannedEnd) {
+                        behindBy = (currentTime.getTime() - inProgressStep.plannedEnd.getTime()) / 60000;
+                    }
+
+                } else if (pendingSteps.length > 0) {
+                    const totalPendingMinutes = pendingSteps.reduce((sum, step) => sum + (step.minutes || 0), 0);
+                    const lastStep = calculatedSteps[calculatedSteps.length-1];
+                    eta = lastStep?.plannedEnd || null;
+                } else if (lastCompletedStep) {
+                    eta = new Date(lastCompletedStep.actualEnd);
+                }
+
+                remainingBuffer = Math.max(0, buffer - timeLost);
+                
+                if (timeLost > buffer) {
+                     scheduleStatus = `Behind`;
+                     behindBy = timeLost - buffer;
+                } else if (timeLost > 0) {
+                    scheduleStatus = 'On track'; // Still on track but buffer is shrinking
+                }
+
+                const nextStepToStart = pendingSteps[0];
+                
+                return {
+                    eta,
+                    scheduleStatus,
+                    behindBy: Math.round(behindBy),
+                    remainingBuffer: Math.round(remainingBuffer),
+                    nextStepStart: nextStepToStart ? nextStepToStart.plannedStart : null,
+                };
+            }, [calculatedSteps, currentTime, buffer]);
+
+            // --- Event Handlers ---
+            const handleStepChange = useCallback((id, field, value) => {
+                setSteps(prevSteps => prevSteps.map(step => 
+                    step.id === id ? { ...step, [field]: value } : step
+                ));
+            }, []);
+
+            const addStep = useCallback(() => {
+                const newStep = {
+                    id: Date.now(),
+                    name: `New Task ${steps.length + 1}`,
+                    minutes: 15,
+                    status: 'pending',
+                    actualStart: null,
+                    actualEnd: null,
+                };
+                setSteps(prev => [...prev, newStep]);
+            }, [steps.length]);
+
+            const deleteStep = useCallback((id) => {
+                setSteps(prev => prev.filter(step => step.id !== id));
+            }, []);
+            
+            const handleStartStep = useCallback((id) => {
+                const now = new Date();
+                setSteps(prev => prev.map(step => 
+                    step.id === id ? { ...step, status: 'in-progress', actualStart: now.toISOString() } : step
+                ));
+            }, []);
+            
+            const handleCompleteStep = useCallback((id) => {
+                const now = new Date();
+                setSteps(prev => prev.map(step => 
+                    step.id === id ? { ...step, status: 'completed', actualEnd: now.toISOString() } : step
+                ));
+            }, []);
+            
+            const handleMoveStep = useCallback((index, direction) => {
+                const newSteps = [...steps];
+                const [movedStep] = newSteps.splice(index, 1);
+                newSteps.splice(index + direction, 0, movedStep);
+                setSteps(newSteps);
+            }, [steps]);
+
+            // --- Drag & Drop Handlers ---
+            const onDragStart = (e, id) => {
+                draggedStepRef.current = id;
+                e.dataTransfer.effectAllowed = 'move';
+                 e.currentTarget.classList.add('dragging');
+            };
+
+            const onDragEnter = (e, id) => {
+                e.preventDefault();
+                dropTargetRef.current = id;
+                 e.currentTarget.classList.add('drop-target');
+            };
+            
+            const onDragLeave = (e) => {
+                e.currentTarget.classList.remove('drop-target');
+            }
+
+            const onDragEnd = (e) => {
+                e.currentTarget.classList.remove('dragging');
+                
+                if (draggedStepRef.current !== null && dropTargetRef.current !== null) {
+                    const fromId = draggedStepRef.current;
+                    const toId = dropTargetRef.current;
+                    
+                    const fromIndex = steps.findIndex(s => s.id === fromId);
+                    const toIndex = steps.findIndex(s => s.id === toId);
+
+                    const newSteps = [...steps];
+                    const [movedItem] = newSteps.splice(fromIndex, 1);
+                    newSteps.splice(toIndex, 0, movedItem);
+                    setSteps(newSteps);
+                }
+
+                draggedStepRef.current = null;
+                dropTargetRef.current = null;
+                 // Clean up any remaining drop-target classes
+                document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
+            };
+
+            // --- Render ---
+            const L = lucideReact; // Alias for easier use
+            
+            return (
+                <>
+                    <div className="glass-card">
+                        <div className="header-controls">
+                            <div className="control-group">
+                                <label htmlFor="deadline">Target Deadline Time</label>
+                                <input id="deadline" type="time" value={deadline} onChange={e => setDeadline(e.target.value)} />
+                            </div>
+                            <div className="control-group">
+                                <label htmlFor="buffer">Buffer (Minutes)</label>
+                                <input id="buffer" type="number" value={buffer} onChange={e => setBuffer(parseInt(e.target.value, 10))} />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="glass-card">
+                        <div className="status-grid">
+                            <div className="status-item">
+                                <div className="label"><L.Clock size={14} /> Current Time</div>
+                                <div className="value">{formatTime(currentTime)}</div>
+                            </div>
+                            <div className="status-item">
+                                <div className="label"><L.ShieldCheck size={14} /> Rem. Buffer</div>
+                                <div className="value">{statusInfo.remainingBuffer} min</div>
+                            </div>
+                            <div className="status-item">
+                                <div className="label"><L.Flag size={14} /> ETA</div>
+                                <div className="value">{formatTime(statusInfo.eta)}</div>
+                            </div>
+                            <div className="status-item">
+                                <div className="label"><L.Activity size={14} /> Status</div>
+                                <div className={`value ${statusInfo.behindBy > 0 ? 'behind' : 'on-track'}`}>
+                                    {statusInfo.scheduleStatus}
+                                    {statusInfo.behindBy > 0 && ` by ${statusInfo.behindBy} min`}
+                                </div>
+                            </div>
+                             <div className="status-item" style={{ gridColumn: '1 / -1' }}>
+                                <div className="label"><L.PlayCircle size={14} /> Start Next Step By</div>
+                                <div className="value">{formatTime(statusInfo.nextStepStart)}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="steps-list">
+                        {calculatedSteps.map((step, index) => (
+                            <div 
+                                key={step.id} 
+                                className={`glass-card step-item ${step.status}`}
+                                draggable={step.status === 'pending'}
+                                onDragStart={(e) => onDragStart(e, step.id)}
+                                onDragEnter={(e) => onDragEnter(e, step.id)}
+                                onDragLeave={onDragLeave}
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={onDragEnd}
+                                onDragEnd={onDragEnd}
+                            >
+                                <div className="step-content">
+                                    <div className="step-inputs">
+                                        <input 
+                                            type="text" 
+                                            value={step.name} 
+                                            onChange={e => handleStepChange(step.id, 'name', e.target.value)}
+                                            placeholder="Step Name"
+                                            disabled={step.status !== 'pending'}
+                                        />
+                                        <input 
+                                            type="number" 
+                                            value={step.minutes}
+                                            onChange={e => handleStepChange(step.id, 'minutes', parseInt(e.target.value, 10) || 0)}
+                                            disabled={step.status !== 'pending'}
+                                        />
+                                    </div>
+                                    <div className="step-times">
+                                        <p>Plan: <span>{formatTime(step.plannedStart)} - {formatTime(step.plannedEnd)}</span></p>
+                                        {step.actualStart && 
+                                            <p>Actual: <span>{formatTime(new Date(step.actualStart))} - {step.actualEnd ? formatTime(new Date(step.actualEnd)) : '...'}</span></p>
+                                        }
+                                    </div>
+                                </div>
+                                <div className="step-actions">
+                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                      <button className="icon-button" onClick={() => handleMoveStep(index, -1)} disabled={index === 0}>
+                                          <L.ChevronUp size={20} />
+                                      </button>
+                                      <button className="icon-button" onClick={() => handleMoveStep(index, 1)} disabled={index === steps.length - 1}>
+                                          <L.ChevronDown size={20} />
+                                      </button>
+                                    </div>
+                                    
+                                    {step.status === 'pending' && <button className="action-button start-button" onClick={() => handleStartStep(step.id)}>Start</button>}
+                                    {step.status === 'in-progress' && <button className="action-button complete-button" onClick={() => handleCompleteStep(step.id)}>Complete</button>}
+                                    {step.status === 'completed' && <L.CheckCircle2 size={24} color="var(--accent-color)" />}
+                                    
+                                    <button className="icon-button" onClick={() => deleteStep(step.id)}><L.Trash2 size={18} /></button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    
+                    <AddStepButton onClick={addStep} />
+                </>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<DeadlinePlanner />);
+    </script>
+
+</body>
+</html>
