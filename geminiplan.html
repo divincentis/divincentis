@@ -3,40 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Same-Day Deadline Planner</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
+    <title>Durable Deadline Planner</title>
     <style>
         :root {
-            --bg-gradient: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
-            --card-bg: rgba(255, 255, 255, 0.1);
+            --bg-gradient: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            --card-bg: rgba(255, 255, 255, 0.08);
             --card-border: rgba(255, 255, 255, 0.2);
             --text-color: #f0f0f0;
             --text-muted: #a0a0a0;
             --accent-color: #4CAF50;
             --pending-border: rgba(255, 255, 255, 0.2);
-            --inprogress-border: #3b82f6; /* Blue 500 */
-            --completed-border: #22c55e; /* Green 500 */
-            --behind-color: #ef4444; /* Red 500 */
+            --inprogress-border: #3b82f6;
+            --completed-border: #22c55e;
+            --behind-color: #ef4444;
             --on-track-color: #22c55e;
         }
 
-        *, *::before, *::after {
-            box-sizing: border-box;
-        }
+        *, *::before, *::after { box-sizing: border-box; }
 
         body {
-            font-family: 'Inter', sans-serif;
+            /* REMOVED GOOGLE FONT: Using system fonts for maximum durability */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
             background: var(--bg-gradient);
             background-attachment: fixed;
             color: var(--text-color);
             margin: 0;
             padding: 1rem;
             min-height: 100vh;
-            -webkit-font-smoothing: antialiased;
         }
 
         #root {
@@ -57,200 +50,97 @@
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         }
 
-        .header-controls {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 1rem;
-        }
-        
-        .control-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-            flex-grow: 1;
-            min-width: 120px;
-        }
-
-        .control-group label {
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: var(--text-muted);
-            padding-left: 0.25rem;
-        }
-
+        .header-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
+        .control-group { display: flex; flex-direction: column; gap: 0.25rem; flex-grow: 1; min-width: 120px; }
+        .control-group label { font-size: 0.8rem; font-weight: 500; color: var(--text-muted); padding-left: 0.25rem; }
         .control-group input {
-            background: rgba(0,0,0,0.2);
-            border: 1px solid var(--card-border);
-            color: var(--text-color);
-            border-radius: 8px;
-            padding: 0.5rem;
-            font-size: 1rem;
-            font-family: 'Inter', sans-serif;
-            width: 100%;
+            background: rgba(0,0,0,0.2); border: 1px solid var(--card-border); color: var(--text-color);
+            border-radius: 8px; padding: 0.5rem; font-size: 1rem; font-family: inherit; width: 100%;
         }
-        
         input[type=number]::-webkit-inner-spin-button, 
-        input[type=number]::-webkit-outer-spin-button { 
-            -webkit-appearance: none; 
-            margin: 0; 
-        }
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 
-        .status-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-            gap: 1rem;
-        }
-
-        .status-item {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-        }
-
-        .status-item .label {
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: var(--text-muted);
-            display: flex;
-            align-items: center;
-            gap: 0.35rem;
-        }
-
-        .status-item .value {
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
+        .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; }
+        .status-item { display: flex; flex-direction: column; gap: 0.25rem; }
+        .status-item .label { font-size: 0.8rem; font-weight: 500; color: var(--text-muted); display: flex; align-items: center; gap: 0.35rem; }
+        .status-item .value { font-size: 1.1rem; font-weight: 600; }
         .status-item .value.on-track { color: var(--on-track-color); }
         .status-item .value.behind { color: var(--behind-color); }
+        .label svg { flex-shrink: 0; }
 
-        .steps-list {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
+        .steps-list { display: flex; flex-direction: column; gap: 1rem; }
         .step-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 1rem;
-            border-left-width: 5px;
-            border-left-style: solid;
-            transition: all 0.3s ease;
+            display: flex; align-items: center; gap: 0.5rem; padding: 1rem;
+            border-left-width: 5px; border-left-style: solid; transition: all 0.3s ease;
         }
         .step-item.pending { border-left-color: var(--pending-border); }
         .step-item.in-progress { border-left-color: var(--inprogress-border); }
         .step-item.completed { border-left-color: var(--completed-border); background: rgba(34, 197, 94, 0.08); }
-        
         .step-item[draggable="true"] { cursor: grab; }
-        .step-item.dragging { opacity: 0.5; background: var(--card-bg); }
+        .step-item.dragging { opacity: 0.5; }
         .step-item.drop-target { border-top: 2px solid var(--text-color); }
 
-        .step-content {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-        
-        .step-inputs {
-            display: flex;
-            gap: 0.5rem;
-        }
-
+        .step-content { flex-grow: 1; display: flex; flex-direction: column; gap: 0.75rem; }
+        .step-inputs { display: flex; gap: 0.5rem; }
         .step-inputs input[type="text"] { flex: 1 1 75%; min-width: 100px; }
         .step-inputs input[type="number"] { flex: 1 1 25%; }
+        .step-inputs input { background: rgba(0,0,0,0.2); border: 1px solid var(--card-border); color: var(--text-color); border-radius: 6px; padding: 0.5rem; font-family: inherit; }
 
-        .step-inputs input {
-            background: rgba(0,0,0,0.2);
-            border: 1px solid var(--card-border);
-            color: var(--text-color);
-            border-radius: 6px;
-            padding: 0.5rem;
-            font-family: 'Inter', sans-serif;
-        }
-
-        .step-times {
-            display: flex;
-            gap: 1rem;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            flex-wrap: wrap;
-        }
+        .step-times { display: flex; gap: 1rem; font-size: 0.8rem; color: var(--text-muted); flex-wrap: wrap; }
         .step-times p { margin: 0; }
         .step-times span { font-weight: 600; color: var(--text-color); }
 
-        .step-actions {
-            display: flex;
-            flex-direction: row;
-            gap: 0.5rem;
-            align-items: center;
-        }
-
-        .reorder-controls {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .icon-button {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            padding: 0.25rem;
-            transition: color 0.2s ease;
-        }
+        .step-actions { display: flex; align-items: center; gap: 0.5rem; }
+        .reorder-controls { display: flex; flex-direction: column; }
+        .icon-button { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0.25rem; transition: color 0.2s ease; line-height: 1; }
         .icon-button:hover { color: var(--text-color); }
         .icon-button:disabled { opacity: 0.3; cursor: not-allowed; }
-
+        
         .action-button {
-            background: rgba(255, 255, 255, 0.15);
-            border: 1px solid var(--card-border);
-            color: var(--text-color);
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: background 0.2s ease;
-            white-space: nowrap;
+            background: rgba(255, 255, 255, 0.15); border: 1px solid var(--card-border); color: var(--text-color);
+            padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 500;
+            transition: background 0.2s ease; white-space: nowrap;
+            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
         }
         .action-button:hover { background: rgba(255, 255, 255, 0.25); }
-        
         .start-button { background-color: var(--inprogress-border); }
         .complete-button { background-color: var(--accent-color); }
-        
+        .add-step-button { background: var(--accent-color); color: white; padding: 0.75rem; font-size: 1rem; font-weight: 600; }
         .completed-indicator { display: flex; align-items: center; justify-content: center; width: 80px; }
-
-        .add-step-button {
-            background: var(--accent-color);
-            color: white;
-            padding: 0.75rem;
-            font-size: 1rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
     </style>
 </head>
 <body>
-
     <div id="root"></div>
 
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    
-    <script src="https://unpkg.com/lucide-react@0.378.0/dist/lucide-react.js"></script>
-    
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
     <script type="text/babel">
-        const { useState, useEffect, useMemo, useCallback, useRef, createElement } = React;
+        const { useState, useEffect, useMemo, useCallback, useRef } = React;
 
-        // --- Helper Functions ---
+        // --- SELF-CONTAINED SVG ICONS ---
+        // No external libraries needed. These are embedded directly.
+        const Icon = ({ name, size = 16 }) => {
+            const iconPaths = {
+                clock: <path d="M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0zM12 6v6l4 2" />,
+                shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
+                flag: <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7" />,
+                activity: <path d="M22 12h-4l-3 9L9 3l-3 9H2" />,
+                play: <path d="M5 3l14 9-14 9V3z" />,
+                up: <path d="M18 15l-6-6-6 6" />,
+                down: <path d="M6 9l6 6 6-6" />,
+                check: <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="M22 4L12 14.01l-3-3" />,
+                trash: <path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m-6 5v6m4-6v6" />,
+                plus: <path d="M12 5v14m-7-7h14" />,
+            };
+            return (
+                <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    {iconPaths[name]}
+                </svg>
+            );
+        };
+
         const formatTime = (date) => {
             if (!date || isNaN(new Date(date))) return 'N/A';
             return new Date(date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
@@ -265,33 +155,29 @@
             return now;
         };
         
-        // --- Main Application Component ---
         const DeadlinePlanner = () => {
-            const [currentTime, setCurrentTime] = useState(new Date());
             const [deadline, setDeadline] = useState('17:00');
             const [buffer, setBuffer] = useState(30);
             const [steps, setSteps] = useState([]);
+            const [currentTime, setCurrentTime] = useState(new Date());
             const [hydrated, setHydrated] = useState(false);
             const draggedStepRef = useRef(null);
-            
+
             useEffect(() => {
                 try {
                     const savedState = localStorage.getItem('deadlinePlannerState');
                     if (savedState) {
-                        const { deadline, buffer, steps } = JSON.parse(savedState);
-                        if(deadline) setDeadline(deadline);
-                        if(buffer) setBuffer(buffer);
-                        if(steps) setSteps(steps);
+                        const data = JSON.parse(savedState);
+                        if(data.deadline) setDeadline(data.deadline);
+                        if(data.buffer) setBuffer(data.buffer);
+                        if(data.steps) setSteps(data.steps);
                     }
                 } catch (error) { console.error("Failed to load state:", error); }
                 setHydrated(true);
             }, []);
 
             useEffect(() => {
-                if (!hydrated) return;
-                try {
-                    localStorage.setItem('deadlinePlannerState', JSON.stringify({ deadline, buffer, steps }));
-                } catch (error) { console.error("Failed to save state:", error); }
+                if(hydrated) localStorage.setItem('deadlinePlannerState', JSON.stringify({ deadline, buffer, steps }));
             }, [deadline, buffer, steps, hydrated]);
             
             useEffect(() => {
@@ -302,111 +188,71 @@
             const calculatedSteps = useMemo(() => {
                 const deadlineDate = parseTimeToDate(deadline);
                 if (!deadlineDate) return steps.map(s => ({ ...s, plannedStart: null, plannedEnd: null }));
-
-                let currentEndTime = new Date(deadlineDate.getTime() - (buffer || 0) * 60000);
-                
+                let end = new Date(deadlineDate.getTime() - (buffer || 0) * 60000);
                 return [...steps].reverse().map(step => {
-                    const plannedEnd = new Date(currentEndTime);
-                    const plannedStart = new Date(currentEndTime.getTime() - (step.minutes || 0) * 60000);
-                    currentEndTime = plannedStart;
+                    const plannedEnd = new Date(end);
+                    const plannedStart = new Date(end.getTime() - (step.minutes || 0) * 60000);
+                    end = plannedStart;
                     return { ...step, plannedStart: plannedStart.toISOString(), plannedEnd: plannedEnd.toISOString() };
                 }).reverse();
             }, [deadline, buffer, steps]);
 
             const statusInfo = useMemo(() => {
-                const inProgressStep = calculatedSteps.find(s => s.status === 'in-progress');
-                const completedSteps = calculatedSteps.filter(s => s.status === 'completed');
-                const pendingSteps = calculatedSteps.filter(s => s.status === 'pending');
-                const lastCompletedStep = completedSteps[completedSteps.length - 1];
+                const inProgress = calculatedSteps.find(s => s.status === 'in-progress');
+                const completed = calculatedSteps.filter(s => s.status === 'completed');
+                const pending = calculatedSteps.filter(s => s.status === 'pending');
                 const lastStep = calculatedSteps[calculatedSteps.length - 1];
 
+                let timeLost = completed.reduce((acc, step) => acc + (((new Date(step.actualEnd) - new Date(step.actualStart)) / 60000) - step.minutes), 0);
+                
                 let eta = lastStep ? new Date(lastStep.plannedEnd) : null;
-                let scheduleStatus = 'On track';
                 let behindBy = 0;
-                
-                let timeLost = completedSteps.reduce((acc, step) => {
-                    const actualDuration = (new Date(step.actualEnd).getTime() - new Date(step.actualStart).getTime()) / 60000;
-                    return acc + (actualDuration - step.minutes);
-                }, 0);
 
-                if (inProgressStep) {
-                    const elapsedMillis = currentTime.getTime() - new Date(inProgressStep.actualStart).getTime();
-                    const currentSlippage = (elapsedMillis / 60000) - inProgressStep.minutes;
-                    const totalTimeLost = timeLost + Math.max(0, currentSlippage);
-                    
-                    if (lastStep) {
-                        const originalEta = new Date(lastStep.plannedEnd);
-                        eta = new Date(originalEta.getTime() + totalTimeLost * 60000);
-                    }
-                    if(totalTimeLost > buffer) behindBy = totalTimeLost - buffer;
-                } else if(pendingSteps.length > 0 && lastStep) {
-                     const originalEta = new Date(lastStep.plannedEnd);
-                     eta = new Date(originalEta.getTime() + timeLost * 60000);
-                     if(timeLost > buffer) behindBy = timeLost - buffer;
-                } else if (lastCompletedStep) {
-                    eta = new Date(lastCompletedStep.actualEnd);
+                if (inProgress) {
+                    const slippage = ((currentTime - new Date(inProgress.actualStart)) / 60000) - inProgress.minutes;
+                    timeLost += Math.max(0, slippage);
                 }
                 
-                if (behindBy > 0) scheduleStatus = `Behind`;
-                
-                let remainingBuffer = Math.max(0, (buffer || 0) - timeLost);
-                if (inProgressStep) {
-                    const elapsedMinutes = (currentTime.getTime() - new Date(inProgressStep.actualStart).getTime()) / 60000;
-                    remainingBuffer = Math.max(0, remainingBuffer - Math.max(0, elapsedMinutes - inProgressStep.minutes));
-                }
+                if (eta) eta.setMinutes(eta.getMinutes() + timeLost);
+                if (timeLost > buffer) behindBy = timeLost - buffer;
 
-                const nextStepToStart = pendingSteps[0];
-                
                 return {
-                    eta, scheduleStatus, behindBy: Math.ceil(behindBy),
-                    remainingBuffer: Math.round(remainingBuffer),
-                    nextStepStart: nextStepToStart ? nextStepToStart.plannedStart : null,
+                    eta,
+                    scheduleStatus: behindBy > 0 ? `Behind` : 'On track',
+                    behindBy: Math.ceil(behindBy),
+                    remainingBuffer: Math.round(Math.max(0, buffer - timeLost)),
+                    nextStepStart: pending[0]?.plannedStart || null,
                 };
             }, [calculatedSteps, currentTime, buffer]);
 
             const handleStepChange = useCallback((id, field, value) => setSteps(p => p.map(s => s.id === id ? { ...s, [field]: value } : s)), []);
-            const addStep = useCallback(() => setSteps(p => [...p, { id: Date.now(), name: `New Task`, minutes: 15, status: 'pending', actualStart: null, actualEnd: null }]), []);
+            const addStep = useCallback(() => setSteps(p => [...p, { id: Date.now(), name: `New Task`, minutes: 15, status: 'pending' }]), []);
             const deleteStep = useCallback((id) => setSteps(p => p.filter(s => s.id !== id)), []);
-            const handleStartStep = useCallback((id) => setSteps(p => p.some(s => s.status === 'in-progress') ? p : p.map(s => s.id === id ? { ...s, status: 'in-progress', actualStart: new Date().toISOString() } : s)), []);
-            const handleCompleteStep = useCallback((id) => setSteps(p => p.map(s => s.id === id ? { ...s, status: 'completed', actualEnd: new Date().toISOString() } : s)), []);
-            const handleMoveStep = useCallback((index, direction) => {
+            const startStep = useCallback((id) => setSteps(p => p.some(s => s.status === 'in-progress') ? p : p.map(s => s.id === id ? { ...s, status: 'in-progress', actualStart: new Date().toISOString() } : s)), []);
+            const completeStep = useCallback((id) => setSteps(p => p.map(s => s.id === id ? { ...s, status: 'completed', actualEnd: new Date().toISOString() } : s)), []);
+            const moveStep = useCallback((fromIndex, toIndex) => {
                 setSteps(p => {
-                    const n = [...p];
-                    const [moved] = n.splice(index, 1);
-                    n.splice(index + direction, 0, moved);
-                    return n;
+                    const newSteps = [...p];
+                    const [moved] = newSteps.splice(fromIndex, 1);
+                    newSteps.splice(toIndex, 0, moved);
+                    return newSteps;
                 });
             }, []);
-            const onDragStart = (e, index) => {
-                draggedStepRef.current = index;
-                e.dataTransfer.effectAllowed = 'move';
-                e.currentTarget.classList.add('dragging');
-            };
+
+            const onDragStart = (e, index) => { draggedStepRef.current = index; e.currentTarget.classList.add('dragging'); };
+            const onDragEnd = (e) => e.currentTarget.classList.remove('dragging');
+            const onDragOver = e => e.preventDefault();
             const onDrop = (e, dropIndex) => {
-                e.currentTarget.classList.remove('drop-target');
+                e.preventDefault();
                 const dragIndex = draggedStepRef.current;
-                if (dragIndex === null || dragIndex === dropIndex) return;
-                handleMoveStep(dragIndex, dropIndex - dragIndex);
-                draggedStepRef.current = null;
+                e.currentTarget.classList.remove('drop-target');
+                if (dragIndex !== null && dragIndex !== dropIndex) moveStep(dragIndex, dropIndex);
             };
-            const onDragEnd = (e) => {
-                e.currentTarget.classList.remove('dragging');
-                document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
+            const onDragEnter = (e, index) => {
+                if (index !== draggedStepRef.current) e.currentTarget.classList.add('drop-target');
             };
-            const onDragOver = (e, index) => {
-                 e.preventDefault();
-                 if (index !== draggedStepRef.current) {
-                    document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
-                    e.currentTarget.classList.add('drop-target');
-                 }
-            }
             const onDragLeave = (e) => e.currentTarget.classList.remove('drop-target');
-            
-            // --- *** KEY FIX IS HERE *** ---
-            // The icon library's global variable is `lucide`, not `LucideReact`.
-            // We also use `createElement` for safety, as JSX syntax can be tricky with dynamic globals.
-            const Icon = (name, props) => lucide && lucide[name] ? createElement(lucide[name], props) : null;
-            
+
             if (!hydrated) return null;
 
             return (
@@ -425,19 +271,19 @@
                     </div>
                     <div className="glass-card">
                         <div className="status-grid">
-                            <div className="status-item"><div className="label">{Icon('Clock', {size: 14})} Current Time</div><div className="value">{formatTime(currentTime)}</div></div>
-                            <div className="status-item"><div className="label">{Icon('ShieldCheck', {size: 14})} Rem. Buffer</div><div className="value">{statusInfo.remainingBuffer} min</div></div>
-                            <div className="status-item"><div className="label">{Icon('Flag', {size: 14})} Final ETA</div><div className="value">{formatTime(statusInfo.eta)}</div></div>
-                            <div className="status-item"><div className="label">{Icon('TrendingUp', {size: 14})} Status</div><div className={`value ${statusInfo.behindBy > 0 ? 'behind' : 'on-track'}`}>{statusInfo.scheduleStatus}{statusInfo.behindBy > 0 && ` by ${statusInfo.behindBy} min`}</div></div>
-                            <div className="status-item" style={{ gridColumn: '1 / -1' }}><div className="label">{Icon('PlayCircle', {size: 14})} Start Next Step By</div><div className="value">{formatTime(statusInfo.nextStepStart)}</div></div>
+                            <div className="status-item"><div className="label"><Icon name="clock" size={14}/> Current Time</div><div className="value">{formatTime(currentTime)}</div></div>
+                            <div className="status-item"><div className="label"><Icon name="shield" size={14}/> Rem. Buffer</div><div className="value">{statusInfo.remainingBuffer} min</div></div>
+                            <div className="status-item"><div className="label"><Icon name="flag" size={14}/> Final ETA</div><div className="value">{formatTime(statusInfo.eta)}</div></div>
+                            <div className="status-item"><div className="label"><Icon name="activity" size={14}/> Status</div><div className={`value ${statusInfo.behindBy > 0 ? 'behind' : 'on-track'}`}>{statusInfo.scheduleStatus}{statusInfo.behindBy > 0 && ` by ${statusInfo.behindBy} min`}</div></div>
+                            <div className="status-item" style={{ gridColumn: '1 / -1' }}><div className="label"><Icon name="play" size={14}/> Start Next Step By</div><div className="value">{formatTime(statusInfo.nextStepStart)}</div></div>
                         </div>
                     </div>
                     <div className="steps-list">
                         {calculatedSteps.map((step, index) => (
-                            <div key={step.id} className={`glass-card step-item ${step.status}`} draggable={step.status === 'pending'} onDragStart={e => onDragStart(e, index)} onDragOver={e => onDragOver(e, index)} onDragLeave={onDragLeave} onDrop={e => onDrop(e, index)} onDragEnd={onDragEnd}>
+                            <div key={step.id} className={`glass-card step-item ${step.status}`} draggable={step.status === 'pending'} onDragStart={e => onDragStart(e, index)} onDragEnd={onDragEnd} onDragOver={onDragOver} onDrop={e => onDrop(e, index)} onDragEnter={e => onDragEnter(e, index)} onDragLeave={onDragLeave}>
                                 <div className="reorder-controls">
-                                  <button className="icon-button" onClick={() => handleMoveStep(index, -1)} disabled={index === 0}>{Icon('ChevronUp', {size:20})}</button>
-                                  <button className="icon-button" onClick={() => handleMoveStep(index, 1)} disabled={index === steps.length - 1}>{Icon('ChevronDown', {size:20})}</button>
+                                  <button className="icon-button" onClick={() => moveStep(index, index - 1)} disabled={index === 0}><Icon name="up" size={20}/></button>
+                                  <button className="icon-button" onClick={() => moveStep(index, index + 1)} disabled={index === steps.length - 1}><Icon name="down" size={20}/></button>
                                 </div>
                                 <div className="step-content">
                                     <div className="step-inputs">
@@ -450,22 +296,20 @@
                                     </div>
                                 </div>
                                 <div className="step-actions">
-                                    {step.status === 'pending' && <button className="action-button start-button" onClick={() => handleStartStep(step.id)} disabled={calculatedSteps.some(s => s.status === 'in-progress')}>Start</button>}
-                                    {step.status === 'in-progress' && <button className="action-button complete-button" onClick={() => handleCompleteStep(step.id)}>Complete</button>}
-                                    {step.status === 'completed' && <div className="completed-indicator">{Icon('CheckCircle2', {size:24, color:'var(--accent-color)'})}</div>}
-                                    <button className="icon-button" onClick={() => deleteStep(step.id)}>{Icon('Trash2', {size:18})}</button>
+                                    {step.status === 'pending' && <button className="action-button start-button" onClick={() => startStep(step.id)} disabled={calculatedSteps.some(s => s.status === 'in-progress')}>Start</button>}
+                                    {step.status === 'in-progress' && <button className="action-button complete-button" onClick={() => completeStep(step.id)}>Complete</button>}
+                                    {step.status === 'completed' && <div className="completed-indicator"><Icon name="check" size={24} color="var(--completed-border)"/></div>}
+                                    <button className="icon-button" onClick={() => deleteStep(step.id)}><Icon name="trash" size={18}/></button>
                                 </div>
                             </div>
                         ))}
                     </div>
-                    <button onClick={addStep} className="glass-card action-button add-step-button">{Icon('PlusCircle', {size: 20})} Add New Step</button>
+                    <button onClick={addStep} className="glass-card action-button add-step-button"><Icon name="plus" size={20}/> Add New Step</button>
                 </>
             );
         };
-        
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<DeadlinePlanner />);
     </script>
-
 </body>
 </html>
