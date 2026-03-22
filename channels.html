@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Radio Channel Reference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0d1117;
+    --bg2:       #161b22;
+    --bg3:       #1c2333;
+    --border:    #30363d;
+    --text:      #e6edf3;
+    --muted:     #8b949e;
+    --accent:    #58a6ff;
+    --accent2:   #3fb950;
+    --warn:      #d29922;
+    --tag-gmrs:  rgba(88,166,255,0.12);
+    --tag-ham:   rgba(63,185,80,0.12);
+    --tag-rep:   rgba(210,153,34,0.12);
+    --tag-tac:   rgba(188,109,232,0.12);
+    --tag-gmrs-b:#58a6ff;
+    --tag-ham-b: #3fb950;
+    --tag-rep-b: #d29922;
+    --tag-tac-b: #bc6de8;
+    --mono:      'Share Tech Mono', monospace;
+    --sans:      'Barlow', sans-serif;
+    --cond:      'Barlow Condensed', sans-serif;
+    --radius:    8px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    min-height: 100vh;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .header-icon {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+  }
+
+  .header-title {
+    font-family: var(--cond);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .header-sub {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-family: var(--mono);
+    margin-top: 2px;
+  }
+
+  /* ── Search ── */
+  .search-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  #search {
+    flex: 1;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    padding: 9px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+  }
+  #search::placeholder { color: var(--muted); }
+  #search:focus { border-color: var(--accent); }
+
+  #clear-btn {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--muted);
+    font-size: 18px;
+    width: 40px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s;
+    flex-shrink: 0;
+  }
+  #clear-btn.visible { display: flex; }
+  #clear-btn:active { color: var(--text); }
+
+  /* ── Filter pills ── */
+  .filter-row {
+    display: flex;
+    gap: 6px;
+    padding: 10px 16px 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .filter-row::-webkit-scrollbar { display: none; }
+
+  .pill {
+    flex-shrink: 0;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: var(--cond);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    color: var(--muted);
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .pill.active-all  { background: var(--accent);  border-color: var(--accent);  color: #0d1117; }
+  .pill.active-gmrs { background: var(--tag-gmrs); border-color: var(--tag-gmrs-b); color: var(--tag-gmrs-b); }
+  .pill.active-ham  { background: var(--tag-ham);  border-color: var(--tag-ham-b);  color: var(--tag-ham-b); }
+  .pill.active-rep  { background: var(--tag-rep);  border-color: var(--tag-rep-b);  color: var(--tag-rep-b); }
+  .pill.active-tac  { background: var(--tag-tac);  border-color: var(--tag-tac-b);  color: var(--tag-tac-b); }
+
+  /* ── Count bar ── */
+  .count-bar {
+    padding: 8px 16px 4px;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: var(--mono);
+    letter-spacing: 0.03em;
+  }
+
+  /* ── Channel cards ── */
+  .channel-list {
+    padding: 4px 12px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .channel-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    display: grid;
+    grid-template-columns: 44px 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 2px 10px;
+    align-items: start;
+    cursor: pointer;
+    transition: border-color 0.12s, background 0.12s;
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+  }
+  .channel-card:active {
+    background: var(--bg3);
+    border-color: var(--accent);
+  }
+
+  .ch-num {
+    grid-row: 1 / 3;
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--muted);
+    line-height: 1;
+    align-self: center;
+    text-align: center;
+  }
+
+  .ch-name {
+    font-family: var(--cond);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--text);
+    line-height: 1.1;
+  }
+
+  .ch-freq {
+    font-family: var(--mono);
+    font-size: 15px;
+    color: var(--accent);
+    text-align: right;
+    white-space: nowrap;
+    line-height: 1.2;
+    align-self: start;
+  }
+  .ch-freq span {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    display: block;
+    text-align: right;
+    font-family: var(--sans);
+    margin-top: 1px;
+  }
+
+  .ch-type {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.3;
+  }
+
+  /* type tags */
+  .ch-tags {
+    position: absolute;
+    top: 10px;
+    right: 86px;
+    display: flex;
+    gap: 4px;
+    pointer-events: none;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: 120px;
+  }
+  .ch-tag {
+    font-size: 10px;
+    font-weight: 600;
+    font-family: var(--cond);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .tag-gmrs { background: var(--tag-gmrs); color: var(--tag-gmrs-b); }
+  .tag-ham  { background: var(--tag-ham);  color: var(--tag-ham-b); }
+  .tag-rep  { background: var(--tag-rep);  color: var(--tag-rep-b); }
+  .tag-tac  { background: var(--tag-tac);  color: var(--tag-tac-b); }
+
+  /* ── Copy toast ── */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: #238636;
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 10px 20px;
+    border-radius: 24px;
+    white-space: nowrap;
+    pointer-events: none;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+    opacity: 0;
+    z-index: 999;
+    letter-spacing: 0.04em;
+  }
+  #toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+
+  /* ── No results ── */
+  .no-results {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 13px;
+    display: none;
+  }
+  .no-results.visible { display: block; }
+  .no-results .nr-icon { font-size: 40px; margin-bottom: 12px; }
+
+  /* ── Desktop tweak ── */
+  @media (min-width: 600px) {
+    header { padding: 16px 20px 14px; }
+    .filter-row { padding: 10px 20px 0; }
+    .channel-list { padding: 8px 20px 80px; max-width: 720px; margin: 0 auto; }
+    .count-bar { padding: 8px 20px 4px; max-width: 720px; margin: 0 auto; }
+    .channel-card { grid-template-columns: 52px 1fr auto; }
+    .ch-num { font-size: 26px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <svg class="header-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="32" height="32" rx="6" fill="#1c2333"/>
+      <path d="M16 6 L16 11" stroke="#58a6ff" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="16" cy="16" r="7" stroke="#58a6ff" stroke-width="1.5" fill="none"/>
+      <circle cx="16" cy="16" r="3" fill="#58a6ff"/>
+      <path d="M9 16 L6 16 M23 16 L26 16 M16 23 L16 26" stroke="#58a6ff" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M10.9 10.9 L8.8 8.8 M21.1 21.1 L23.2 23.2 M21.1 10.9 L23.2 8.8 M10.9 21.1 L8.8 23.2" stroke="#30363d" stroke-width="1.2" stroke-linecap="round"/>
+    </svg>
+    <div>
+      <div class="header-title">Radio Channels</div>
+      <div class="header-sub">Front Range · CO</div>
+    </div>
+  </div>
+  <div class="search-row">
+    <input id="search" type="search" placeholder="Search name, frequency, type…" autocomplete="off" autocorrect="off" spellcheck="false">
+    <button id="clear-btn" aria-label="Clear search">✕</button>
+  </div>
+</header>
+
+<div class="filter-row">
+  <button class="pill active-all" data-filter="all">All</button>
+  <button class="pill" data-filter="gmrs">GMRS / FRS</button>
+  <button class="pill" data-filter="tac">TAC</button>
+  <button class="pill" data-filter="rep">Repeaters</button>
+  <button class="pill" data-filter="ham">Ham Simplex</button>
+</div>
+
+<div class="count-bar" id="count-bar">41 channels</div>
+
+<div class="channel-list" id="channel-list"></div>
+<div class="no-results" id="no-results">
+  <div class="nr-icon">📻</div>
+  No channels match your search.
+</div>
+
+<div id="toast">Frequency copied!</div>
+
+<script>
+const channels = [
+  {ch:1,  name:"GMRS 1",   freq:"462.5625", type:"GMRS / FRS (5w max.)",                     cat:"gmrs"},
+  {ch:2,  name:"GMRS 2",   freq:"462.5875", type:"GMRS / FRS (5w max.)",                     cat:"gmrs"},
+  {ch:3,  name:"GMRS 3",   freq:"462.6125", type:"GMRS / FRS (5w max.)",                     cat:"gmrs"},
+  {ch:4,  name:"GMRS 4",   freq:"462.6375", type:"GMRS / FRS (5w max.)",                     cat:"gmrs"},
+  {ch:5,  name:"GMRS 5",   freq:"462.6625", type:"GMRS / FRS (5w max.)",                     cat:"gmrs"},
+  {ch:6,  name:"GMRS 6",   freq:"462.6875", type:"GMRS / FRS (5w max.)",                     cat:"gmrs"},
+  {ch:7,  name:"GMRS 7",   freq:"462.7125", type:"GMRS / FRS (5w max.)",                     cat:"gmrs"},
+  {ch:8,  name:"GMRS 8",   freq:"467.5625", type:"GMRS / FRS Low Power (0.5w)",              cat:"gmrs"},
+  {ch:9,  name:"GMRS 9",   freq:"467.5875", type:"GMRS / FRS Low Power (0.5w)",              cat:"gmrs"},
+  {ch:10, name:"GMRS 10",  freq:"467.6125", type:"GMRS / FRS Low Power (0.5w)",              cat:"gmrs"},
+  {ch:11, name:"GMRS 11",  freq:"467.6375", type:"GMRS / FRS Low Power (0.5w)",              cat:"gmrs"},
+  {ch:12, name:"GMRS 12",  freq:"467.6625", type:"GMRS / FRS Low Power (0.5w)",              cat:"gmrs"},
+  {ch:13, name:"GMRS 13",  freq:"467.6875", type:"GMRS / FRS Low Power (0.5w)",              cat:"gmrs"},
+  {ch:14, name:"GMRS 14",  freq:"467.7125", type:"GMRS / FRS Low Power (0.5w)",              cat:"gmrs"},
+  {ch:15, name:"GMRS 15",  freq:"462.5500", type:"GMRS High Power (50w) / FRS",              cat:"gmrs"},
+  {ch:16, name:"GMRS 16",  freq:"462.5750", type:"GMRS High Power (50w) / FRS",              cat:"gmrs"},
+  {ch:17, name:"GMRS 17",  freq:"462.6000", type:"GMRS High Power (50w) / FRS",              cat:"gmrs"},
+  {ch:18, name:"GMRS 18",  freq:"462.6250", type:"GMRS High Power (50w) / FRS",              cat:"gmrs"},
+  {ch:19, name:"GMRS 19",  freq:"462.6500", type:"GMRS High Power (50w) / FRS",              cat:"gmrs"},
+  {ch:20, name:"GMRS 20",  freq:"462.6750", type:"GMRS High Power (50w) / FRS",              cat:"gmrs"},
+  {ch:21, name:"GMRS 21",  freq:"462.7000", type:"GMRS High Power (50w) / FRS",              cat:"gmrs"},
+  {ch:22, name:"GMRS 22",  freq:"462.7250", type:"GMRS High Power (50w) / FRS",              cat:"gmrs"},
+  {ch:23, name:"gTAC 7",   freq:"462.7125", type:"GMRS / FRS with Tone (Personal Tac)",      cat:"tac"},
+  {ch:24, name:"gTAC 15",  freq:"462.5500", type:"GMRS / FRS with Tone (Personal Tac)",      cat:"tac"},
+  {ch:25, name:"gTAC 17",  freq:"462.6000", type:"GMRS / FRS with Tone (Personal Tac)",      cat:"tac"},
+  {ch:26, name:"MT600",    freq:"462.6000", type:"GMRS Repeater – Front Range (Metro 600)",   cat:["gmrs","rep"]},
+  {ch:27, name:"DH625",    freq:"462.6250", type:"GMRS Repeater – Front Range (Devil's Head)",cat:["gmrs","rep"]},
+  {ch:28, name:"LK675",    freq:"462.6750", type:"GMRS Repeater – Front Range (Lookout 675)", cat:["gmrs","rep"]},
+  {ch:29, name:"700 S",    freq:"462.7000", type:"GMRS Repeater – Front Range (700 South)",   cat:["gmrs","rep"]},
+  {ch:30, name:"MST725",   freq:"462.7250", type:"GMRS Repeater – Front Range (Mesta 725)",   cat:["gmrs","rep"]},
+  {ch:31, name:"CCDEN2m",  freq:"145.3100", type:"Ham Repeater – Colorado Connection (Denver VHF)", cat:["ham","rep"]},
+  {ch:32, name:"CRA145",   freq:"145.1450", type:"Ham Repeater – Colorado Repeater Assn.",    cat:["ham","rep"]},
+  {ch:33, name:"CRAWCR",   freq:"147.2250", type:"Ham Repeater – Colorado Repeater Assn.",    cat:["ham","rep"]},
+  {ch:34, name:"CRAELD",   freq:"145.4600", type:"Ham Repeater – Colorado Repeater Assn.",    cat:["ham","rep"]},
+  {ch:35, name:"DRCGM",    freq:"147.3300", type:"Ham Repeater – Denver Radio Club",          cat:["ham","rep"]},
+  {ch:36, name:"DRCCC",    freq:"145.4900", type:"Ham Repeater – Denver Radio Club",          cat:["ham","rep"]},
+  {ch:37, name:"CCDEN70c", freq:"448.0750", type:"Ham Repeater – Colorado Connection (Denver UHF)", cat:["ham","rep"]},
+  {ch:38, name:"CCKRM",    freq:"147.0750", type:"Ham Repeater – Colorado Connection (Kremmling)", cat:["ham","rep"]},
+  {ch:39, name:"CCWPK",    freq:"147.2850", type:"Ham Repeater – Colorado Connection (Winter Park)", cat:["ham","rep"]},
+  {ch:40, name:"2m Call",  freq:"146.5200", type:"Ham – Simplex National Calling Frequency",  cat:"ham"},
+  {ch:41, name:"70cm Cal", freq:"446.0000", type:"Ham – Simplex National Calling Frequency",  cat:"ham"},
+];
+
+const tagLabel = { gmrs:"GMRS", ham:"Ham", rep:"Repeater", tac:"TAC" };
+const tagClass  = { gmrs:"tag-gmrs", ham:"tag-ham", rep:"tag-rep", tac:"tag-tac" };
+
+let activeFilter = "all";
+let searchVal = "";
+
+const list      = document.getElementById("channel-list");
+const noResults = document.getElementById("no-results");
+const countBar  = document.getElementById("count-bar");
+const searchEl  = document.getElementById("search");
+const clearBtn  = document.getElementById("clear-btn");
+const toast     = document.getElementById("toast");
+let toastTimer;
+
+function cats(c) { return Array.isArray(c.cat) ? c.cat : [c.cat]; }
+
+function render() {
+  const q = searchVal.toLowerCase().trim();
+  const filtered = channels.filter(c => {
+    const catMatch = activeFilter === "all" || cats(c).includes(activeFilter);
+    const textMatch = !q || [c.name, c.freq, c.type, String(c.ch)].some(s => s.toLowerCase().includes(q));
+    return catMatch && textMatch;
+  });
+
+  list.innerHTML = filtered.map(c => {
+    const tagsHtml = cats(c).map(k =>
+      `<div class="ch-tag ${tagClass[k]}">${tagLabel[k]}</div>`
+    ).join("");
+    return `
+    <div class="channel-card" data-freq="${c.freq}" data-name="${c.name}">
+      <div class="ch-num">${c.ch}</div>
+      <div class="ch-name">${highlight(c.name, q)}</div>
+      <div class="ch-freq">${c.freq}<span>MHz</span></div>
+      <div class="ch-type">${highlight(c.type, q)}</div>
+      <div class="ch-tags">${tagsHtml}</div>
+    </div>`;
+  }).join("");
+
+  countBar.textContent = filtered.length === channels.length
+    ? `${channels.length} channels`
+    : `${filtered.length} of ${channels.length} channels`;
+
+  noResults.classList.toggle("visible", filtered.length === 0);
+
+  // tap to copy frequency
+  list.querySelectorAll(".channel-card").forEach(card => {
+    card.addEventListener("click", () => {
+      const freq = card.dataset.freq;
+      const name = card.dataset.name;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(freq).then(() => showToast(`Copied ${freq} MHz`));
+      } else {
+        showToast(`${name}: ${freq} MHz`);
+      }
+    });
+  });
+}
+
+function highlight(text, q) {
+  if (!q) return text;
+  const idx = text.toLowerCase().indexOf(q);
+  if (idx < 0) return text;
+  return text.slice(0, idx)
+    + `<mark style="background:rgba(88,166,255,0.3);color:inherit;border-radius:2px;">${text.slice(idx, idx+q.length)}</mark>`
+    + text.slice(idx + q.length);
+}
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove("show"), 2000);
+}
+
+// Search
+searchEl.addEventListener("input", () => {
+  searchVal = searchEl.value;
+  clearBtn.classList.toggle("visible", searchVal.length > 0);
+  render();
+});
+
+clearBtn.addEventListener("click", () => {
+  searchEl.value = "";
+  searchVal = "";
+  clearBtn.classList.remove("visible");
+  searchEl.focus();
+  render();
+});
+
+// Filter pills
+document.querySelectorAll(".pill").forEach(pill => {
+  pill.addEventListener("click", () => {
+    activeFilter = pill.dataset.filter;
+    document.querySelectorAll(".pill").forEach(p => {
+      p.className = "pill";
+      if (p.dataset.filter === activeFilter) {
+        p.classList.add(`active-${activeFilter}`);
+      }
+    });
+    render();
+  });
+});
+
+render();
+</script>
+</body>
+</html>
