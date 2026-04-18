@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="../styles.css">
+    <title>Ingredient Weights ⚖️</title>
+    <style>
+        /* Page-specific tweaks for the conversion table */
+        .conversion-table {
+            font-size: 0.95rem;
+        }
+        .conversion-table th {
+            background: #f0f0f0;
+            position: sticky;
+            top: 0;
+        }
+        .conversion-table tr:hover {
+            background: #f9f9f9;
+        }
+        .result-count {
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        @media (max-width: 600px) {
+            .conversion-table {
+                font-size: 0.85rem;
+            }
+            .conversion-table th,
+            .conversion-table td {
+                padding: 0.35rem 0.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="site-corner">divincentis.com</div>
+    <nav>
+        <ul>
+            <li><a href="../recipes.html">Home</a></li>
+            <li><a href="../recipes.html">Recipes</a></li>
+            <li><a href="../about.html">About</a></li>
+        </ul>
+    </nav>
+
+    <article class="recipe-card">
+        <h1>Ingredient Weights ⚖️</h1>
+
+        <p class="text-muted">A reference table for converting common baking and cooking ingredients between volume and weight. Use the search box to quickly find any ingredient.</p>
+
+        <div class="search-container">
+            <input type="text" class="search-input" placeholder="Search ingredients (e.g. flour, sugar, butter)..." id="ingredientSearch">
+            <div class="result-count" id="resultCount"></div>
+        </div>
+
+        <table class="conversion-table">
+            <thead>
+                <tr>
+                    <th>Ingredient</th>
+                    <th>Volume</th>
+                    <th>Grams</th>
+                    <th>Ounces</th>
+                </tr>
+            </thead>
+            <tbody id="ingredientTable">
+                <tr><td>'00' Pizza Flour</td><td>1 cup</td><td>116</td><td>4</td></tr>
+                <tr><td>Agave syrup</td><td>1/4 cup</td><td>84</td><td>3</td></tr>
+                <tr><td>All-Purpose Baking Mix</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
+                <tr><td>All-Purpose Flour</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
+                <tr><td>Almond butter</td><td>1/4 cup</td><td>68</td><td>2 1/3</td></tr>
+                <tr><td>Almond Flour</td><td>1 cup</td><td>96</td><td>3 3/8</td></tr>
+                <tr><td>Almond meal</td><td>1 cup</td><td>84</td><td>3</td></tr>
+                <tr><td>Almond paste (packed)</td><td>1 cup</td><td>259</td><td>9 1/8</td></tr>
+                <tr><td>Almonds (sliced)</td><td>1/2 cup</td><td>43</td><td>1 1/2</td></tr>
+                <tr><td>Almonds (slivered)</td><td>1/2 cup</td><td>57</td><td>2</td></tr>
+                <tr><td>Almonds, whole (unblanched)</td><td>1 cup</td><td>142</td><td>5</td></tr>
+                <tr><td>Amaranth flour</td><td>1 cup</td><td>103</td><td>3 5/8</td></tr>
+                <tr><td>Apple juice concentrate</td><td>1/4 cup</td><td>70</td><td>2 1/2</td></tr>
+                <tr><td>Apples (dried, diced)</td><td>1 cup</td><td>85</td><td>3</td></tr>
+                <tr><td>Apples (peeled, sliced)</td><td>1 cup</td><td>113</td><td>4</td></tr>
+                <tr><td>Applesauce</td><td>1 cup</td><td>255</td><td>9</td></tr>
+                <tr><td>Apricots (dried, diced)</td><td>1/2 cup</td><td>64</td><td>2 1/4</td></tr>
+                <tr><td>Artisan Bread Flour</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
+                <tr><td>Artisan Bread Topping</td><td>1/4 cup</td><td>43</td><td>1 1/2</td></tr>
+                <tr><td>Baker's Cinnamon Filling</td><td>1 cup</td><td>152</td><td>5 3/8</td></tr>
+                <tr><td>Baker's Fruit Blend</td><td>1 cup</td><td>128</td><td>4 1/2</td></tr>
+                <tr><td>Baker's Special Sugar (superfine sugar, castor sugar)</td><td>1 cup</td><td>190</td><td>6 3/4</td></tr>
+                <tr><td>Baking powder</td><td>1 teaspoon</td><td>4</td><td>1/8</td></tr>
+                <tr><td>Baking soda</td><td>1/2 teaspoon</td><td>3</td><td>1/10</td></tr>
+                <tr><td>Baking Sugar Alternative</td><td>1 cup</td><td>170</td><td>6</td></tr>
+                <tr><td>Bananas (mashed)</td><td>1 cup</td><td>227</td><td>8</td></tr>
+                <tr><td>Barley (cooked)</td><td>1 cup</td><td>215</td><td>7 5/8</td></tr>
+                <tr><td>Barley (pearled)</td><td>1 cup</td><td>213</td><td>7 1/2</td></tr>
+                <tr><td>Barley flakes</td><td>1/2 cup</td><td>46</td><td>1 5/8</td></tr>
+                <tr><td>Barley flour</td><td>1 cup</td><td>85</td><td>3</td></tr>
+                <tr><td>Barley malt syrup</td><td>2 tablespoons</td><td>42</td><td>1 1/2</td></tr>
+                <tr><td>Basil pesto</td><td>2 tablespoons</td><td>28</td><td>1</td></tr>
+                <tr><td>Bell peppers (fresh)</td><td>1 cup</td><td>142</td><td>5</td></tr>
+                <tr><td>Berries (frozen)</td><td>1 cup</td><td>142</td><td>5</td></tr>
+                <tr><td>Better Cheddar Cheese Powder</td><td>1/2 cup</td><td>57</td><td>2</td></tr>
+                <tr><td>Blueberries (dried)</td><td>1 cup</td><td>156</td><td>5 1/2</td></tr>
+                <tr><td>Blueberries (fresh or frozen)</td><td>1 cup</td><td>140 to 170</td><td>5 to 6</td></tr>
+                <tr><td>Blueberry juice</td><td>1 cup</td><td>241</td><td>8 1/2</td></tr>
+                <tr><td>Boiled cider</td><td>1/4 cup</td><td>85</td><td>3</td></tr>
+                <tr><td>Bran cereal</td><td>1 cup</td><td>60</td><td>2 1/8</td></tr>
+                <tr><td>Bread Flour</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
+                <tr><td>Breadcrumbs (dried)</td><td>1/4 cup</td><td>28</td><td>1</td></tr>
+                <tr><td>Breadcrumbs (fresh)</td><td>1/4 cup</td><td>21</td><td>3/4</td></tr>
+                <tr><td>Breadcrumbs (Japanese Panko)</td><td>1 cup</td><td>50</td><td>1 3/4</td></tr>
+                <tr><td>Brown rice (cooked)</td><td>1 cup</td><td>170</td><td>6</td></tr>
+                <tr><td>Brown rice flour</td><td>1 cup</td><td>128</td><td>4 1/2</td></tr>
+                <tr><td>Brown sugar (dark or light, packed)</td><td>1 cup</td><td>213</td><td>7 1/2</td></tr>
+                <tr><td>Buckwheat (whole)</td><td>1 cup</td><td>170</td><td>6</td></tr>
+                <tr><td>Buckwheat Flour</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
+                <tr><td>Bulgur</td><td>1 cup</td><td>152</td><td>5 3/8</td></tr>
+                <tr><td>Butter</td><td>8 tablespoons (1/2 cup)</td><td>113</td><td>4</td></tr>
+                <tr><td>Buttermilk</td><td>1 cup</td><td>227</td><td>8</td></tr>
+                <tr><td>Buttermilk Biscuit Flour Blend</td><td>1 cup</td><td>110</td><td>3 7/8</td></tr>
+                <tr><td>Buttermilk powder</td><td>2 tablespoons</td><td>18</td><td>2/3</td></tr>
+                <tr><td>Cacao nibs</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
+                <tr><td>Cake Enhancer</td><td>2 tablespoons</td><td>14</td><td>1/2</td></tr>
+                <tr><td>Candied Lemon Peel</td><td>1/4 cup</td><td>37</td><td>1 1/3</td></tr>
+                <tr><td>Candied Orange Peel</td><td>1/4 cup</td><td>25</td><td>7/8</td></tr>
+                <tr><td>Caramel (14-16 individual pieces, 1" squares)</td><td>1/2 cup</td><td>142</td><td>5</td></tr>
+                <tr><td>Caramel bits (chopped Heath or toffee)</td><td>1 cup</td><td>156</td><td>5 1/2</td></tr>
+                <tr><td>Caraway seeds</td><td>2 tablespoons</td><td>18</td><td>5/8</td></tr>
+                <tr><td>Carrots (cooked and puréed)</td><td>1/2 cup</td><td>128</td><td>4 1/2</td></tr>
+                <tr><td>Carrots (diced)</td><td>1 cup</td><td>142</td><td>5</td></tr>
+                <tr><td>Carrots (grated)</td><td>1 cup</td><td>99</td><td>3 1/2</td></tr>
+                <tr><td>Cashews (chopped)</td><td>1 cup</td><td>113</td><td>4</td></tr>
+                <tr><td>Cashews (whole)</td><td>1 cup</td><td>113</td><td>4</td></tr>
+                <tr><td>Celery (diced)</td><td>1 cup</td><td>142</td><td>5</td></tr>
+                <tr><td>Cheese (Feta)</td><td>1/2 cup</td><td>57</td><td>2</td></tr>
+                <tr><td>Cheese (grated cheddar, jack, mozzarella, or Swiss)</td><td>1 cup</td><td>113</td><td>4</td></tr>
+                <tr><td>Cheese (grated Parmesan)</td><td>1/2 cup</td><td>50</td><td>1 3/4</td></tr>
+                <tr><td>Cheese (Ricotta)</td><td>1 cup</td><td>227</td><td>8</td></tr>
+                <tr><td>Cherries (candied)</td><td>1/4 cup</td><td>50</td><td>1 3/4</td></tr>
+                <tr><td>Cherries (dried)</td><td>1/2 cup</td><td>71</td><td>2 1/2</td></tr>
+                <tr><td>Cherries (fresh, pitted, chopped)</td><td>1/2 cup</td><td>80</td><td>2 7/8</td></tr>
+                <tr><td>Cherries (frozen)</td><td>1 cup</td><td>113</td><td>4</td></tr>
+                <tr><td>Cherry Concentrate</td><td>2 tablespoons</td><td>42</td><td>1 1/2</td></tr>
+                <tr><td>Chia seeds</td><td>1/4 cup</td><td>37</td><td>1 1/3</td></tr>
+                <tr><td>Chickpea flour</td><td>1 cup</td><td>85</td><td>3</td></tr>
+                <tr><td>Chives (fresh)</td><td>1/2 cup</td><td>21</td><td>3/4</td></tr>
+                <tr><td>Chocolate (chopped)</td><td>1 cup</td><td>170</td><td>6</td></tr>
+                <tr><td>Chocolate Chips</td><td>1 cup</td><td>170</td><td>6</td></tr>
+                <tr><td>Chocolate Chunks</td><td>1 cup</td><td>170</td><td>6</td></tr>
+                <tr><td>Chocolate Mousse Mix</td><td>1/4 cup</td><td>28</td><td>1</td></tr>
+                <tr><td>Cinnamon Sweet Bits</td><td>1/4 cup</td><td>35</td><td>1 1/4</td></tr>
+                <tr><td>Cinnamon-Sugar</td><td>1/4 cup</td><td>50</td><td>1 3/4</td></tr>
+                <tr><td>Climate Blend Flour</td><td>1 cup</td><td>115</td><td>4</td></tr>
+                <tr><td>Cocoa (unsweetened)</td><td>1/2 cup</td><td>42</td><td>1 1/2</td></tr>
+                <tr><td>Coconut (sweetened, shredded)</td><td>1 cup</td><td>85</td><td>3</td></tr>
+                <tr><td>Coconut (toasted)</td><td>1 cup</td><td>85</td><td>3</td></tr>
+                <tr><td>Coconut (unsweetened, desiccated)</td><td>1 cup</td><td>85</td><td>3</td></tr>
+                <tr><td>Coconut (unsweetened, large flakes)</td><td>1 cup</td><td>60</td><td>2 1/8</td></tr>
+                <tr><td>Coconut (unsweetened, shredded)</td><td>1 cup</td><td>53</td><td>1 7/8</td></tr>
+                <tr><td>Coconut cream (unsweetened)</td><td>1 cup</td><td>284</td><td>10</td></tr>
+                <tr><td>Coconut Flour</td><td>1 cup</td><td>128</td><td>4 1/2</td></tr>
+                <tr><td>Coconut milk (evaporated)</td><td>1 cup</td><td>242</td><td>8 1/2</td></tr>
+                <tr><td>Coconut Milk Powder</td><td>1/2 cup</td><td>57</td><td>2</td></tr>
+                <tr><td>Coconut milk; canned, well shaken</td><td>1 cup</td><td>241</td><td>8 1/2</td></tr>
+                <tr><td>Coconut oil</td><td>1/2 cup</td><td>113</td><td>4</td></tr>
+                <tr><td>Coconut sugar</td><td>1/2 cup</td><td>77</td><td>2 3/4</td></tr>
+                <tr><td>Confectioners' sugar (unsifted)</td><td>1 cup</td><td>113</td><td>4</td></tr>
+                <tr><td>Cookie butter</td><td>1/4 cup</td><td>72</td><td>2 1/2</td></tr>
+                <tr><td>Cookie crumbs</td><td>1 cup</td><td>85</td><td>3</td></tr>
+                <tr><td>Corn (fresh or frozen)</td><td>1/4 cup</td><td>38</td><td>1 1/3</td></tr>
+                <tr><td>Corn (popped)</td><td>4 cups</td><td>21</td><td>3/4</td></tr>
+                <tr><td>Corn syrup</td><td>1 cup</td><td>312</td><td>11</td></tr>
+                <tr><td>Cornmeal (whole)</td><td>1 cup</td><td>138</td><td>4 7/8</td></tr>
+                <tr><td>Cornmeal (yellow, Quaker)</td><td>1 cup</td><td>156</td><td>5 1/2</td></tr>
+                <tr><td>Cornstarch</td><td>1/4 cup</td><td>28</td><td>1</td></tr>
+                <tr><td>Cottage cheese</td><td>1/2 cup</td><td>113</td><td>4</td></tr>
+                <tr><td>Cracked wheat</td><td>1 cup</td><td>149</td><td>5 1/4</td></tr>
+                <tr><td>Cranberries (dried)</td><td>1/2 cup</td><td>57</td><td>2</td></tr>
+                <tr><td>Cranberries (fresh or frozen)</td><td>1 cup</td><td>99</td><td>3 1/2</td></tr>
+                <tr><td>Cream (heavy cream, light cream, or half & half)</td><td>1 cup</td><td>227</td><td>8</td></tr>
+                <tr><td>Cream cheese</td><td>1 cup</td><td>227</td><td>8</td></tr>
+                <tr><td>Cream of coconut</td><td>1/2 cup</td><td>142</td><td>5</td></tr>
+                <tr><td>Crème fraiche</td><td>1/2 cup</td><td>113</td><td>4</td></tr>
+                <tr><td>Currants</td><td>1 cup</td><td>142</td><td>5</td></tr>
+                <tr><td>Dates (chopped)</td><td>1 cup</td><td>149</td><td>5 1/4</td></tr>
+                <tr><td>Demerara sugar</td><td>1 cup</td><td>220</td><td>7 3/4</td></tr>
+                <tr><td>Dried Blueberry Powder</td><td>1/4 cup</td><td>28</td><td>1</td></tr>
+                <tr><td>Dried milk (Baker's Special Dry Milk)</td><td>1/4 cup</td><td>28</td><td>1</td></tr>
+                <tr><td>Dried nonfat milk (powdered)</td><td>1/4 cup</td><td>28</td><td>1</td></tr>
+                <tr><td>Dried potato flakes (instant mashed potatoes)</td><td>1/2 cup</td><td>43</td><td>1 1/2</td></tr>
+                <tr><td>Dried whole milk (powdered)</td><td>1/2 cup</td><td>50</td><td>1 3/4</td></tr>
+                <tr><td>Durum Flour</td><td>1 cup</td><td>124</td><td>4 3/8</td></tr>
+                <tr><td>Easy Roll Dough Improver</td><td>2 tablespoons</td><td>18</td><td>5/8</td></tr>
+                <tr><td>Egg (fresh)</td><td>1 large</td><td>50</td><td>1 3/4</td></tr>
+                <tr><td>Egg white (fresh)</td><td>1 large</td><td>30 to 35</td><td>1 to 1 1/4</td></tr>
+                <tr><td>Egg whites (dried)</td><td>2 tablespoons</td><td>11</td><td>3/8</td></tr>
+                <tr><td>Egg yolk (fresh)</td><td>1 large</td><td>14</td><td>1/2</td></tr>
+                <tr><td>Espresso Powder</td><td>1 tablespoon</td><td>7</td><td>1/4</td></tr>
+                <tr><td>Everything Bagel Topping</td><td>1/4 cup</td><td>35</td><td>1 1/4</td></tr>
+                <tr><td>Figs (dried, chopped)</td><td>1 cup</td><td>149</td><td>5 1/4</td></tr>
+                <tr><td>First Clear Flour</td><td>1 cup</td><td>106</td><td>3 3/4</td></tr>
+                <tr><td>Flax meal</td><td>1/2 cup</td><td>50</td><td>1 3/4</td></tr>
+                <tr><td>Flaxseed</td><td>1/4 cup</td><td>35</td><td>1 1/4</td></tr>
+                <tr><td>Formaggio Italiano Cheese and Herb Blend</td><td>1/4 cup</td><td>30</td><td>1</td></tr>
+                <tr><td>French-Style Flour</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
+                <tr><td>Fruitcake Fruit Blend</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
+                <tr><td>Garlic (cloves, in skin for roasting)</td><td>1 large head</td><td>113</td><td>4</td></tr>
+                <tr><td>Garlic (minced)</td><td>2 tablespoons</td><td>28</td><td>1</td></tr>
+                <tr><td>Garlic (peeled and sliced)</td><td>1 cup</td><td>149</td><td>5 1/4</td></tr>
+                <tr><td>Ghee</td><td>1/4 cup</td><td>44</td><td>1 1/2</td></tr>
+                <tr><td>Ginger (fresh, sliced)</td><td>1/4 cup</td><td>57</td><td>2</td></tr>
+                <tr><td>Gluten-Free All-Purpose Baking Mix</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
+                <tr><td>Gluten-Free All-Purpose Flour</td><td>1 cup</td><td>156</td><td>5 1/2</td></tr>
+                <tr><td>Gluten-Free Bread Flour</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
+                <tr><td>Gluten-Free Measure for Measure Flour</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
+                <tr><td>Gluten-Free Pizza Flour</td><td>1 cup</td><td>100</td><td>3 1/2</td></tr>
+                <tr><td>Gluten-Free sourdough starter (made with Gluten-Free Bread Flour)</td><td>1 cup</td><td>170 to 185</td><td>6 to 6 1/2</td></tr>
+                <tr><td>Gluten-Free sourdough starter (made with Gluten-Free Measure for Measure Flour)</td><td>1 cup</td><td>227 to 241</td><td>8 to 8 1/2</td></tr>
+                <tr><td>Glutinous rice flour</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
+                <tr><td>Golden Wheat Flour</td><td>1 cup</td><td>113</td><td>4</td></tr>
+                <tr><td>Graham cracker crumbs (store-bought or crushed from whole)</td><td>1 cup (6 to 7 crackers)</td><td>100</td><td>3 1/2</td></tr>
+                <tr><td>Granola</td><td>1 cup</td><td>113</td><td>4</td></tr>
+                <tr><td>Grape Nuts</td><td>1/2 cup</td><td>57</td><td>2</td></tr>
+                <tr><td>Guava paste</td><td>1/4 cup</td><td>100</td><td>3 1/2</td></tr>
+                <tr><td>Harvest Grains Blend</td><td>1/2 cup</td><td>74</td><td>2 5/8</td></tr>
+                <tr><td>Hazelnut flour</td><td>1 cup</td><td>89</td><td>3 1/8</td></tr>
+                <tr><td>Hazelnut Praline Paste</td><td>1/2 cup</td><td>156</td><td>5 1/2</td></tr>
+                <tr><td>Hazelnut spread</td><td>1/2 cup</td><td>160</td><td>5 5/8</td></tr>
+                <tr><td>Hazelnuts (whole)</td><td>1 cup</td><td>142</td><td>5</td></tr>
+                <tr><td>Hi-Maize Natural Fiber</td><td>1/4 cup</td><td>32</td><td>1 1/8</td></tr>
+                <tr><td>High-Gluten Flour</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
+                <tr><td>Honey</td><td>1 tablespoon</td><td>21</td><td>3/4</td></tr>
+                <tr><td>Instant Clearjel</td><td>1 tablespoon</td><td>11</td><td>3/8</td></tr>
+                <tr><td>Irish-Style Flour</td><td>1 cup</td><td>110</td><td>3 7/8</td></tr>
+                <tr><td>Italian Herb Seasoning</td><td>2 tablespoons</td><td>14</td><td>1/2</td></tr>
+                <tr><td>Italian-Style Flour</td><td>1 cup</td><td>106</td><td>3 3/4</td></tr>
+                <tr><td>Jam or preserves</td><td>1/4 cup</td><td>85</td><td>3</td></tr>
+                <tr><td>Jammy Bits</td><td>1 cup</td><td>184</td><td>6 1/2</td></tr>
+                <tr><td>Keto Wheat Flour</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
+                <tr><td>Keto Wheat Pizza Crust Mix</td><td>1 cup</td><td>110</td><td>3 7/8</td></tr>
+                <tr><td>Key Lime Juice</td><td>1 cup</td><td>227</td><td>8</td></tr>
+                <tr><td>Lard</td><td>1/2 cup</td><td>113</td><td>4</td></tr>
+                <tr><td>Leeks (diced)</td><td>1 cup</td><td>92</td><td>3 1/4</td></tr>
+                <tr><td>Lemon Crumbles</td><td>1 cup</td><td>180</td><td>6 1/3</td></tr>
+                <tr><td>Lemon Curd</td><td>1/2 cup</td><td>113</td><td>4</td></tr>
+                <tr><td>Lemon juice</td><td>1 tablespoon</td><td>14</td><td>1/2</td></tr>
+                <tr><td>Lemon Juice Powder</td><td>2 tablespoons</td><td>18</td><td>5/8</td></tr>
+                <tr><td>Lime Juice Powder</td><td>2 tablespoons</td><td>18</td><td>5/8</td></tr>
+                <tr><td>Macadamia nuts (whole)</td><td>1 cup</td><td>149</td><td>5 1/4</td></tr>
+                <tr><td>Malt syrup</td><td>2 tablespoons</td><td>43</td><td>1 1/2</td></tr>
+                <tr><td>Malted Milk Powder</td><td>1/4 cup</td><td>35</td><td>1 1/4</td></tr>
+                <tr><td>Malted Wheat Flakes</td><td>1/2 cup</td><td>64</td><td>2 1/4</td></tr>
+                <tr><td>Maple Cinnamon French Toast Sugar</td><td>1/4 cup</td><td>48</td><td>1 2/3</td></tr>
+                <tr><td>Maple Cream</td><td>2 tablespoons</td><td>42</td><td>1 1/2</td></tr>
+                <tr><td>Maple sugar</td><td>1/2 cup</td><td>78</td><td>2 3/4</td></tr>
+                <tr><td>Maple syrup</td><td>1/2 cup</td><td>156</td><td>5 1/2</td></tr>
+                <tr><td>Marshmallow Fluff®</td><td>1 cup</td><td>128</td><td>4 1/2</td></tr>
+                <tr><td>Marshmallow spread, homemade</td><td>1 cup</td><td>72</td><td>2 1/2</td></tr>
+                <tr><td>Marshmallow spread, store-bought</td><td>1 cup</td><td>123</td><td>4 1/3</td></tr>
+                <tr><td>Marshmallows (mini)</td><td>1 cup</td><td>43</td><td>1 1/2</td></tr>
+                <tr><td>Marzipan</td><td>1 cup</td><td>290</td><td>10 1/8</td></tr>
+                <tr><td>Masa Harina</td><td>1 cup</td><td>93</td><td>3 1/4</td></tr>
+                <tr><td>Mascarpone cheese</td><td>1 cup</td><td>227</td><td>8</td></tr>
+                <tr><td>Mashed potatoes</td><td>1 cup</td><td>213</td><td>7 1/2</td></tr>
+                <tr><td>Mashed sweet potatoes</td><td>1 cup</td><td>240</td><td>8 1/2</td></tr>
+                <tr><td>Matcha powder</td><td>2 tablespoons</td><td>12</td><td>3/8</td></tr>
+                <tr><td>Mayonnaise</td><td>1/2 cup</td><td>113</td><td>4</td></tr>
+                <tr><td>Medium Rye Flour</td><td>1 cup</td><td>106</td><td>3 3/4</td></tr>
+                <tr><td>Meringue powder</td><td>1/4 cup</td><td>43</td><td>1 1/2</td></tr>
+                <tr><td>Milk (evaporated)</td><td>1/2 cup</td><td>113</td><td>4</td></tr>
+                <tr><td>Milk (fresh)</td><td>1 cup</td><td>227</td><td>8</td></tr>
+                <tr><td>Millet (whole)</td><td>1/2 cup</td><td>103</td><td>3 5/8</td></tr>
+                <tr><td>Mini chocolate chips</td><td>1 cup</td><td>177</td><td>6 1/4</td></tr>
+                <tr><td>Mini Diced Ginger</td><td>1/2 cup</td><td>73</td><td>2 1/2</td></tr>
+                <tr><td>Molasses</td><td>1/4 cup</td><td>85</td><td>3</td></tr>
+                <tr><td>Mushrooms (sliced)</td><td>1 cup</td><td>78</td><td>2 3/4</td></tr>
+                <tr><td>Non-Diastatic Malt Powder</td><td>2 tablespoons</td><td>18</td><td>5/8</td></tr>
+                <tr><td>Nutella</td><td>1/2 cup</td><td>149</td><td>5 1/4</td></tr>
+                <tr><td>Oat bran</td><td>1/2 cup</td><td>53</td><td>1 7/8</td></tr>
+                <tr><td>Oat Flour</td><td>1 cup</td><td>92</td><td>3 1/4</td></tr>
+                <tr><td>Oats (King Arthur Rolled)</td><td>1 cup</td><td>113</td><td>4</td></tr>
+                <tr><td>Oats (old-fashioned or quick-cooking)</td><td>1 cup</td><td>89</td><td>3 1/8</td></tr>
+                <tr><td>Oats (prepared)</td><td>1 cup</td><td>147</td><td>5 1/8</td></tr>
+                <tr><td>Olive oil</td><td>1/4 cup</td><td>50</td><td>1 3/4</td></tr>
+                <tr><td>Olives (sliced)</td><td>1 cup</td><td>142</td><td>5</td></tr>
+                <tr><td>Onions (fresh, diced)</td><td>1 cup</td><td>142</td><td>5</td></tr>
+                <tr><td>Paleo Baking Flour</td><td>1 cup</td><td>104</td><td>3 5/8</td></tr>
+                <tr><td>Palm shortening</td><td>1/4 cup</td><td>45</td><td>1 1/2</td></tr>
+                <tr><td>Passion fruit purée</td><td>1/3 cup</td><td>60</td><td>2 1/8</td></tr>
+                <tr><td>Pasta Flour Blend</td><td>1 cup</td><td>145</td><td>5 1/8</td></tr>
+                <tr><td>Pastry Flour</td><td>1 cup</td><td>106</td><td>3 3/4</td></tr>
+                <tr><td>Pastry Flour Blend</td><td>1 cup</td><td>113</td><td>4</td></tr>
+                <tr><td>Peaches (peeled and diced)</td><td>1 cup</td><td>170</td><td>6</td></tr>
+                <tr><td>Peanut butter</td><td>1/2 cup</td><td>135</td><td>4 3/4</td></tr>
+                <tr><td>Peanuts (whole, shelled)</td><td>1 cup</td><td>142</td><td>5</td></tr>
+                <tr><td>Pears (peeled and diced)</td><td>1 cup</td><td>163</td><td>5 3/4</td></tr>
+                <tr><td>Pecan Meal</td><td>1 cup</td><td>80</td><td>2 3/4</td></tr>
+                <tr><td>Pecans (diced)</td><td>1/2 cup</td><td>57</td><td>2</td></tr>
+                <tr><td>Pecans (whole)</td><td>1 cup</td><td>105</td><td>3 3/4</td></tr>
+                <tr><td>Pie Filling Enhancer</td><td>1/4 cup</td><td>46</td><td>1 5/8</td></tr>
+                <tr><td>Pine nuts</td><td>1/2 cup</td><td>71</td><td>2 1/2</td></tr>
+                <tr><td>Pineapple (crushed, drained)</td><td>1 cup</td><td>256</td><td>9</td></tr>
+                <tr><td>Pineapple (dried)</td><td>1/2 cup</td><td>71</td><td>2 1/2</td></tr>
+                <tr><td>Pineapple (fresh or canned, diced)</td><td>1 cup</td><td>170</td><td>6</td></tr>
+                <tr><td>Pistachio nuts (shelled)</td><td>1/2 cup</td><td>60</td><td>2 1/8</td></tr>
+                <tr><td>Pistachio Paste</td><td>1/4 cup</td><td>78</td><td>2 3/4</td></tr>
+                <tr><td>Pizza Dough Flavor</td><td>2 tablespoons</td><td>12</td><td>2/5</td></tr>
+                <tr><td>Pizza Flour Blend</td><td>1 cup</td><td>124</td><td>4 3/8</td></tr>
+                <tr><td>Pizza sauce</td><td>1/4 cup</td><td>57</td><td>2</td></tr>
+                <tr><td>Pizza Seasoning</td><td>2 tablespoons</td><td>10</td><td>1/3</td></tr>
+                <tr><td>Polenta (coarse ground cornmeal)</td><td>1 cup</td><td>163</td><td>5 3/4</td></tr>
+                <tr><td>Poppy seeds</td><td>2 tablespoons</td><td>18</td><td>5/8</td></tr>
+                <tr><td>Potato Flour</td><td>1/4 cup</td><td>46</td><td>1 5/8</td></tr>
+                <tr><td>Potato starch</td><td>1 cup</td><td>152</td><td>5 3/8</td></tr>
+                <tr><td>Pumpernickel Flour</td><td>1 cup</td><td>106</td><td>3 3/4</td></tr>
+                <tr><td>Pumpkin purée</td><td>1 cup</td><td>227</td><td>8</td></tr>
+                <tr><td>Pumpkin seeds</td><td>1/4 cup</td><td>40</td><td>1 3/8</td></tr>
+                <tr><td>Queso fresco</td><td>1/2 cup</td><td>57</td><td>2</td></tr>
+                <tr><td>Quinoa (cooked)</td><td>1 cup</td><td>184</td><td>6 1/2</td></tr>
+                <tr><td>Quinoa (whole)</td><td>1 cup</td><td>177</td><td>6 1/4</td></tr>
+                <tr><td>Quinoa flour</td><td>1 cup</td><td>110</td><td>3 7/8</td></tr>
+                <tr><td>Raisins (loose)</td><td>1 cup</td><td>149</td><td>5 1/4</td></tr>
+                <tr><td>Raisins (packed)</td><td>1/2 cup</td><td>85</td><td>3</td></tr>
+                <tr><td>Raspberries (fresh)</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
+                <tr><td>Rhubarb (sliced, 1/2" slices)</td><td>1 cup</td><td>120 to 140</td><td>4 1/4 to 5</td></tr>
+                <tr><td>Rice (long grain, dry)</td><td>1/2 cup</td><td>99</td><td>3 1/2</td></tr>
+                <tr><td>Rice flour (white)</td><td>1 cup</td><td>142</td><td>5</td></tr>
+                <tr><td>Rice Krispies</td><td>1 cup</td><td>28</td><td>1</td></tr>
+                <tr><td>Rye Bread Improver</td><td>2 tablespoons</td><td>14</td><td>1/2</td></tr>
+                <tr><td>Rye Chops</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
+                <tr><td>Rye flakes</td><td>1 cup</td><td>124</td><td>4 3/8</td></tr>
+                <tr><td>Rye Flour Blend</td><td>1 cup</td><td>106</td><td>3 3/4</td></tr>
+                <tr><td>Salt (Kosher, Diamond Crystal)</td><td>1 tablespoon</td><td>8</td><td>1/4</td></tr>
+                <tr><td>Salt (Kosher, Morton's)</td><td>1 tablespoon</td><td>16</td><td>1/2</td></tr>
+                <tr><td>Salt (table)</td><td>1 tablespoon</td><td>18</td><td>2/3</td></tr>
+                <tr><td>Scallions (sliced)</td><td>1 cup</td><td>64</td><td>2 1/4</td></tr>
+                <tr><td>Self-Rising Flour</td><td>1 cup</td><td>113</td><td>4</td></tr>
+                <tr><td>Semolina Flour</td><td>1 cup</td><td>163</td><td>5 3/4</td></tr>
+                <tr><td>Sesame seeds</td><td>1/2 cup</td><td>71</td><td>2 1/2</td></tr>
+                <tr><td>Shallots (peeled and sliced)</td><td>1 cup</td><td>156</td><td>5 1/2</td></tr>
+                <tr><td>Six-Grain Blend</td><td>1 cup</td><td>128</td><td>4 1/2</td></tr>
+                <tr><td>Snow White Non-Melting Topping Sugar</td><td>1/2 cup</td><td>57</td><td>2</td></tr>
+                <tr><td>Sorghum flour</td><td>1 cup</td><td>138</td><td>4 7/8</td></tr>
+                <tr><td>Sour cream</td><td>1 cup</td><td>227</td><td>8</td></tr>
+                <tr><td>Sourdough starter</td><td>1 cup</td><td>227 to 241</td><td>8 to 8 1/2</td></tr>
+                <tr><td>Soy flour</td><td>1/4 cup</td><td>35</td><td>1 1/4</td></tr>
+                <tr><td>Sparkling Sugar</td><td>1/4 cup</td><td>57</td><td>2</td></tr>
+                <tr><td>Spelt Flour</td><td>1 cup</td><td>99</td><td>3 1/2</td></tr>
+                <tr><td>Sprouted Wheat Flour</td><td>1 cup</td><td>113</td><td>4</td></tr>
+                <tr><td>Steel cut oats</td><td>1/2 cup</td><td>70</td><td>2 1/2</td></tr>
+                <tr><td>Sticky Bun Sugar</td><td>1 cup</td><td>99</td><td>3 1/2</td></tr>
+                <tr><td>Strawberries (fresh sliced)</td><td>1 cup</td><td>167</td><td>5 7/8</td></tr>
+                <tr><td>Sugar (granulated white)</td><td>1 cup</td><td>198</td><td>7</td></tr>
+                <tr><td>Sugar substitute (Splenda)</td><td>1 cup</td><td>25</td><td>7/8</td></tr>
+                <tr><td>Sundried tomatoes (dry pack)</td><td>1 cup</td><td>170</td><td>6</td></tr>
+                <tr><td>Sunflower seeds</td><td>1/4 cup</td><td>35</td><td>1 1/4</td></tr>
+                <tr><td>Super 10 Blend</td><td>1 cup</td><td>106</td><td>3 3/4</td></tr>
+                <tr><td>Swedish Pearl Sugar</td><td>1/4 cup</td><td>49</td><td>1 3/4</td></tr>
+                <tr><td>Sweetened condensed coconut milk</td><td>1 cup</td><td>288</td><td>10 1/8</td></tr>
+                <tr><td>Sweetened condensed milk</td><td>1/4 cup</td><td>78</td><td>2 3/4</td></tr>
+                <tr><td>Tahini paste</td><td>1/2 cup</td><td>128</td><td>4 1/2</td></tr>
+                <tr><td>Tapioca (quick cooking)</td><td>2 tablespoons</td><td>21</td><td>3/4</td></tr>
+                <tr><td>Tapioca starch or flour</td><td>1 cup</td><td>113</td><td>4</td></tr>
+                <tr><td>Teff flour</td><td>1 cup</td><td>135</td><td>4 3/4</td></tr>
+                <tr><td>The Works Bread Topping</td><td>1/4 cup</td><td>35</td><td>1 1/4</td></tr>
+                <tr><td>Toasted Almond Flour</td><td>1 cup</td><td>96</td><td>3 3/8</td></tr>
+                <tr><td>Toffee chunks</td><td>1 cup</td><td>156</td><td>5 1/2</td></tr>
+                <tr><td>Tomato paste</td><td>2 tablespoons</td><td>29</td><td>1</td></tr>
+                <tr><td>Tropical Fruit Blend</td><td>1 cup</td><td>128 to 142</td><td>4 1/2 to 5</td></tr>
+                <tr><td>Turbinado sugar (raw)</td><td>1 cup</td><td>180</td><td>6 3/8</td></tr>
+                <tr><td>Unbleached Cake Flour</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
+                <tr><td>Vanilla Extract</td><td>1 tablespoon</td><td>14</td><td>1/2</td></tr>
+                <tr><td>Vegetable oil</td><td>1 cup</td><td>198</td><td>7</td></tr>
+                <tr><td>Vegetable shortening</td><td>1/4 cup</td><td>46</td><td>1 5/8</td></tr>
+                <tr><td>Vital Wheat Gluten</td><td>2 tablespoons</td><td>18</td><td>5/8</td></tr>
+                <tr><td>Walnuts (chopped)</td><td>1 cup</td><td>113</td><td>4</td></tr>
+                <tr><td>Walnuts (whole)</td><td>1/2 cup</td><td>64</td><td>2 1/4</td></tr>
+                <tr><td>Water</td><td>1 cup</td><td>227</td><td>8</td></tr>
+                <tr><td>Wheat berries (red)</td><td>1 cup</td><td>184</td><td>6 1/2</td></tr>
+                <tr><td>Wheat bran</td><td>1/2 cup</td><td>32</td><td>1 1/8</td></tr>
+                <tr><td>Wheat germ</td><td>1/4 cup</td><td>28</td><td>1</td></tr>
+                <tr><td>White Chocolate Chips</td><td>1 cup</td><td>170</td><td>6</td></tr>
+                <tr><td>White Rye Flour</td><td>1 cup</td><td>106</td><td>3 3/4</td></tr>
+                <tr><td>Whole Grain Flour Blend</td><td>1 cup</td><td>113</td><td>4</td></tr>
+                <tr><td>Whole Wheat Flour (Premium 100%)</td><td>1 cup</td><td>113</td><td>4</td></tr>
+                <tr><td>Whole Wheat Pastry Flour / Graham Flour</td><td>1 cup</td><td>96</td><td>3 3/8</td></tr>
+                <tr><td>Yeast (instant)</td><td>2 teaspoons</td><td>6</td><td>1/5</td></tr>
+                <tr><td>Yeast (instant)</td><td>2 1/4 teaspoons</td><td>7</td><td>1/4</td></tr>
+                <tr><td>Yeast (instant)</td><td>1 tablespoon</td><td>9</td><td>1/3</td></tr>
+                <tr><td>Yogurt</td><td>1 cup</td><td>227</td><td>8</td></tr>
+                <tr><td>Yuletide Cheer Fruit Blend</td><td>1 cup</td><td>130</td><td>4 1/2</td></tr>
+                <tr><td>Zucchini (shredded)</td><td>1 cup</td><td>121 to 150</td><td>4 1/4 to 5 1/4</td></tr>
+            </tbody>
+        </table>
+
+        <h2>Notes</h2>
+        <ul>
+            <li>Weights are approximate and assume ingredients are measured by the standard scoop-and-level method (not sifted unless noted).</li>
+            <li>For best baking results, weigh ingredients rather than measuring by volume — especially flours, which can vary by 20% or more depending on how they're scooped and settled.</li>
+            <li>1 US cup = 236.6 ml; 1 US tablespoon = 14.8 ml; 1 US teaspoon = 4.9 ml.</li>
+        </ul>
+    </article>
+
+    <footer class="text-center text-muted">
+        <hr>
+        <p class="text-small">Ingredient weights reference</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('ingredientSearch');
+            const rows = document.querySelectorAll('#ingredientTable tr');
+            const resultCount = document.getElementById('resultCount');
+            const totalCount = rows.length;
+
+            function updateCount(visible) {
+                if (searchInput.value.trim() === '') {
+                    resultCount.textContent = totalCount + ' ingredients';
+                } else {
+                    resultCount.textContent = visible + ' of ' + totalCount + ' ingredients';
+                }
+            }
+
+            searchInput.addEventListener('input', function() {
+                const term = searchInput.value.toLowerCase().trim();
+                let visible = 0;
+                rows.forEach(function(row) {
+                    const text = row.textContent.toLowerCase();
+                    if (term === '' || text.includes(term)) {
+                        row.classList.remove('hidden');
+                        visible++;
+                    } else {
+                        row.classList.add('hidden');
+                    }
+                });
+                updateCount(visible);
+            });
+
+            updateCount(totalCount);
+        });
+    </script>
+</body>
+</html>
