@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>finnCAD v0.13.0</title>
+  <title>finnCAD v0.13.1</title>
   <style>
 :root {
   font-family: Arial, Helvetica, sans-serif;
@@ -197,7 +197,7 @@ kbd { font-size: 9px; opacity: .65; }
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">finnCAD (Prototype) <span class="version">v0.13.0</span></div>
+    <div class="brand">finnCAD Prototype <span class="version">v0.13.1</span></div>
     <div class="tools">
       <button id="newBtn">New</button>
       <button id="openBtn">Open</button>
@@ -256,7 +256,7 @@ kbd { font-size: 9px; opacity: .65; }
 
   <div id="help" class="help">
     <strong>Prototype controls:</strong>
-    Ctrl+N/O/S = new/open/save · drawings recover automatically after refresh · select an object, then click a white grip to edit it · L = line · PL = polyline · REC = rectangle · C = circle; choose 2P/3P before the first point or D after the center · A = three-point arc · M = move · CO = copy · RO = rotate · SC = uniform scale · type R after the RO/SC base point for reference mode · O = offset · TR = trim · EX = extend · use the Layers panel to create, rename, color, hide, lock, assign, and safely delete layers · Enter/right-click/Esc finishes or cancels the current edit · F8 = ortho · Ctrl+Z/Y = undo/redo
+    Ctrl+N/O/S = new/open/save · drawings recover automatically after refresh · select an object, then click a white grip to edit it · L = line · PL = polyline · REC = rectangle · C = circle; choose 2P/3P before the first point or D after the center · A = three-point arc · M = move · CO = copy · RO = rotate · SC = uniform scale · type R after the RO/SC base point for reference mode · O = offset · TR = trim · EX = extend · use the Layers panel to create, rename, color, hide, lock, assign, and safely delete layers · Enter or Space finishes; Esc cancels and discards · Enter/Space at an empty prompt repeats the last command · type C to close or U to step back during a line or polyline · distances accept 5'6-1/2" and 3-1/2 · F8 = ortho · Ctrl+Z/Y = undo/redo
   </div>
 
   <noscript><div class="fatal-error">JavaScript is disabled. This prototype cannot run until JavaScript is enabled.</div></noscript>
@@ -303,6 +303,7 @@ kbd { font-size: 9px; opacity: .65; }
     documentDirty: false,
     selected: new Set(),
     mode: 'SELECT',
+    lastCommand: null,
     currentPoints: [],
     transform: null,
     offset: null,
@@ -853,12 +854,21 @@ kbd { font-size: 9px; opacity: .65; }
       autosaveTimer = null;
       try {
         window.localStorage.setItem(AUTOSAVE_KEY, exportDocumentText(false));
+        // Only clear the dirty flag once the write actually succeeded, so a failed
+        // autosave does not also suppress the beforeunload save.
+        state.documentDirty = false;
         setFileStatus(`${state.drawingName} · Autosaved`);
       } catch {
         setFileStatus('Autosave unavailable — use Save', true);
       }
-      state.documentDirty = false;
     }, 250);
+  }
+
+  // Single place that marks the document changed. Autosave is driven from here
+  // rather than from draw(), so persistence is no longer tied to the render loop.
+  function markDirty() {
+    state.documentDirty = true;
+    scheduleAutosave();
   }
 
   function applyDocument(documentData, dirty = true) {
@@ -873,6 +883,7 @@ kbd { font-size: 9px; opacity: .65; }
     state.history = [];
     state.future = [];
     state.documentDirty = dirty;
+    if (dirty) scheduleAutosave();
     setMode('SELECT');
     renderLayerManager();
     zoomExtents();
@@ -892,13 +903,21 @@ kbd { font-size: 9px; opacity: .65; }
     return true;
   }
 
-  function restoreAutosave() {
+  function restoreAutosave(skipConfirmation = false) {
     try {
       for (const key of [AUTOSAVE_KEY, ...LEGACY_AUTOSAVE_KEYS]) {
         const text = window.localStorage.getItem(key);
         if (!text) continue;
         const parsed = parseDocumentText(text);
         if (parsed.error) continue;
+        // Restoring without asking silently replaced a deliberately blank session
+        // with the previous drawing, and the single autosave slot meant the
+        // discarded one was then overwritten.
+        const count = parsed.document.entities.length;
+        if (!skipConfirmation && !window.confirm(
+          `Recover the unsaved drawing "${parsed.document.name}" (${count} ${count === 1 ? 'object' : 'objects'})?\n\n` +
+          'Choose Cancel to start a blank drawing. The recovered copy stays available until the next change is autosaved.',
+        )) return false;
         applyDocument(parsed.document, false);
         if (key !== AUTOSAVE_KEY) {
           window.localStorage.setItem(AUTOSAVE_KEY, exportDocumentText(false));
@@ -928,7 +947,7 @@ kbd { font-size: 9px; opacity: .65; }
     state.selected.clear();
     state.history = [];
     state.future = [];
-    state.documentDirty = true;
+    markDirty();
     setMode('SELECT');
     renderLayerManager();
     zoomExtents();
@@ -972,7 +991,7 @@ kbd { font-size: 9px; opacity: .65; }
     state.history.push(editSnapshot());
     if (state.history.length > 100) state.history.shift();
     state.future.length = 0;
-    state.documentDirty = true;
+    markDirty();
   }
 
   function undo() {
@@ -980,7 +999,7 @@ kbd { font-size: 9px; opacity: .65; }
     state.future.push(editSnapshot());
     restoreEditSnapshot(state.history.pop());
     state.selected.clear();
-    state.documentDirty = true;
+    markDirty();
     renderLayerManager();
     draw();
   }
@@ -990,7 +1009,7 @@ kbd { font-size: 9px; opacity: .65; }
     state.history.push(editSnapshot());
     restoreEditSnapshot(state.future.pop());
     state.selected.clear();
-    state.documentDirty = true;
+    markDirty();
     renderLayerManager();
     draw();
   }
@@ -1016,9 +1035,17 @@ kbd { font-size: 9px; opacity: .65; }
   function updatePrompt(extra = '') {
     let p = 'Command:';
     if (state.mode === 'LINE') {
-      p = state.currentPoints.length ? 'LINE — Specify next point or distance:' : 'LINE — Specify first point:';
+      p = state.currentPoints.length >= 3
+        ? 'LINE — Specify next point, distance, or [Close/Undo]:'
+        : state.currentPoints.length
+          ? 'LINE — Specify next point, distance, or [Undo]:'
+          : 'LINE — Specify first point:';
     } else if (state.mode === 'PLINE') {
-      p = state.currentPoints.length ? 'PLINE — Specify next point, distance, or Enter to finish:' : 'PLINE — Specify start point:';
+      p = state.currentPoints.length >= 3
+        ? 'PLINE — Specify next point, distance, or [Close/Undo]; Enter to finish:'
+        : state.currentPoints.length
+          ? 'PLINE — Specify next point, distance, or [Undo]; Enter to finish:'
+          : 'PLINE — Specify start point:';
     } else if (state.mode === 'RECTANGLE') {
       p = state.currentPoints.length ? 'RECTANGLE — Specify opposite corner:' : 'RECTANGLE — Specify first corner:';
     } else if (state.mode === 'CIRCLE') {
@@ -1185,14 +1212,34 @@ kbd { font-size: 9px; opacity: .65; }
       .filter(point => pointOnCircularEntity(point, first) && pointOnCircularEntity(point, second));
   }
 
+  function segmentWithinRadius(a, b, p, radius) {
+    const closest = pointOnSegmentClosest(p, a, b);
+    return dist(p, closest) <= radius;
+  }
+
   function getSnap(rawWorld, basePoint = null, excludedEntityId = null) {
     if (!state.snapEnabled) return null;
     const maxPx = 10;
     const candidates = [];
-    const segs = snapSegments(excludedEntityId);
-    const circularEntities = state.entities.filter(entity =>
-      isEntityVisible(entity) && entity.id !== excludedEntityId && ['CIRCLE', 'ARC'].includes(entity.type),
-    );
+
+    // Aperture prefilter. Every snap candidate this function can return lies either
+    // ON a segment/curve or AT a circle center, and is discarded below unless it is
+    // within maxPx of the cursor. So geometry that never passes within the aperture
+    // cannot contribute a surviving candidate, and can be dropped before the
+    // O(n^2) intersection pass. This is an exact filter, not an approximation.
+    const cursor = screenToWorld(state.mouseScreen);
+    const aperture = maxPx / state.view.scale + 1e-9;
+
+    const segs = snapSegments(excludedEntityId)
+      .filter(([a, b]) => segmentWithinRadius(a, b, cursor, aperture));
+    const circularEntities = state.entities.filter(entity => {
+      if (!isEntityVisible(entity) || entity.id === excludedEntityId) return false;
+      if (!['CIRCLE', 'ARC'].includes(entity.type)) return false;
+      const radial = dist(cursor, entity.center);
+      // Near the curve (endpoints, midpoint, quadrants, intersections, perpendicular)
+      // or near the center (CENTER snap, which sits far from the drawn curve).
+      return Math.abs(radial - entity.radius) <= aperture || radial <= aperture;
+    });
 
     for (const [a, b] of segs) {
       candidates.push({ type: 'END', p: a });
@@ -1329,18 +1376,20 @@ kbd { font-size: 9px; opacity: .65; }
     return true;
   }
 
-  function addPolyline(points) {
+  function addPolyline(points, forceClosed = false) {
     if (points.length < 2 || !currentLayerIsEditable()) return false;
     const storedPoints = points.map(point => ({ ...point }));
     const closesAtStart = storedPoints.length >= 4 && dist(storedPoints[0], storedPoints[storedPoints.length - 1]) < 1e-7;
     if (closesAtStart) storedPoints.pop();
+    const closed = forceClosed || closesAtStart;
+    if (closed && storedPoints.length < 3) return false;
     pushHistory();
     state.entities.push({
       id: state.nextId++,
       type: 'PLINE',
       layerId: state.currentLayerId,
       points: storedPoints,
-      closed: closesAtStart,
+      closed,
     });
     return true;
   }
@@ -2468,9 +2517,10 @@ kbd { font-size: 9px; opacity: .65; }
     if (state.mode === 'LINE') {
       if (!state.currentPoints.length) {
         state.currentPoints.push({ ...p });
-      } else {
-        addLine(state.currentPoints[0], p);
-        state.currentPoints = [{ ...p }];
+      } else if (addLine(state.currentPoints[state.currentPoints.length - 1], p)) {
+        // The whole run is retained (not just the last point) so that Close and
+        // Undo have the chain available.
+        state.currentPoints.push({ ...p });
       }
       updatePrompt();
     } else if (state.mode === 'PLINE') {
@@ -2614,26 +2664,133 @@ kbd { font-size: 9px; opacity: .65; }
     }
   }
 
-  function parseDistance(text) {
-    const s = text.trim().toLowerCase().replace(/\s+/g, '');
+  // C — close the run back to its start point, then end the command.
+  function closeCurrentPath() {
+    if (state.mode === 'PLINE') {
+      if (state.currentPoints.length < 3) {
+        updatePrompt('Specify at least three points before closing.');
+        return true;
+      }
+      if (addPolyline(state.currentPoints, true)) {
+        state.currentPoints = [];
+        setMode('SELECT');
+      } else {
+        updatePrompt('Could not close this polyline.');
+      }
+      return true;
+    }
+    if (state.mode === 'LINE') {
+      if (state.currentPoints.length < 3) {
+        updatePrompt('Draw at least two segments before closing.');
+        return true;
+      }
+      const start = state.currentPoints[0];
+      const last = state.currentPoints[state.currentPoints.length - 1];
+      if (!addLine(last, start)) {
+        updatePrompt('Could not close this line run.');
+        return true;
+      }
+      state.currentPoints = [];
+      setMode('SELECT');
+      return true;
+    }
+    return false;
+  }
+
+  // U — step back one point without leaving the command.
+  function undoLastPoint() {
+    if (state.mode === 'PLINE') {
+      if (state.currentPoints.length < 1) {
+        updatePrompt('Nothing to undo in this polyline.');
+        return true;
+      }
+      state.currentPoints.pop();
+      updatePrompt();
+      draw();
+      return true;
+    }
+    if (state.mode === 'LINE') {
+      if (state.currentPoints.length < 2) {
+        // Only the start point exists; nothing has been committed yet.
+        if (state.currentPoints.length) state.currentPoints.pop();
+        else updatePrompt('Nothing to undo in this line run.');
+        updatePrompt();
+        draw();
+        return true;
+      }
+      // addLine() pushed a snapshot before creating the segment, so popping and
+      // restoring it removes exactly that segment and rewinds nextId with it.
+      const snapshot = state.history.pop();
+      if (snapshot) {
+        restoreEditSnapshot(snapshot);
+        state.future.length = 0;
+        markDirty();
+      }
+      state.currentPoints.pop();
+      state.selected.clear();
+      updatePrompt();
+      draw();
+      return true;
+    }
+    return false;
+  }
+
+  // Accepts a decimal, a bare fraction, or a mixed number: 3.5 / 1/2 / 3 1/2 / 3-1/2
+  function parseMagnitude(text) {
+    const s = String(text).trim();
     if (!s) return null;
 
-    // Drawing units are inches in this prototype.
-    const ftIn = s.match(/^([+-]?)(\d+(?:\.\d+)?)'(?:-?(\d+(?:\.\d+)?)"?)?$/);
-    if (ftIn) {
-      const sign = ftIn[1] === '-' ? -1 : 1;
-      return sign * (Number(ftIn[2]) * 12 + Number(ftIn[3] || 0));
+    const mixed = s.match(/^(\d+)[\s-](\d+)\/(\d+)$/);
+    if (mixed) {
+      const denominator = Number(mixed[3]);
+      return denominator > 0 ? Number(mixed[1]) + Number(mixed[2]) / denominator : null;
     }
 
-    const inches = s.match(/^(-?\d+(?:\.\d+)?)"$/);
-    if (inches) return Number(inches[1]);
+    const fraction = s.match(/^(\d+)\/(\d+)$/);
+    if (fraction) {
+      const denominator = Number(fraction[2]);
+      return denominator > 0 ? Number(fraction[1]) / denominator : null;
+    }
 
-    const bare = Number(s);
-    return Number.isFinite(bare) ? bare : null;
+    return /^\d+(?:\.\d+)?$/.test(s) ? Number(s) : null;
+  }
+
+  function parseDistance(text) {
+    // Drawing units are inches in this prototype. Whitespace is collapsed but NOT
+    // removed, because "3 1/2" and "31/2" are different lengths.
+    let s = String(text).trim().toLowerCase().replace(/\s+/g, ' ');
+    if (!s) return null;
+
+    let sign = 1;
+    if (s.startsWith('-')) { sign = -1; s = s.slice(1).trim(); }
+    else if (s.startsWith('+')) { s = s.slice(1).trim(); }
+    if (!s) return null;
+
+    // Feet, optionally with inches: 5'   5'6"   5'-6"   5'-6 1/2"   5 ft 6 in
+    const ftIn = s.match(/^([\d./ -]*\d)\s*(?:'|ft)\s*(?:[-\s]*(.+?)\s*(?:"|in)?)?$/);
+    if (ftIn) {
+      const feet = parseMagnitude(ftIn[1]);
+      if (feet === null) return null;
+      const inchPart = ftIn[2] === undefined ? 0 : parseMagnitude(ftIn[2]);
+      if (inchPart === null) return null;
+      return sign * (feet * 12 + inchPart);
+    }
+
+    // Inches: 6"   6 1/2"   1/2"   6 in
+    const inches = s.match(/^(.+?)\s*(?:"|in)$/);
+    if (inches) {
+      const value = parseMagnitude(inches[1]);
+      if (value !== null) return sign * value;
+    }
+
+    // Bare number or bare fraction, interpreted in drawing units.
+    const bare = parseMagnitude(s);
+    return bare === null ? null : sign * bare;
   }
 
   function parsePoint(text, basePoint) {
-    const s = text.trim().replace(/\s+/g, '');
+    // Inner whitespace is preserved so parseDistance can see mixed numbers.
+    const s = text.trim();
     if (!s) return null;
 
     const relative = s.startsWith('@');
@@ -2644,7 +2801,7 @@ kbd { font-size: 9px; opacity: .65; }
     const polarSeparator = body.lastIndexOf('<');
     if (polarSeparator > 0) {
       const distance = parseDistance(body.slice(0, polarSeparator));
-      const angle = Number(body.slice(polarSeparator + 1));
+      const angle = Number(body.slice(polarSeparator + 1).trim());
       if (distance === null || !Number.isFinite(angle)) return null;
       const radians = angle * Math.PI / 180;
       return {
@@ -2906,6 +3063,45 @@ kbd { font-size: 9px; opacity: .65; }
     return inner.minX >= outer.minX && inner.maxX <= outer.maxX && inner.minY >= outer.minY && inner.maxY <= outer.maxY;
   }
 
+  function pointInBox(p, box) {
+    return p.x >= box.minX && p.x <= box.maxX && p.y >= box.minY && p.y <= box.maxY;
+  }
+
+  function boxEdges(box) {
+    const corners = [
+      { x: box.minX, y: box.minY },
+      { x: box.maxX, y: box.minY },
+      { x: box.maxX, y: box.maxY },
+      { x: box.minX, y: box.maxY },
+    ];
+    return [
+      [corners[0], corners[1]],
+      [corners[1], corners[2]],
+      [corners[2], corners[3]],
+      [corners[3], corners[0]],
+    ];
+  }
+
+  // A crossing window must select geometry the window actually touches. Testing
+  // bounding boxes selected any diagonal line whose box overlapped the window,
+  // and any circle whose box corner overlapped it, even when the window sat in
+  // empty space.
+  function entityCrossesBox(entity, box) {
+    const bounds = entityBBox(entity);
+    if (!bounds || !boxesOverlap(box, bounds)) return false;
+    if (boxContains(box, bounds)) return true;
+
+    const edges = boxEdges(box);
+    if (entity.type === 'CIRCLE' || entity.type === 'ARC') {
+      return edges.some(([a, b]) => segmentCircularIntersections(a, b, entity).length > 0);
+    }
+    for (const [a, b] of entitySegments(entity)) {
+      if (pointInBox(a, box) || pointInBox(b, box)) return true;
+      if (edges.some(([c, d]) => segmentIntersection(a, b, c, d))) return true;
+    }
+    return false;
+  }
+
   function finishBoxSelection(add = false) {
     const ds = state.dragSelect;
     if (!ds) return;
@@ -2918,7 +3114,11 @@ kbd { font-size: 9px; opacity: .65; }
       if (!isEntityEditable(e)) continue;
       const bb = entityBBox(e);
       if (!bb) continue;
-      if ((crossing && boxesOverlap(box, bb)) || (!crossing && boxContains(box, bb))) state.selected.add(e.id);
+      // Window selection stays a bbox containment test: these bounding boxes are
+      // tight (arcs include their quadrant extremes), so bbox-inside-window is
+      // equivalent to geometry-inside-window.
+      const hit = crossing ? entityCrossesBox(e, box) : boxContains(box, bb);
+      if (hit) state.selected.add(e.id);
     }
     state.dragSelect = null;
     if (state.transform?.stage === 'SELECT') updatePrompt();
@@ -3192,7 +3392,7 @@ kbd { font-size: 9px; opacity: .65; }
     if (!['LINE', 'PLINE', 'RECTANGLE', 'CIRCLE', 'ARC'].includes(state.mode) || !state.currentPoints.length) return;
     const p = getActivePoint();
     if (state.mode === 'LINE') {
-      drawEntity({type:'LINE',a:state.currentPoints[0],b:p}, true);
+      drawEntity({type:'LINE',a:state.currentPoints[state.currentPoints.length - 1],b:p}, true);
     } else if (state.mode === 'PLINE') {
       const pts = [...state.currentPoints, p];
       drawEntity({type:'PLINE',points:pts}, true);
@@ -3287,7 +3487,9 @@ kbd { font-size: 9px; opacity: .65; }
     ctx.setLineDash([]);
   }
 
-  function draw() {
+  function render() {
+    state.activePoint = getActivePoint();
+    coordsEl.innerHTML = `X: ${state.activePoint.x.toFixed(2)}&nbsp;&nbsp;Y: ${state.activePoint.y.toFixed(2)}`;
     ctx.clearRect(0,0,canvas.clientWidth,canvas.clientHeight);
     ctx.fillStyle = '#111';
     ctx.fillRect(0,0,canvas.clientWidth,canvas.clientHeight);
@@ -3299,7 +3501,26 @@ kbd { font-size: 9px; opacity: .65; }
     drawSelectionBox();
     drawSnap();
     if (assignLayerBtn) assignLayerBtn.disabled = !state.selected.size;
-    scheduleAutosave();
+  }
+
+  // Repaint at most once per animation frame. mousemove can fire several times
+  // between frames; without this, every one of them paid for a full redraw.
+  let frameHandle = null;
+  function draw() {
+    if (frameHandle !== null) return;
+    frameHandle = window.requestAnimationFrame(() => {
+      frameHandle = null;
+      render();
+    });
+  }
+
+  // For code paths that must observe the canvas synchronously (tests, export).
+  function drawNow() {
+    if (frameHandle !== null) {
+      window.cancelAnimationFrame(frameHandle);
+      frameHandle = null;
+    }
+    render();
   }
 
   function canvasPoint(ev) {
@@ -3325,8 +3546,6 @@ kbd { font-size: 9px; opacity: .65; }
     }
 
     if (state.dragSelect) state.dragSelect.end = { ...state.mouseScreen };
-    state.activePoint = getActivePoint();
-    coordsEl.innerHTML = `X: ${state.activePoint.x.toFixed(2)}&nbsp;&nbsp;Y: ${state.activePoint.y.toFixed(2)}`;
     draw();
   });
 
@@ -3436,9 +3655,10 @@ kbd { font-size: 9px; opacity: .65; }
 
     if (ev.key === 'Escape') {
       ev.preventDefault();
-      if (state.mode === 'PLINE' && state.currentPoints.length >= 2) {
-        finishCurrent();
-      } else if (state.mode !== 'SELECT' || state.currentPoints.length) {
+      // Esc always CANCELS. It must never commit geometry — use Enter, Space,
+      // or right-click for that. Committing on Esc silently created polylines
+      // that the user had explicitly tried to abandon.
+      if (state.mode !== 'SELECT' || state.currentPoints.length) {
         state.currentPoints = [];
         setMode('SELECT');
       } else {
@@ -3458,6 +3678,12 @@ kbd { font-size: 9px; opacity: .65; }
       ev.preventDefault(); deleteSelected(); return;
     }
 
+    if (ev.key === ' ' && document.activeElement !== commandInput) {
+      ev.preventDefault();
+      submitCommandInput();
+      return;
+    }
+
     if (document.activeElement !== commandInput && !ev.ctrlKey && !ev.metaKey && !ev.altKey && ev.key.length === 1) {
       commandInput.focus();
       commandInput.value += ev.key;
@@ -3475,8 +3701,24 @@ kbd { font-size: 9px; opacity: .65; }
       else if (state.mode === 'GRIP') setMode('SELECT');
       else if (TRANSFORM_COMMANDS.includes(state.mode) && state.transform?.stage === 'SELECT') acceptTransformSelection();
       else if (state.mode === 'OFFSET' && state.offset?.stage === 'SOURCE') acceptOffsetSource();
+      // Enter or Space at a bare Command: prompt repeats the last command.
+      else if (state.mode === 'SELECT' && state.lastCommand) startCommand(state.lastCommand);
       canvas.focus();
       return;
+    }
+
+    // Keywords that belong to LINE/PLINE must be handled before alias lookup,
+    // otherwise C resolves to CIRCLE and U is simply unknown.
+    if (['LINE', 'PLINE'].includes(state.mode) && state.currentPoints.length) {
+      const keyword = raw.toUpperCase();
+      if ((keyword === 'C' || keyword === 'CLOSE') && closeCurrentPath()) {
+        canvas.focus();
+        return;
+      }
+      if ((keyword === 'U' || keyword === 'UNDO') && undoLastPoint()) {
+        canvas.focus();
+        return;
+      }
     }
 
     if (commitCircleKeyword(raw)) {
@@ -3517,27 +3759,46 @@ kbd { font-size: 9px; opacity: .65; }
       Z:'ZOOMEXTENTS', ZE:'ZOOMEXTENTS',
     };
     const resolved = aliases[cmd];
-    if (resolved === 'ZOOMEXTENTS') zoomExtents();
-    else if (TRANSFORM_COMMANDS.includes(resolved)) startTransform(resolved);
-    else if (resolved === 'OFFSET') startOffset();
-    else if (resolved === 'TRIM' || resolved === 'EXTEND') startEdgeEdit(resolved);
-    else if (resolved) activateDrawingMode(resolved);
-    else updatePrompt(`Unknown command: ${raw}`);
+
+    // Do not let a command alias silently discard geometry that is mid-creation.
+    // Previously, typing C during a polyline resolved to CIRCLE and setMode()
+    // wiped currentPoints with no warning.
+    if (resolved && resolved !== state.mode && state.currentPoints.length) {
+      updatePrompt(`Finish ${state.mode} with Enter/Space or cancel with Esc before starting ${resolved}.`);
+      canvas.focus();
+      return;
+    }
+
+    if (!resolved) updatePrompt(`Unknown command: ${raw}`);
+    else startCommand(resolved);
     canvas.focus();
   }
 
+  function startCommand(name) {
+    if (name === 'ZOOMEXTENTS') { zoomExtents(); return true; }
+    let started;
+    if (TRANSFORM_COMMANDS.includes(name)) { startTransform(name); started = true; }
+    else if (name === 'OFFSET') { startOffset(); started = true; }
+    else if (name === 'TRIM' || name === 'EXTEND') { startEdgeEdit(name); started = true; }
+    else started = activateDrawingMode(name);
+    // SELECT is a resting state, not a command worth repeating.
+    if (started && name !== 'SELECT') state.lastCommand = name;
+    return started;
+  }
+
   commandInput.addEventListener('keydown', ev => {
-    if (ev.key !== 'Enter') return;
+    // Space is a command terminator in AutoCAD and QCAD, so it must never be a
+    // literal character here. Mixed numbers are therefore typed with a hyphen —
+    // 5'6-1/2" — exactly as AutoCAD requires, and parseDistance accepts both
+    // separators so pasted values still work.
+    if (ev.key !== 'Enter' && ev.key !== ' ') return;
     ev.preventDefault();
     ev.stopPropagation();
     submitCommandInput();
   });
 
   document.querySelectorAll('[data-command]').forEach(btn => btn.addEventListener('click', () => {
-    if (TRANSFORM_COMMANDS.includes(btn.dataset.command)) startTransform(btn.dataset.command);
-    else if (btn.dataset.command === 'OFFSET') startOffset();
-    else if (btn.dataset.command === 'TRIM' || btn.dataset.command === 'EXTEND') startEdgeEdit(btn.dataset.command);
-    else activateDrawingMode(btn.dataset.command);
+    startCommand(btn.dataset.command);
     canvas.focus();
   }));
   document.getElementById('undoBtn').addEventListener('click', undo);
@@ -3630,7 +3891,13 @@ kbd { font-size: 9px; opacity: .65; }
     exportDocumentText,
     importDocumentText: loadDocumentText,
     newDrawing: () => newDrawing(true),
-    restoreAutosave,
+    restoreAutosave: () => restoreAutosave(true),
+    closeCurrentPath,
+    undoLastPoint,
+    startCommand,
+    drawNow,
+    parseDistance,
+    get lastCommand() { return state.lastCommand; },
     createLayer,
     renameLayer,
     setLayerColor,
