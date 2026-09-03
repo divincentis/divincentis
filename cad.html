@@ -1,0 +1,3647 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>finnCAD v0.13.0</title>
+  <style>
+:root {
+  font-family: Arial, Helvetica, sans-serif;
+  color: #e8e8e8;
+  background: #151515;
+}
+
+* { box-sizing: border-box; }
+html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+body { display: grid; grid-template-rows: 44px 1fr 36px; }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 0 10px;
+  background: #252525;
+  border-bottom: 1px solid #3a3a3a;
+  overflow-x: auto;
+}
+.brand { font-weight: 700; white-space: nowrap; }
+.version { color: #9e9e9e; font-size: 11px; font-weight: 400; }
+.tools { display: flex; flex: 0 0 auto; gap: 5px; }
+button {
+  border: 1px solid #4a4a4a;
+  background: #303030;
+  color: #e7e7e7;
+  border-radius: 3px;
+  padding: 5px 9px;
+  cursor: pointer;
+}
+button:hover { background: #3a3a3a; }
+button.active, button.on { background: #565656; border-color: #888; }
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 274px;
+  min-height: 0;
+  background: #111;
+}
+.canvas-shell { position: relative; min-width: 0; min-height: 0; }
+#cadCanvas { display: block; width: 100%; height: 100%; cursor: crosshair; outline: none; }
+
+.layer-panel {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  overflow: hidden;
+  background: #202020;
+  border-left: 1px solid #3a3a3a;
+  font-size: 12px;
+}
+.layer-heading { display: flex; align-items: center; justify-content: space-between; }
+.layer-heading strong { font-size: 13px; }
+.layer-add { padding: 3px 8px; font-size: 11px; }
+.layer-label { color: #aaa; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; }
+#currentLayerSelect {
+  width: 100%;
+  padding: 5px 6px;
+  color: #eee;
+  background: #303030;
+  border: 1px solid #4a4a4a;
+  border-radius: 3px;
+}
+.assign-layer { width: 100%; padding: 5px 6px; font-size: 11px; }
+.assign-layer:disabled { opacity: .45; cursor: default; }
+.layer-list {
+  min-height: 0;
+  overflow-y: auto;
+  border-top: 1px solid #363636;
+}
+.layer-row {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 28px 40px 30px 30px;
+  gap: 4px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid #303030;
+}
+.layer-row.current { background: rgba(86, 214, 255, .06); }
+.layer-row.hidden { opacity: .58; }
+.layer-row button { padding: 4px 3px; font-size: 10px; }
+.layer-row button:disabled { opacity: .3; cursor: default; }
+.layer-current { color: #777; }
+.layer-current.on { color: #56d6ff; }
+.layer-lock { font-size: 14px !important; line-height: 1; }
+.layer-delete { color: #d8a0a0; }
+.layer-name {
+  width: 100%;
+  min-width: 0;
+  padding: 4px 5px;
+  color: #e8e8e8;
+  background: #292929;
+  border: 1px solid #414141;
+  border-radius: 2px;
+  font-size: 11px;
+}
+.layer-name:disabled { color: #bbb; opacity: 1; }
+.layer-color {
+  width: 28px;
+  height: 24px;
+  padding: 1px;
+  border: 1px solid #4a4a4a;
+  background: #303030;
+  cursor: pointer;
+}
+.layer-hint { margin-top: auto; color: #888; font-size: 10px; line-height: 1.35; }
+
+.statusbar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  background: #252525;
+  border-top: 1px solid #3a3a3a;
+  font-size: 13px;
+}
+.command-wrap { display: flex; align-items: center; padding-left: 8px; min-width: 0; }
+.prompt { margin-right: 7px; white-space: nowrap; color: #cfcfcf; }
+#commandInput {
+  flex: 1;
+  min-width: 50px;
+  color: #fff;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  font-family: Consolas, monospace;
+  font-size: 13px;
+}
+#commandInput::placeholder { color: #858585; opacity: 1; }
+.toggles { display: flex; align-items: center; gap: 7px; padding-right: 8px; }
+.toggle { font-size: 11px; padding: 3px 6px; }
+kbd { font-size: 9px; opacity: .65; }
+.snap-status {
+  min-width: 34px;
+  color: #56d6ff;
+  font: 700 10px Consolas, monospace;
+  text-align: center;
+}
+.engine-status { min-width: 98px; font: 10px Consolas, monospace; text-align: center; }
+.engine-status.loading { color: #ffc857; }
+.engine-status.ready { color: #69d285; }
+.engine-status.error { color: #ff6b6b; }
+.file-status {
+  min-width: 120px;
+  max-width: 190px;
+  overflow: hidden;
+  color: #aeb8c2;
+  font: 10px Consolas, monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.file-status.error { color: #ff8b8b; }
+#coords { min-width: 150px; text-align: right; font-family: Consolas, monospace; }
+
+.help {
+  position: fixed;
+  left: 12px;
+  top: 55px;
+  max-width: 520px;
+  padding: 8px 10px;
+  background: rgba(30,30,30,.92);
+  border: 1px solid #555;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.35;
+  pointer-events: none;
+  transition: opacity .3s;
+}
+
+.fatal-error {
+  position: fixed;
+  inset: 70px auto auto 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  padding: 12px 16px;
+  color: #fff;
+  background: #8b1e1e;
+  border: 1px solid #ff8080;
+  border-radius: 4px;
+}
+
+@media (max-width: 820px) {
+  .workspace { grid-template-columns: minmax(0, 1fr) 230px; }
+  .layer-row { grid-template-columns: 22px minmax(0, 1fr) 26px 36px 28px 28px; }
+}
+
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">2D Draft Prototype <span class="version">v0.13.0</span></div>
+    <div class="tools">
+      <button id="newBtn">New</button>
+      <button id="openBtn">Open</button>
+      <button id="saveBtn">Save</button>
+      <button data-command="SELECT" class="active">Select</button>
+      <button data-command="LINE">Line (L)</button>
+      <button data-command="PLINE">Polyline (PL)</button>
+      <button data-command="RECTANGLE">Rectangle (REC)</button>
+      <button data-command="CIRCLE">Circle (C)</button>
+      <button data-command="ARC">Arc (A)</button>
+      <button data-command="MOVE">Move (M)</button>
+      <button data-command="COPY">Copy (CO)</button>
+      <button data-command="ROTATE">Rotate (RO)</button>
+      <button data-command="SCALE">Scale (SC)</button>
+      <button data-command="OFFSET">Offset (O)</button>
+      <button data-command="TRIM">Trim (TR)</button>
+      <button data-command="EXTEND">Extend (EX)</button>
+      <button id="undoBtn">Undo</button>
+      <button id="redoBtn">Redo</button>
+      <button id="fitBtn">Zoom Extents</button>
+    </div>
+    <input id="openInput" type="file" accept=".json,.draft2d.json,application/json" hidden />
+  </header>
+
+  <main class="workspace">
+    <div class="canvas-shell">
+      <canvas id="cadCanvas" tabindex="0"></canvas>
+    </div>
+    <aside class="layer-panel" aria-label="Layer manager">
+      <div class="layer-heading">
+        <strong>Layers</strong>
+        <button id="addLayerBtn" class="layer-add" title="Create a new layer">+ Add</button>
+      </div>
+      <label class="layer-label" for="currentLayerSelect">Current layer</label>
+      <select id="currentLayerSelect" aria-label="Current drawing layer"></select>
+      <button id="assignLayerBtn" class="assign-layer" title="Move selected objects to the current layer">Assign selection to current</button>
+      <div id="layerList" class="layer-list"></div>
+      <div class="layer-hint">Hidden layers do not snap or edit. Locked layers stay visible and snappable.</div>
+    </aside>
+  </main>
+
+  <footer class="statusbar">
+    <div class="command-wrap">
+      <span class="prompt" id="prompt">Command:</span>
+      <input id="commandInput" autocomplete="off" spellcheck="false" aria-label="CAD command input" placeholder="L / PL / @x,y / @distance&lt;angle" />
+    </div>
+    <div class="toggles">
+      <button id="snapBtn" class="toggle on">SNAP</button>
+      <span id="snapStatus" class="snap-status">—</span>
+      <button id="orthoBtn" class="toggle">ORTHO <kbd>F8</kbd></button>
+      <span id="fileStatus" class="file-status">Untitled</span>
+      <span id="engineStatus" class="engine-status loading">ENGINE: LOADING</span>
+      <span id="coords">X: 0.00&nbsp;&nbsp;Y: 0.00</span>
+    </div>
+  </footer>
+
+  <div id="help" class="help">
+    <strong>Prototype controls:</strong>
+    Ctrl+N/O/S = new/open/save · drawings recover automatically after refresh · select an object, then click a white grip to edit it · L = line · PL = polyline · REC = rectangle · C = circle; choose 2P/3P before the first point or D after the center · A = three-point arc · M = move · CO = copy · RO = rotate · SC = uniform scale · type R after the RO/SC base point for reference mode · O = offset · TR = trim · EX = extend · use the Layers panel to create, rename, color, hide, lock, assign, and safely delete layers · Enter/right-click/Esc finishes or cancels the current edit · F8 = ortho · Ctrl+Z/Y = undo/redo
+  </div>
+
+  <noscript><div class="fatal-error">JavaScript is disabled. This prototype cannot run until JavaScript is enabled.</div></noscript>
+
+  <script>
+(() => {
+  'use strict';
+
+  const canvas = document.getElementById('cadCanvas');
+  const ctx = canvas.getContext('2d');
+  const promptEl = document.getElementById('prompt');
+  const commandInput = document.getElementById('commandInput');
+  const coordsEl = document.getElementById('coords');
+  const snapBtn = document.getElementById('snapBtn');
+  const snapStatus = document.getElementById('snapStatus');
+  const orthoBtn = document.getElementById('orthoBtn');
+  const engineStatus = document.getElementById('engineStatus');
+  const fileStatus = document.getElementById('fileStatus');
+  const openInput = document.getElementById('openInput');
+  const currentLayerSelect = document.getElementById('currentLayerSelect');
+  const addLayerBtn = document.getElementById('addLayerBtn');
+  const assignLayerBtn = document.getElementById('assignLayerBtn');
+  const layerList = document.getElementById('layerList');
+  const help = document.getElementById('help');
+  const TAU = Math.PI * 2;
+  const MIN_VIEW_SCALE = 0.0001;
+  const MAX_VIEW_SCALE = 100000;
+  const DOCUMENT_FORMAT = 'browser-2d-draft';
+  const DOCUMENT_VERSION = 2;
+  const AUTOSAVE_KEY = `${DOCUMENT_FORMAT}.autosave`;
+  const LEGACY_AUTOSAVE_KEYS = [`${DOCUMENT_FORMAT}.autosave.v1`];
+  const TRANSFORM_COMMANDS = ['MOVE', 'COPY', 'ROTATE', 'SCALE'];
+
+  function createDefaultLayers() {
+    return [{ id: '0', name: '0', color: '#d6d6d6', visible: true, locked: false }];
+  }
+
+  const state = {
+    entities: [],
+    layers: createDefaultLayers(),
+    currentLayerId: '0',
+    drawingName: 'Untitled',
+    units: 'inches',
+    documentDirty: false,
+    selected: new Set(),
+    mode: 'SELECT',
+    currentPoints: [],
+    transform: null,
+    offset: null,
+    edit: null,
+    grip: null,
+    circle: null,
+    mouseScreen: { x: 0, y: 0 },
+    mouseWorld: { x: 0, y: 0 },
+    activePoint: { x: 0, y: 0 },
+    snap: null,
+    snapEnabled: true,
+    ortho: false,
+    view: { scale: 1.5, offsetX: 0, offsetY: 0 },
+    panning: false,
+    panStart: null,
+    dragSelect: null,
+    mouseDownScreen: null,
+    history: [],
+    future: [],
+    nextId: 1,
+    nextLayerId: 1,
+  };
+
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (state.view.offsetX === 0 && state.view.offsetY === 0) {
+      state.view.offsetX = rect.width / 2;
+      state.view.offsetY = rect.height / 2;
+    }
+    draw();
+  }
+
+  function screenToWorld(p) {
+    return {
+      x: (p.x - state.view.offsetX) / state.view.scale,
+      y: (state.view.offsetY - p.y) / state.view.scale,
+    };
+  }
+
+  function worldToScreen(p) {
+    return {
+      x: state.view.offsetX + p.x * state.view.scale,
+      y: state.view.offsetY - p.y * state.view.scale,
+    };
+  }
+
+  function dist(a, b) {
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  }
+
+  function normalizeAngle(angle) {
+    const normalized = angle % TAU;
+    return normalized < 0 ? normalized + TAU : normalized;
+  }
+
+  function angleFromCenter(center, point) {
+    return normalizeAngle(Math.atan2(point.y - center.y, point.x - center.x));
+  }
+
+  function circularPoint(center, radius, angle) {
+    return { x: center.x + radius * Math.cos(angle), y: center.y + radius * Math.sin(angle) };
+  }
+
+  function isArc(entity) {
+    return entity?.type === 'ARC' || entity?.kind === 'ARC';
+  }
+
+  function arcSweep(entity) {
+    return entity.endAngle - entity.startAngle;
+  }
+
+  function angleOnArc(angle, entity, epsilon = 1e-8) {
+    if (!isArc(entity)) return true;
+    return normalizeAngle(angle - entity.startAngle) <= arcSweep(entity) + epsilon;
+  }
+
+  function unwrappedArcAngle(angle, entity) {
+    return entity.startAngle + normalizeAngle(angle - entity.startAngle);
+  }
+
+  function pointOnCircularEntity(point, entity) {
+    return !isArc(entity) || angleOnArc(angleFromCenter(entity.center, point), entity);
+  }
+
+  function cloneEntities() {
+    return JSON.parse(JSON.stringify(state.entities));
+  }
+
+  function cloneLayers() {
+    return JSON.parse(JSON.stringify(state.layers));
+  }
+
+  function getLayer(id) {
+    return state.layers.find(layer => layer.id === String(id)) || null;
+  }
+
+  function isLayerVisible(id) {
+    return getLayer(id)?.visible !== false;
+  }
+
+  function isLayerLocked(id) {
+    return getLayer(id)?.locked === true;
+  }
+
+  function isEntityVisible(entity) {
+    return !entity?.layerId || isLayerVisible(entity.layerId);
+  }
+
+  function isEntityEditable(entity) {
+    return isEntityVisible(entity) && !isLayerLocked(entity?.layerId);
+  }
+
+  function derivedNextLayerId(layers) {
+    const ids = new Set(layers.map(layer => layer.id));
+    let next = 1;
+    while (ids.has(`layer-${next}`)) next += 1;
+    return next;
+  }
+
+  function editSnapshot() {
+    return {
+      entities: cloneEntities(),
+      layers: cloneLayers(),
+      currentLayerId: state.currentLayerId,
+      nextId: state.nextId,
+      nextLayerId: state.nextLayerId,
+    };
+  }
+
+  function restoreEditSnapshot(snapshot) {
+    state.entities = snapshot.entities;
+    state.layers = snapshot.layers;
+    state.currentLayerId = snapshot.currentLayerId;
+    state.nextId = snapshot.nextId;
+    state.nextLayerId = snapshot.nextLayerId || derivedNextLayerId(snapshot.layers);
+  }
+
+  function documentSnapshot() {
+    return {
+      format: DOCUMENT_FORMAT,
+      version: DOCUMENT_VERSION,
+      name: state.drawingName,
+      units: state.units,
+      layers: cloneLayers(),
+      currentLayerId: state.currentLayerId,
+      nextId: state.nextId,
+      nextLayerId: state.nextLayerId,
+      entities: cloneEntities(),
+    };
+  }
+
+  function exportDocumentText(pretty = true) {
+    return JSON.stringify(documentSnapshot(), null, pretty ? 2 : 0);
+  }
+
+  function cleanPoint(value) {
+    if (!value || !Number.isFinite(value.x) || !Number.isFinite(value.y)) return null;
+    return { x: value.x, y: value.y };
+  }
+
+  function cleanEntity(value, layerIds) {
+    if (!value || typeof value !== 'object') return { error: 'must be an object' };
+    if (!Number.isSafeInteger(value.id) || value.id <= 0) return { error: 'has an invalid ID' };
+    const type = typeof value.type === 'string' ? value.type.toUpperCase() : '';
+    const layerId = value.layerId === undefined ? '0' : String(value.layerId);
+    if (!layerIds.has(layerId)) return { error: `references unknown layer ${layerId}` };
+    const common = { id: value.id, type, layerId };
+
+    if (type === 'LINE') {
+      const a = cleanPoint(value.a);
+      const b = cleanPoint(value.b);
+      if (!a || !b || dist(a, b) <= 1e-9) return { error: 'has invalid line geometry' };
+      return { entity: { ...common, a, b } };
+    }
+
+    if (type === 'PLINE') {
+      if (!Array.isArray(value.points) || value.points.length < 2) return { error: 'has too few polyline points' };
+      const points = value.points.map(cleanPoint);
+      if (points.some(point => !point)) return { error: 'has an invalid polyline point' };
+      if (points.some((point, index) => index > 0 && dist(point, points[index - 1]) <= 1e-9)) {
+        return { error: 'has duplicate consecutive polyline points' };
+      }
+      const closed = Boolean(value.closed);
+      if (closed && points.length < 3) return { error: 'has too few points to be closed' };
+      return { entity: { ...common, points, closed } };
+    }
+
+    if (type === 'CIRCLE') {
+      const center = cleanPoint(value.center);
+      if (!center || !Number.isFinite(value.radius) || value.radius <= 1e-9) return { error: 'has invalid circle geometry' };
+      return { entity: { ...common, center, radius: value.radius } };
+    }
+
+    if (type === 'ARC') {
+      const center = cleanPoint(value.center);
+      const sweep = value.endAngle - value.startAngle;
+      if (!center || !Number.isFinite(value.radius) || value.radius <= 1e-9 ||
+          !Number.isFinite(value.startAngle) || !Number.isFinite(value.endAngle) ||
+          sweep <= 1e-8 || sweep >= TAU - 1e-8) {
+        return { error: 'has invalid arc geometry' };
+      }
+      const startAngle = normalizeAngle(value.startAngle);
+      return {
+        entity: {
+          ...common,
+          center,
+          radius: value.radius,
+          startAngle,
+          endAngle: startAngle + sweep,
+        },
+      };
+    }
+
+    return { error: `uses unsupported entity type ${type || '(missing)'}` };
+  }
+
+  function parseDocumentText(text) {
+    let value;
+    try {
+      value = JSON.parse(text);
+    } catch {
+      return { error: 'The selected file is not valid JSON.' };
+    }
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return { error: 'The selected file is not a drawing document.' };
+    }
+    if (value.format !== DOCUMENT_FORMAT) {
+      return { error: 'The selected file is not a Browser 2D Draft drawing.' };
+    }
+    if (!Number.isSafeInteger(value.version) || value.version < 1) {
+      return { error: 'The drawing has an invalid document version.' };
+    }
+    if (value.version > DOCUMENT_VERSION) {
+      return { error: `This drawing requires a newer document version (${value.version}).` };
+    }
+    if (value.units !== 'inches') {
+      return { error: `Unsupported drawing units: ${String(value.units || '(missing)')}.` };
+    }
+
+    if (!Array.isArray(value.layers) || !value.layers.length) {
+      return { error: 'The drawing has no layer table.' };
+    }
+    const layers = [];
+    const layerIds = new Set();
+    const layerNames = new Set();
+    for (let index = 0; index < value.layers.length; index++) {
+      const layer = value.layers[index];
+      if (!layer || typeof layer !== 'object') return { error: `Layer ${index + 1} is invalid.` };
+      const id = typeof layer.id === 'string' ? layer.id.trim() : '';
+      const name = typeof layer.name === 'string' ? layer.name.trim() : '';
+      if (!id || !name) return { error: `Layer ${index + 1} is missing an ID or name.` };
+      if (layerIds.has(id)) return { error: `Layer ID ${id} is duplicated.` };
+      const normalizedName = name.toLocaleLowerCase();
+      if (layerNames.has(normalizedName)) return { error: `Layer name ${name} is duplicated.` };
+      layerIds.add(id);
+      layerNames.add(normalizedName);
+      layers.push({
+        id,
+        name,
+        color: typeof layer.color === 'string' && /^#[0-9a-f]{6}$/i.test(layer.color)
+          ? layer.color.toLowerCase()
+          : '#d6d6d6',
+        visible: layer.visible !== false,
+        locked: layer.locked === true,
+      });
+    }
+    if (!layerIds.has('0')) return { error: 'The drawing is missing required layer 0.' };
+
+    if (!Array.isArray(value.entities)) return { error: 'The drawing has no entity table.' };
+    const entities = [];
+    const entityIds = new Set();
+    for (let index = 0; index < value.entities.length; index++) {
+      const cleaned = cleanEntity(value.entities[index], layerIds);
+      if (cleaned.error) return { error: `Entity ${index + 1} ${cleaned.error}.` };
+      if (entityIds.has(cleaned.entity.id)) return { error: `Entity ID ${cleaned.entity.id} is duplicated.` };
+      entityIds.add(cleaned.entity.id);
+      entities.push(cleaned.entity);
+    }
+
+    const minimumNextId = entities.reduce((maximum, entity) => Math.max(maximum, entity.id + 1), 1);
+    const suppliedNextId = Number.isSafeInteger(value.nextId) && value.nextId > 0 ? value.nextId : 1;
+    const derivedLayerId = derivedNextLayerId(layers);
+    const suppliedNextLayerId = Number.isSafeInteger(value.nextLayerId) && value.nextLayerId > 0
+      ? value.nextLayerId
+      : derivedLayerId;
+    const currentLayerId = layerIds.has(String(value.currentLayerId)) ? String(value.currentLayerId) : '0';
+    const name = typeof value.name === 'string' && value.name.trim() ? value.name.trim().slice(0, 120) : 'Untitled';
+    return {
+      document: {
+        name,
+        units: 'inches',
+        layers,
+        currentLayerId,
+        nextId: Math.max(minimumNextId, suppliedNextId),
+        nextLayerId: Math.max(derivedLayerId, suppliedNextLayerId),
+        entities,
+      },
+    };
+  }
+
+  function setFileStatus(message, error = false) {
+    fileStatus.textContent = message;
+    fileStatus.classList.toggle('error', error);
+  }
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, character => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    })[character]);
+  }
+
+  function renderLayerManager() {
+    if (!currentLayerSelect || !layerList) return;
+    currentLayerSelect.innerHTML = state.layers.map(layer => {
+      const unavailable = !layer.visible || layer.locked;
+      const suffix = !layer.visible ? ' (hidden)' : layer.locked ? ' (locked)' : '';
+      return `<option value="${escapeHtml(layer.id)}"${layer.id === state.currentLayerId ? ' selected' : ''}${unavailable && layer.id !== state.currentLayerId ? ' disabled' : ''}>${escapeHtml(layer.name + suffix)}</option>`;
+    }).join('');
+    currentLayerSelect.value = state.currentLayerId;
+
+    layerList.innerHTML = state.layers.map(layer => {
+      const current = layer.id === state.currentLayerId;
+      const protectedLayer = layer.id === '0' || current;
+      const lockTitle = layer.locked ? 'Layer locked — click to unlock' : 'Layer unlocked — click to lock';
+      return `
+        <div class="layer-row${current ? ' current' : ''}${layer.visible ? '' : ' hidden'}" data-layer-id="${escapeHtml(layer.id)}">
+          <button class="layer-current${current ? ' on' : ''}" data-layer-action="current" data-layer-id="${escapeHtml(layer.id)}" title="Make current" aria-label="Make ${escapeHtml(layer.name)} current">${current ? '●' : '○'}</button>
+          <input class="layer-name" data-layer-action="name" data-layer-id="${escapeHtml(layer.id)}" value="${escapeHtml(layer.name)}" aria-label="Layer name"${layer.id === '0' ? ' disabled title="Layer 0 cannot be renamed"' : ''} />
+          <input class="layer-color" type="color" data-layer-action="color" data-layer-id="${escapeHtml(layer.id)}" value="${escapeHtml(layer.color)}" title="Layer color" aria-label="${escapeHtml(layer.name)} color" />
+          <button data-layer-action="visibility" data-layer-id="${escapeHtml(layer.id)}" title="Toggle visibility">${layer.visible ? 'On' : 'Off'}</button>
+          <button class="layer-lock" data-layer-action="lock" data-layer-id="${escapeHtml(layer.id)}" title="${lockTitle}" aria-label="${lockTitle}">${layer.locked ? '🔒' : '🔓'}</button>
+          <button class="layer-delete" data-layer-action="delete" data-layer-id="${escapeHtml(layer.id)}" title="${protectedLayer ? (layer.id === '0' ? 'Layer 0 cannot be deleted' : 'The current layer cannot be deleted') : 'Delete layer'}" aria-label="Delete ${escapeHtml(layer.name)}"${protectedLayer ? ' disabled' : ''}>Del</button>
+        </div>`;
+    }).join('');
+    if (assignLayerBtn) assignLayerBtn.disabled = !state.selected.size;
+  }
+
+  function nextDefaultLayerName(seed) {
+    const names = new Set(state.layers.map(layer => layer.name.toLocaleLowerCase()));
+    let number = Math.max(1, seed);
+    while (names.has(`layer ${number}`)) number += 1;
+    return `Layer ${number}`;
+  }
+
+  function createLayer(name = '', color = '#56d6ff') {
+    let number = Math.max(1, state.nextLayerId);
+    while (state.layers.some(layer => layer.id === `layer-${number}`)) number += 1;
+    const layerName = (String(name || '').trim() || nextDefaultLayerName(number)).slice(0, 80);
+    if (!layerName) {
+      updatePrompt('Layer name cannot be empty.');
+      return null;
+    }
+    if (state.layers.some(layer => layer.name.toLocaleLowerCase() === layerName.toLocaleLowerCase())) {
+      updatePrompt(`A layer named ${layerName} already exists.`);
+      return null;
+    }
+    const layerColor = /^#[0-9a-f]{6}$/i.test(color) ? color.toLowerCase() : '#56d6ff';
+    const id = `layer-${number}`;
+    pushHistory();
+    state.layers.push({ id, name: layerName, color: layerColor, visible: true, locked: false });
+    state.currentLayerId = id;
+    state.nextLayerId = number + 1;
+    renderLayerManager();
+    setFileStatus(`${state.drawingName} · Created ${layerName}`);
+    draw();
+    return id;
+  }
+
+  function renameLayer(id, name) {
+    const layer = getLayer(id);
+    const nextName = String(name || '').trim().slice(0, 80);
+    if (!layer) return false;
+    if (layer.id === '0') {
+      updatePrompt('Layer 0 cannot be renamed.');
+      renderLayerManager();
+      return false;
+    }
+    if (!nextName) {
+      updatePrompt('Layer name cannot be empty.');
+      renderLayerManager();
+      return false;
+    }
+    if (state.layers.some(candidate => candidate.id !== layer.id && candidate.name.toLocaleLowerCase() === nextName.toLocaleLowerCase())) {
+      updatePrompt(`A layer named ${nextName} already exists.`);
+      renderLayerManager();
+      return false;
+    }
+    if (nextName === layer.name) return true;
+    pushHistory();
+    layer.name = nextName;
+    renderLayerManager();
+    setFileStatus(`${state.drawingName} · Renamed layer`);
+    draw();
+    return true;
+  }
+
+  function setLayerColor(id, color) {
+    const layer = getLayer(id);
+    if (!layer || !/^#[0-9a-f]{6}$/i.test(String(color))) return false;
+    const nextColor = String(color).toLowerCase();
+    if (layer.color === nextColor) return true;
+    pushHistory();
+    layer.color = nextColor;
+    renderLayerManager();
+    draw();
+    return true;
+  }
+
+  function setCurrentLayer(id) {
+    const layer = getLayer(id);
+    if (!layer) return false;
+    if (!layer.visible || layer.locked) {
+      updatePrompt(`Make ${layer.name} visible and unlocked before setting it current.`);
+      renderLayerManager();
+      return false;
+    }
+    if (layer.id === state.currentLayerId) return true;
+    pushHistory();
+    state.currentLayerId = layer.id;
+    renderLayerManager();
+    setFileStatus(`${state.drawingName} · Current: ${layer.name}`);
+    draw();
+    return true;
+  }
+
+  function toggleLayerVisibility(id) {
+    const layer = getLayer(id);
+    if (!layer) return false;
+    if (layer.id === state.currentLayerId) {
+      updatePrompt('The current layer cannot be hidden. Make another layer current first.');
+      return false;
+    }
+    pushHistory();
+    layer.visible = !layer.visible;
+    if (!layer.visible) {
+      for (const entity of state.entities) {
+        if (entity.layerId === layer.id) state.selected.delete(entity.id);
+      }
+    }
+    renderLayerManager();
+    draw();
+    return true;
+  }
+
+  function toggleLayerLock(id) {
+    const layer = getLayer(id);
+    if (!layer) return false;
+    if (layer.id === state.currentLayerId) {
+      updatePrompt('The current layer cannot be locked. Make another layer current first.');
+      return false;
+    }
+    pushHistory();
+    layer.locked = !layer.locked;
+    if (layer.locked) {
+      for (const entity of state.entities) {
+        if (entity.layerId === layer.id) state.selected.delete(entity.id);
+      }
+    }
+    renderLayerManager();
+    draw();
+    return true;
+  }
+
+  function deleteLayer(id, skipConfirmation = false) {
+    const layer = getLayer(id);
+    if (!layer) return false;
+    if (layer.id === '0') {
+      updatePrompt('Layer 0 cannot be deleted.');
+      return false;
+    }
+    if (layer.id === state.currentLayerId) {
+      updatePrompt('The current layer cannot be deleted. Make another layer current first.');
+      return false;
+    }
+
+    const destination = getLayer(state.currentLayerId);
+    if (!destination?.visible || destination.locked) {
+      updatePrompt('Choose a visible, unlocked current layer before deleting another layer.');
+      return false;
+    }
+    const affected = state.entities.filter(entity => entity.layerId === layer.id);
+    if (affected.length && !skipConfirmation) {
+      const noun = affected.length === 1 ? 'object' : 'objects';
+      const confirmed = window.confirm(
+        `Delete layer "${layer.name}"?\n\n${affected.length} ${noun} will be moved to current layer "${destination.name}". No drawing geometry will be deleted.`,
+      );
+      if (!confirmed) return false;
+    }
+
+    pushHistory();
+    for (const entity of affected) entity.layerId = destination.id;
+    state.layers = state.layers.filter(candidate => candidate.id !== layer.id);
+    renderLayerManager();
+    const moved = affected.length ? `; moved ${affected.length} to ${destination.name}` : '';
+    setFileStatus(`${state.drawingName} · Deleted ${layer.name}${moved}`);
+    draw();
+    return true;
+  }
+
+  function assignSelectionToLayer(id = state.currentLayerId) {
+    const layer = getLayer(id);
+    if (!layer || !layer.visible || layer.locked) {
+      updatePrompt('The destination layer must be visible and unlocked.');
+      return false;
+    }
+    const selectedEntities = state.entities.filter(entity => state.selected.has(entity.id) && isEntityEditable(entity));
+    if (!selectedEntities.length) {
+      updatePrompt('Select at least one editable object to assign.');
+      return false;
+    }
+    const changing = selectedEntities.filter(entity => entity.layerId !== layer.id);
+    if (!changing.length) {
+      updatePrompt(`Selection is already on ${layer.name}.`);
+      return true;
+    }
+    pushHistory();
+    for (const entity of changing) entity.layerId = layer.id;
+    renderLayerManager();
+    setFileStatus(`${state.drawingName} · Assigned ${changing.length} to ${layer.name}`);
+    draw();
+    return true;
+  }
+
+  function currentLayerIsEditable() {
+    const layer = getLayer(state.currentLayerId);
+    if (layer?.visible && !layer.locked) return true;
+    updatePrompt('Choose a visible, unlocked current layer before drawing.');
+    return false;
+  }
+
+  function activateDrawingMode(mode) {
+    if (['LINE', 'PLINE', 'RECTANGLE', 'CIRCLE', 'ARC'].includes(mode) && !currentLayerIsEditable()) {
+      return false;
+    }
+    setMode(mode);
+    return true;
+  }
+
+  let autosaveTimer = null;
+  function scheduleAutosave() {
+    if (!state.documentDirty) return;
+    if (autosaveTimer !== null) clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(() => {
+      autosaveTimer = null;
+      try {
+        window.localStorage.setItem(AUTOSAVE_KEY, exportDocumentText(false));
+        setFileStatus(`${state.drawingName} · Autosaved`);
+      } catch {
+        setFileStatus('Autosave unavailable — use Save', true);
+      }
+      state.documentDirty = false;
+    }, 250);
+  }
+
+  function applyDocument(documentData, dirty = true) {
+    state.entities = JSON.parse(JSON.stringify(documentData.entities));
+    state.layers = JSON.parse(JSON.stringify(documentData.layers));
+    state.currentLayerId = documentData.currentLayerId;
+    state.drawingName = documentData.name;
+    state.units = documentData.units;
+    state.nextId = documentData.nextId;
+    state.nextLayerId = documentData.nextLayerId || derivedNextLayerId(state.layers);
+    state.selected.clear();
+    state.history = [];
+    state.future = [];
+    state.documentDirty = dirty;
+    setMode('SELECT');
+    renderLayerManager();
+    zoomExtents();
+  }
+
+  function loadDocumentText(text, sourceName = '') {
+    const parsed = parseDocumentText(text);
+    if (parsed.error) {
+      setFileStatus(parsed.error, true);
+      return false;
+    }
+    if (parsed.document.name === 'Untitled' && sourceName) {
+      parsed.document.name = sourceName.replace(/(?:\.draft2d)?\.json$/i, '').trim() || 'Untitled';
+    }
+    applyDocument(parsed.document, true);
+    setFileStatus(`${state.drawingName} · Opened`);
+    return true;
+  }
+
+  function restoreAutosave() {
+    try {
+      for (const key of [AUTOSAVE_KEY, ...LEGACY_AUTOSAVE_KEYS]) {
+        const text = window.localStorage.getItem(key);
+        if (!text) continue;
+        const parsed = parseDocumentText(text);
+        if (parsed.error) continue;
+        applyDocument(parsed.document, false);
+        if (key !== AUTOSAVE_KEY) {
+          window.localStorage.setItem(AUTOSAVE_KEY, exportDocumentText(false));
+        }
+        setFileStatus(`${state.drawingName} · Recovered`);
+        return true;
+      }
+      return false;
+    } catch {
+      setFileStatus('Autosave unavailable — use Save', true);
+      return false;
+    }
+  }
+
+  function newDrawing(skipConfirmation = false) {
+    if (!skipConfirmation && state.entities.length &&
+        !window.confirm('Start a new drawing? Use Save first if you need a separate copy of the current drawing.')) {
+      return false;
+    }
+    state.entities = [];
+    state.layers = createDefaultLayers();
+    state.currentLayerId = '0';
+    state.drawingName = 'Untitled';
+    state.units = 'inches';
+    state.nextId = 1;
+    state.nextLayerId = 1;
+    state.selected.clear();
+    state.history = [];
+    state.future = [];
+    state.documentDirty = true;
+    setMode('SELECT');
+    renderLayerManager();
+    zoomExtents();
+    setFileStatus('Untitled · New drawing');
+    return true;
+  }
+
+  function drawingDownloadName() {
+    const safeName = state.drawingName
+      .replace(/[<>:"/\\|?*\u0000-\u001f]/g, '-')
+      .replace(/[. ]+$/g, '')
+      .trim();
+    return `${safeName || 'drawing'}.draft2d.json`;
+  }
+
+  function saveDrawing() {
+    try {
+      const blob = new Blob([exportDocumentText(true)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = drawingDownloadName();
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+      setFileStatus(`${state.drawingName} · Saved file`);
+      return true;
+    } catch {
+      setFileStatus('Could not create the drawing file', true);
+      return false;
+    }
+  }
+
+  function chooseOpenFile() {
+    openInput.value = '';
+    openInput.click();
+  }
+
+  function pushHistory() {
+    state.history.push(editSnapshot());
+    if (state.history.length > 100) state.history.shift();
+    state.future.length = 0;
+    state.documentDirty = true;
+  }
+
+  function undo() {
+    if (!state.history.length) return;
+    state.future.push(editSnapshot());
+    restoreEditSnapshot(state.history.pop());
+    state.selected.clear();
+    state.documentDirty = true;
+    renderLayerManager();
+    draw();
+  }
+
+  function redo() {
+    if (!state.future.length) return;
+    state.history.push(editSnapshot());
+    restoreEditSnapshot(state.future.pop());
+    state.selected.clear();
+    state.documentDirty = true;
+    renderLayerManager();
+    draw();
+  }
+
+  function setMode(mode) {
+    state.mode = mode;
+    state.currentPoints = [];
+    state.transform = null;
+    state.offset = null;
+    state.edit = null;
+    state.grip = null;
+    state.circle = mode === 'CIRCLE'
+      ? { method: 'CENTER_RADIUS', stage: 'CENTER' }
+      : null;
+    state.snap = null;
+    document.querySelectorAll('[data-command]').forEach(b => {
+      b.classList.toggle('active', b.dataset.command === mode);
+    });
+    updatePrompt();
+    draw();
+  }
+
+  function updatePrompt(extra = '') {
+    let p = 'Command:';
+    if (state.mode === 'LINE') {
+      p = state.currentPoints.length ? 'LINE — Specify next point or distance:' : 'LINE — Specify first point:';
+    } else if (state.mode === 'PLINE') {
+      p = state.currentPoints.length ? 'PLINE — Specify next point, distance, or Enter to finish:' : 'PLINE — Specify start point:';
+    } else if (state.mode === 'RECTANGLE') {
+      p = state.currentPoints.length ? 'RECTANGLE — Specify opposite corner:' : 'RECTANGLE — Specify first corner:';
+    } else if (state.mode === 'CIRCLE') {
+      const method = state.circle?.method || 'CENTER_RADIUS';
+      const stage = state.circle?.stage || 'CENTER';
+      if (method === 'TWO_POINT') {
+        p = stage === 'FIRST'
+          ? 'CIRCLE 2P — Specify first diameter endpoint:'
+          : 'CIRCLE 2P — Specify second diameter endpoint:';
+      } else if (method === 'THREE_POINT') {
+        if (stage === 'FIRST') p = 'CIRCLE 3P — Specify first point:';
+        else if (stage === 'SECOND') p = 'CIRCLE 3P — Specify second point:';
+        else p = 'CIRCLE 3P — Specify third point:';
+      } else if (method === 'CENTER_DIAMETER') {
+        p = 'CIRCLE Diameter — Specify diameter or point:';
+      } else {
+        p = stage === 'CENTER'
+          ? 'CIRCLE — Specify center point or [2P/3P]:'
+          : 'CIRCLE — Specify radius or [Diameter]:';
+      }
+    } else if (state.mode === 'ARC') {
+      if (!state.currentPoints.length) p = 'ARC — Specify start point:';
+      else if (state.currentPoints.length === 1) p = 'ARC — Specify point on arc:';
+      else p = 'ARC — Specify endpoint:';
+    } else if (state.mode === 'SELECT') {
+      p = 'Command:';
+    } else if (state.mode === 'GRIP') {
+      p = 'GRIP — Specify destination point or distance:';
+    } else if (TRANSFORM_COMMANDS.includes(state.mode)) {
+      const stage = state.transform?.stage || 'SELECT';
+      if (stage === 'SELECT') {
+        const count = state.selected.size;
+        p = count
+          ? `${state.mode} — ${count} selected; press Enter or right-click to continue:`
+          : `${state.mode} — Select objects, then press Enter or right-click:`;
+      }
+      else if (stage === 'BASE') p = `${state.mode} — Specify base point:`;
+      else if (state.mode === 'ROTATE') {
+        if (stage === 'ROTATE_REF') p = 'ROTATE Reference — Specify current reference point or angle:';
+        else if (stage === 'ROTATE_TARGET') p = 'ROTATE Reference — Specify absolute target point or angle:';
+        else p = 'ROTATE — Specify relative angle/point or [Reference]:';
+      }
+      else if (state.mode === 'SCALE') {
+        if (stage === 'SCALE_REF_FIRST') p = 'SCALE Reference — Specify reference length or first point:';
+        else if (stage === 'SCALE_REF_SECOND') p = 'SCALE Reference — Specify second reference point:';
+        else if (stage === 'SCALE_REF_NEW') p = `SCALE Reference — Specify new length (${state.transform.referenceLength.toFixed(3)} current):`;
+        else p = 'SCALE — Specify scale factor/point or [Reference]:';
+      }
+      else p = `${state.mode} — Specify destination, distance, or relative point:`;
+    } else if (state.mode === 'OFFSET') {
+      const stage = state.offset?.stage || 'DISTANCE';
+      if (stage === 'DISTANCE') p = 'OFFSET — Specify offset distance:';
+      else if (stage === 'SOURCE') p = 'OFFSET — Select one line, polyline, circle, or arc:';
+      else p = `OFFSET — Specify side (${state.offset.distance}" offset):`;
+    } else if (state.mode === 'TRIM' || state.mode === 'EXTEND') {
+      const boundaryCount = state.edit?.boundaryIds?.length || 0;
+      const boundaries = boundaryCount
+        ? `${boundaryCount} preselected ${boundaryCount === 1 ? 'boundary' : 'boundaries'}`
+        : 'all other geometry as boundaries';
+      p = `${state.mode} — Click ${state.mode === 'TRIM' ? 'portions' : 'ends'} to ${state.mode.toLowerCase()}; ${boundaries}; Enter/right-click/Esc to finish:`;
+    }
+    promptEl.textContent = extra ? `${p} ${extra}` : p;
+  }
+
+  function pointOnSegmentClosest(p, a, b) {
+    const vx = b.x - a.x;
+    const vy = b.y - a.y;
+    const len2 = vx * vx + vy * vy;
+    if (len2 === 0) return { ...a };
+    let t = ((p.x - a.x) * vx + (p.y - a.y) * vy) / len2;
+    t = Math.max(0, Math.min(1, t));
+    return { x: a.x + t * vx, y: a.y + t * vy };
+  }
+
+  function entitySegments(entity) {
+    if (entity.type === 'LINE') return [[entity.a, entity.b]];
+    if (entity.type === 'PLINE') {
+      const segs = [];
+      for (let i = 0; i < entity.points.length - 1; i++) segs.push([entity.points[i], entity.points[i + 1]]);
+      if (entity.closed && entity.points.length >= 3) {
+        segs.push([entity.points[entity.points.length - 1], entity.points[0]]);
+      }
+      return segs;
+    }
+    return [];
+  }
+
+  function snapSegments(excludedEntityId = null) {
+    const segs = [];
+    for (const entity of state.entities) {
+      if (isEntityVisible(entity) && entity.id !== excludedEntityId) segs.push(...entitySegments(entity));
+    }
+
+    // Completed legs of the active polyline are real geometry for OSNAP purposes,
+    // even though the polyline itself is not added to the document until finished.
+    if (state.mode === 'PLINE' && state.currentPoints.length >= 2) {
+      for (let i = 0; i < state.currentPoints.length - 1; i++) {
+        segs.push([state.currentPoints[i], state.currentPoints[i + 1]]);
+      }
+    }
+    return segs;
+  }
+
+  function segmentIntersection(a, b, c, d) {
+    const r = { x: b.x - a.x, y: b.y - a.y };
+    const s = { x: d.x - c.x, y: d.y - c.y };
+    const cross = (u, v) => u.x * v.y - u.y * v.x;
+    const den = cross(r, s);
+    if (Math.abs(den) < 1e-9) return null;
+    const ca = { x: c.x - a.x, y: c.y - a.y };
+    const t = cross(ca, s) / den;
+    const u = cross(ca, r) / den;
+    if (t < 0 || t > 1 || u < 0 || u > 1) return null;
+    return { x: a.x + t * r.x, y: a.y + t * r.y };
+  }
+
+  function segmentCircleIntersections(a, b, center, radius) {
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const fx = a.x - center.x;
+    const fy = a.y - center.y;
+    const qa = dx * dx + dy * dy;
+    if (qa < 1e-12 || radius <= 0) return [];
+    const qb = 2 * (fx * dx + fy * dy);
+    const qc = fx * fx + fy * fy - radius * radius;
+    const discriminant = qb * qb - 4 * qa * qc;
+    if (discriminant < -1e-9) return [];
+    const root = Math.sqrt(Math.max(0, discriminant));
+    const values = [(-qb - root) / (2 * qa), (-qb + root) / (2 * qa)];
+    const results = [];
+    for (const t of values) {
+      if (t < -1e-9 || t > 1 + 1e-9) continue;
+      const clamped = Math.max(0, Math.min(1, t));
+      if (results.some(result => Math.abs(result.t - clamped) < 1e-8)) continue;
+      results.push({ t: clamped, point: pointAlong(a, b, clamped) });
+    }
+    return results;
+  }
+
+  function circleCircleIntersections(first, second) {
+    const centerDistance = dist(first.center, second.center);
+    const r1 = first.radius;
+    const r2 = second.radius;
+    if (centerDistance < 1e-9 || centerDistance > r1 + r2 + 1e-9 || centerDistance < Math.abs(r1 - r2) - 1e-9) return [];
+    const along = (r1 * r1 - r2 * r2 + centerDistance * centerDistance) / (2 * centerDistance);
+    const heightSquared = r1 * r1 - along * along;
+    if (heightSquared < -1e-9) return [];
+    const height = Math.sqrt(Math.max(0, heightSquared));
+    const ux = (second.center.x - first.center.x) / centerDistance;
+    const uy = (second.center.y - first.center.y) / centerDistance;
+    const base = { x: first.center.x + along * ux, y: first.center.y + along * uy };
+    const points = [{ x: base.x - height * uy, y: base.y + height * ux }];
+    if (height > 1e-8) points.push({ x: base.x + height * uy, y: base.y - height * ux });
+    return points;
+  }
+
+  function segmentCircularIntersections(a, b, circularEntity) {
+    return segmentCircleIntersections(a, b, circularEntity.center, circularEntity.radius)
+      .filter(intersection => pointOnCircularEntity(intersection.point, circularEntity));
+  }
+
+  function circularEntityIntersections(first, second) {
+    return circleCircleIntersections(first, second)
+      .filter(point => pointOnCircularEntity(point, first) && pointOnCircularEntity(point, second));
+  }
+
+  function getSnap(rawWorld, basePoint = null, excludedEntityId = null) {
+    if (!state.snapEnabled) return null;
+    const maxPx = 10;
+    const candidates = [];
+    const segs = snapSegments(excludedEntityId);
+    const circularEntities = state.entities.filter(entity =>
+      isEntityVisible(entity) && entity.id !== excludedEntityId && ['CIRCLE', 'ARC'].includes(entity.type),
+    );
+
+    for (const [a, b] of segs) {
+      candidates.push({ type: 'END', p: a });
+      candidates.push({ type: 'END', p: b });
+      candidates.push({ type: 'MID', p: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } });
+    }
+
+    for (let i = 0; i < segs.length; i++) {
+      for (let j = i + 1; j < segs.length; j++) {
+        const p = segmentIntersection(segs[i][0], segs[i][1], segs[j][0], segs[j][1]);
+        if (p) candidates.push({ type: 'INT', p });
+      }
+    }
+
+    for (const circularEntity of circularEntities) {
+      if (circularEntity.type === 'ARC') {
+        candidates.push({ type: 'END', p: circularPoint(circularEntity.center, circularEntity.radius, circularEntity.startAngle) });
+        candidates.push({ type: 'END', p: circularPoint(circularEntity.center, circularEntity.radius, circularEntity.endAngle) });
+        candidates.push({ type: 'MID', p: circularPoint(circularEntity.center, circularEntity.radius, circularEntity.startAngle + arcSweep(circularEntity) / 2) });
+      }
+      candidates.push({ type: 'CENTER', p: circularEntity.center });
+      for (const angle of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+        if (angleOnArc(angle, circularEntity)) {
+          candidates.push({ type: 'QUAD', p: circularPoint(circularEntity.center, circularEntity.radius, angle) });
+        }
+      }
+      for (const [a, b] of segs) {
+        for (const intersection of segmentCircularIntersections(a, b, circularEntity)) {
+          candidates.push({ type: 'INT', p: intersection.point });
+        }
+      }
+    }
+
+    for (let i = 0; i < circularEntities.length; i++) {
+      for (let j = i + 1; j < circularEntities.length; j++) {
+        for (const p of circularEntityIntersections(circularEntities[i], circularEntities[j])) candidates.push({ type: 'INT', p });
+      }
+    }
+
+    if (basePoint) {
+      for (const [a, b] of segs) {
+        const proj = pointOnInfiniteLine(basePoint, a, b);
+        if (proj && pointWithinSegment(proj, a, b)) candidates.push({ type: 'PERP', p: proj });
+      }
+      for (const circularEntity of circularEntities) {
+        const radialLength = dist(basePoint, circularEntity.center);
+        if (radialLength > 1e-9) {
+          const radialAngle = angleFromCenter(circularEntity.center, basePoint);
+          for (const angle of [radialAngle, normalizeAngle(radialAngle + Math.PI)]) {
+            if (angleOnArc(angle, circularEntity)) {
+              candidates.push({ type: 'PERP', p: circularPoint(circularEntity.center, circularEntity.radius, angle) });
+            }
+          }
+        }
+      }
+    }
+
+    let best = null;
+    for (const c of candidates) {
+      const s = worldToScreen(c.p);
+      const px = Math.hypot(s.x - state.mouseScreen.x, s.y - state.mouseScreen.y);
+      if (px <= maxPx && (!best || px < best.px)) best = { ...c, px };
+    }
+    return best;
+  }
+
+  function pointOnInfiniteLine(p, a, b) {
+    const vx = b.x - a.x;
+    const vy = b.y - a.y;
+    const len2 = vx * vx + vy * vy;
+    if (len2 < 1e-12) return null;
+    const t = ((p.x - a.x) * vx + (p.y - a.y) * vy) / len2;
+    return { x: a.x + t * vx, y: a.y + t * vy };
+  }
+
+  function pointWithinSegment(p, a, b) {
+    const eps = 1e-7;
+    return p.x >= Math.min(a.x, b.x) - eps && p.x <= Math.max(a.x, b.x) + eps &&
+      p.y >= Math.min(a.y, b.y) - eps && p.y <= Math.max(a.y, b.y) + eps;
+  }
+
+  function applyOrtho(p, base) {
+    if (!state.ortho || !base) return p;
+    const dx = p.x - base.x;
+    const dy = p.y - base.y;
+    return Math.abs(dx) >= Math.abs(dy) ? { x: p.x, y: base.y } : { x: base.x, y: p.y };
+  }
+
+  function getCommandBasePoint() {
+    if (['LINE', 'PLINE', 'RECTANGLE', 'CIRCLE', 'ARC'].includes(state.mode) && state.currentPoints.length) {
+      return state.currentPoints[state.currentPoints.length - 1];
+    }
+    if (['MOVE', 'COPY'].includes(state.mode) && state.transform?.stage === 'DEST') {
+      return state.transform.base;
+    }
+    if (state.mode === 'ROTATE' && ['ANGLE', 'ROTATE_REF', 'ROTATE_TARGET'].includes(state.transform?.stage)) {
+      return state.transform.base;
+    }
+    if (state.mode === 'SCALE') {
+      if (['FACTOR', 'SCALE_REF_FIRST'].includes(state.transform?.stage)) return state.transform.base;
+      if (state.transform?.stage === 'SCALE_REF_SECOND') return state.transform.referenceStart;
+      if (state.transform?.stage === 'SCALE_REF_NEW') return state.transform.referenceStart || state.transform.base;
+    }
+    if (state.mode === 'GRIP' && state.grip) return state.grip.base;
+    return null;
+  }
+
+  function getActivePoint() {
+    if ((state.mode === 'OFFSET' && state.offset?.stage === 'SIDE') || ['TRIM', 'EXTEND'].includes(state.mode)) {
+      state.snap = null;
+      return { ...state.mouseWorld };
+    }
+    const base = getCommandBasePoint();
+    const useOrtho = ['LINE', 'PLINE'].includes(state.mode) ||
+      (['MOVE', 'COPY'].includes(state.mode) && state.transform?.stage === 'DEST') ||
+      (state.mode === 'ROTATE' && state.transform?.stage === 'ANGLE') ||
+      state.mode === 'GRIP';
+    let p = useOrtho ? applyOrtho(state.mouseWorld, base) : { ...state.mouseWorld };
+    state.snap = getSnap(p, base, state.mode === 'GRIP' ? state.grip?.entityId : null);
+    if (state.snap) p = state.snap.p;
+    return p;
+  }
+
+  function addLine(a, b) {
+    if (dist(a, b) < 1e-9 || !currentLayerIsEditable()) return false;
+    pushHistory();
+    state.entities.push({
+      id: state.nextId++,
+      type: 'LINE',
+      layerId: state.currentLayerId,
+      a: { ...a },
+      b: { ...b },
+    });
+    return true;
+  }
+
+  function addPolyline(points) {
+    if (points.length < 2 || !currentLayerIsEditable()) return false;
+    const storedPoints = points.map(point => ({ ...point }));
+    const closesAtStart = storedPoints.length >= 4 && dist(storedPoints[0], storedPoints[storedPoints.length - 1]) < 1e-7;
+    if (closesAtStart) storedPoints.pop();
+    pushHistory();
+    state.entities.push({
+      id: state.nextId++,
+      type: 'PLINE',
+      layerId: state.currentLayerId,
+      points: storedPoints,
+      closed: closesAtStart,
+    });
+    return true;
+  }
+
+  function addRectangle(first, opposite) {
+    if (Math.abs(first.x - opposite.x) < 1e-9 || Math.abs(first.y - opposite.y) < 1e-9) return false;
+    return addPolyline([
+      first,
+      { x: opposite.x, y: first.y },
+      opposite,
+      { x: first.x, y: opposite.y },
+      first,
+    ]);
+  }
+
+  function addCircle(center, radius) {
+    if (!Number.isFinite(radius) || radius <= 1e-9 || !currentLayerIsEditable()) return false;
+    pushHistory();
+    state.entities.push({
+      id: state.nextId++,
+      type: 'CIRCLE',
+      layerId: state.currentLayerId,
+      center: { ...center },
+      radius,
+    });
+    return true;
+  }
+
+  function circumcircleFromThreePoints(first, second, third) {
+    const span = Math.max(dist(first, second), dist(second, third), dist(third, first));
+    if (!Number.isFinite(span) || span <= 1e-9) return null;
+
+    const twiceArea = (second.x - first.x) * (third.y - first.y) -
+      (second.y - first.y) * (third.x - first.x);
+    if (Math.abs(twiceArea) <= Math.max(1e-10, span * span * 1e-10)) return null;
+
+    // Solve in coordinates relative to the first point. This avoids losing
+    // precision when small circular geometry is drawn at large coordinates.
+    const secondRelative = { x: second.x - first.x, y: second.y - first.y };
+    const thirdRelative = { x: third.x - first.x, y: third.y - first.y };
+    const denominator = 2 * (
+      secondRelative.x * thirdRelative.y - secondRelative.y * thirdRelative.x
+    );
+    const secondSquared = secondRelative.x * secondRelative.x + secondRelative.y * secondRelative.y;
+    const thirdSquared = thirdRelative.x * thirdRelative.x + thirdRelative.y * thirdRelative.y;
+    const center = {
+      x: first.x + (
+        secondSquared * thirdRelative.y - secondRelative.y * thirdSquared
+      ) / denominator,
+      y: first.y + (
+        secondRelative.x * thirdSquared - secondSquared * thirdRelative.x
+      ) / denominator,
+    };
+    const radius = dist(center, first);
+    if (!Number.isFinite(center.x) || !Number.isFinite(center.y) || !Number.isFinite(radius) || radius <= 1e-9) return null;
+    return { center, radius };
+  }
+
+  function threePointArc(start, through, end, id) {
+    const circle = circumcircleFromThreePoints(start, through, end);
+    if (!circle) return null;
+    const { center, radius } = circle;
+
+    const startAngle = angleFromCenter(center, start);
+    const throughAngle = angleFromCenter(center, through);
+    const endAngle = angleFromCenter(center, end);
+    const counterclockwiseSweep = normalizeAngle(endAngle - startAngle);
+    const throughSweep = normalizeAngle(throughAngle - startAngle);
+    const followsCounterclockwise = throughSweep < counterclockwiseSweep;
+    const storedStart = followsCounterclockwise ? startAngle : endAngle;
+    const storedSweep = followsCounterclockwise
+      ? counterclockwiseSweep
+      : normalizeAngle(startAngle - endAngle);
+    if (storedSweep <= 1e-8 || storedSweep >= TAU - 1e-8) return null;
+
+    const arc = {
+      type: 'ARC',
+      layerId: state.currentLayerId,
+      center,
+      radius,
+      startAngle: storedStart,
+      endAngle: storedStart + storedSweep,
+    };
+    if (id !== undefined) arc.id = id;
+    return arc;
+  }
+
+  function addThreePointCircle(first, second, third) {
+    const circle = circumcircleFromThreePoints(first, second, third);
+    if (!circle) return false;
+    return addCircle(circle.center, circle.radius);
+  }
+
+  function addThreePointArc(start, through, end) {
+    if (!currentLayerIsEditable()) return false;
+    const arc = threePointArc(start, through, end, state.nextId);
+    if (!arc) return false;
+    pushHistory();
+    state.nextId++;
+    state.entities.push(arc);
+    return true;
+  }
+
+  function translateEntity(entity, dx, dy, id = entity.id) {
+    if (entity.type === 'LINE') {
+      return {
+        ...entity,
+        id,
+        a: { x: entity.a.x + dx, y: entity.a.y + dy },
+        b: { x: entity.b.x + dx, y: entity.b.y + dy },
+      };
+    }
+    if (entity.type === 'PLINE') {
+      return {
+        ...entity,
+        id,
+        points: entity.points.map(point => ({ x: point.x + dx, y: point.y + dy })),
+      };
+    }
+    if (entity.type === 'CIRCLE' || entity.type === 'ARC') {
+      return {
+        ...entity,
+        id,
+        center: { x: entity.center.x + dx, y: entity.center.y + dy },
+      };
+    }
+    return JSON.parse(JSON.stringify(entity));
+  }
+
+  function rotatePoint(point, base, angle) {
+    const dx = point.x - base.x;
+    const dy = point.y - base.y;
+    const cosine = Math.cos(angle);
+    const sine = Math.sin(angle);
+    return {
+      x: base.x + dx * cosine - dy * sine,
+      y: base.y + dx * sine + dy * cosine,
+    };
+  }
+
+  function rotateEntity(entity, base, angle, id = entity.id) {
+    if (entity.type === 'LINE') {
+      return {
+        ...entity,
+        id,
+        a: rotatePoint(entity.a, base, angle),
+        b: rotatePoint(entity.b, base, angle),
+      };
+    }
+    if (entity.type === 'PLINE') {
+      return {
+        ...entity,
+        id,
+        points: entity.points.map(point => rotatePoint(point, base, angle)),
+      };
+    }
+    if (entity.type === 'CIRCLE') {
+      return { ...entity, id, center: rotatePoint(entity.center, base, angle) };
+    }
+    if (entity.type === 'ARC') {
+      const rotatedStart = normalizeAngle(entity.startAngle + angle);
+      return {
+        ...entity,
+        id,
+        center: rotatePoint(entity.center, base, angle),
+        startAngle: rotatedStart,
+        endAngle: rotatedStart + arcSweep(entity),
+      };
+    }
+    return JSON.parse(JSON.stringify(entity));
+  }
+
+  function scalePoint(point, base, factor) {
+    return {
+      x: base.x + (point.x - base.x) * factor,
+      y: base.y + (point.y - base.y) * factor,
+    };
+  }
+
+  function scaleEntity(entity, base, factor, id = entity.id) {
+    if (entity.type === 'LINE') {
+      return {
+        ...entity,
+        id,
+        a: scalePoint(entity.a, base, factor),
+        b: scalePoint(entity.b, base, factor),
+      };
+    }
+    if (entity.type === 'PLINE') {
+      return {
+        ...entity,
+        id,
+        points: entity.points.map(point => scalePoint(point, base, factor)),
+      };
+    }
+    if (entity.type === 'CIRCLE' || entity.type === 'ARC') {
+      return {
+        ...entity,
+        id,
+        center: scalePoint(entity.center, base, factor),
+        radius: entity.radius * factor,
+      };
+    }
+    return JSON.parse(JSON.stringify(entity));
+  }
+
+  function infiniteLineIntersection(a, b, c, d) {
+    const r = { x: b.x - a.x, y: b.y - a.y };
+    const s = { x: d.x - c.x, y: d.y - c.y };
+    const den = r.x * s.y - r.y * s.x;
+    if (Math.abs(den) < 1e-10) return null;
+    const ca = { x: c.x - a.x, y: c.y - a.y };
+    const t = (ca.x * s.y - ca.y * s.x) / den;
+    return { x: a.x + t * r.x, y: a.y + t * r.y };
+  }
+
+  function offsetSideSign(entity, sidePoint) {
+    let best = null;
+    for (const [a, b] of entitySegments(entity)) {
+      const q = pointOnSegmentClosest(sidePoint, a, b);
+      const gap = dist(sidePoint, q);
+      if (!best || gap < best.gap) {
+        const cross = (b.x - a.x) * (sidePoint.y - a.y) - (b.y - a.y) * (sidePoint.x - a.x);
+        best = { gap, cross };
+      }
+    }
+    if (!best || Math.abs(best.cross) < 1e-9) return 0;
+    return best.cross > 0 ? 1 : -1;
+  }
+
+  function shiftSegment(a, b, distance, side) {
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const length = Math.hypot(dx, dy);
+    if (length < 1e-9) return null;
+    const nx = -dy / length * distance * side;
+    const ny = dx / length * distance * side;
+    return [
+      { x: a.x + nx, y: a.y + ny },
+      { x: b.x + nx, y: b.y + ny },
+    ];
+  }
+
+  function joinedOffsetPoint(previous, current) {
+    return infiniteLineIntersection(previous[0], previous[1], current[0], current[1]) || {
+      x: (previous[1].x + current[0].x) / 2,
+      y: (previous[1].y + current[0].y) / 2,
+    };
+  }
+
+  function offsetEntity(entity, distance, sidePoint, id = entity.id) {
+    if (!['LINE', 'PLINE', 'CIRCLE', 'ARC'].includes(entity.type) || distance <= 0) return null;
+
+    if (entity.type === 'CIRCLE' || entity.type === 'ARC') {
+      const pointDistance = dist(entity.center, sidePoint);
+      if (Math.abs(pointDistance - entity.radius) < 1e-9) return null;
+      const radius = pointDistance > entity.radius ? entity.radius + distance : entity.radius - distance;
+      return radius > 1e-9 ? { ...entity, id, center: { ...entity.center }, radius } : null;
+    }
+
+    const side = offsetSideSign(entity, sidePoint);
+    if (!side) return null;
+
+    if (entity.type === 'LINE') {
+      const shifted = shiftSegment(entity.a, entity.b, distance, side);
+      return shifted ? { ...entity, id, a: shifted[0], b: shifted[1] } : null;
+    }
+
+    const points = entity.points.map(point => ({ ...point }));
+    if (entity.closed && points.length > 1 && dist(points[0], points[points.length - 1]) < 1e-9) points.pop();
+    if (points.length < (entity.closed ? 3 : 2)) return null;
+
+    const sourceSegments = [];
+    for (let i = 0; i < points.length - 1; i++) sourceSegments.push([points[i], points[i + 1]]);
+    if (entity.closed) sourceSegments.push([points[points.length - 1], points[0]]);
+    const shifted = sourceSegments.map(segment => shiftSegment(segment[0], segment[1], distance, side));
+    if (shifted.some(segment => !segment)) return null;
+
+    const offsetPoints = [];
+    if (entity.closed) {
+      for (let i = 0; i < shifted.length; i++) {
+        offsetPoints.push(joinedOffsetPoint(shifted[(i - 1 + shifted.length) % shifted.length], shifted[i]));
+      }
+    } else {
+      offsetPoints.push(shifted[0][0]);
+      for (let i = 1; i < shifted.length; i++) {
+        offsetPoints.push(joinedOffsetPoint(shifted[i - 1], shifted[i]));
+      }
+      offsetPoints.push(shifted[shifted.length - 1][1]);
+    }
+
+    return { ...entity, id, points: offsetPoints, closed: Boolean(entity.closed) };
+  }
+
+  function isOffsettable(entity) {
+    return entity && ['LINE', 'PLINE', 'CIRCLE', 'ARC'].includes(entity.type);
+  }
+
+  function startOffset() {
+    const preselected = state.entities.filter(entity =>
+      state.selected.has(entity.id) && isEntityEditable(entity) && isOffsettable(entity),
+    );
+    const source = preselected.length === 1 && state.selected.size === 1 ? preselected[0] : null;
+    setMode('OFFSET');
+    if (!source) state.selected.clear();
+    state.offset = {
+      stage: 'DISTANCE',
+      distance: null,
+      sourceId: source?.id || null,
+    };
+    updatePrompt();
+    draw();
+  }
+
+  function setOffsetDistance(value) {
+    if (state.mode !== 'OFFSET' || state.offset?.stage !== 'DISTANCE') return false;
+    if (!Number.isFinite(value) || value <= 0) {
+      updatePrompt('Distance must be greater than zero.');
+      return true;
+    }
+    state.offset.distance = value;
+    state.offset.stage = state.offset.sourceId ? 'SIDE' : 'SOURCE';
+    updatePrompt();
+    draw();
+    return true;
+  }
+
+  function acceptOffsetSource() {
+    if (state.mode !== 'OFFSET' || state.offset?.stage !== 'SOURCE') return false;
+    const selected = state.entities.filter(entity => state.selected.has(entity.id) && isEntityEditable(entity));
+    if (selected.length !== 1 || !isOffsettable(selected[0])) {
+      updatePrompt(selected.length ? 'Select exactly one line, polyline, circle, or arc.' : 'No object selected.');
+      return true;
+    }
+    state.offset.sourceId = selected[0].id;
+    state.offset.stage = 'SIDE';
+    updatePrompt();
+    draw();
+    return true;
+  }
+
+  function applyOffset(sidePoint) {
+    if (state.mode !== 'OFFSET' || state.offset?.stage !== 'SIDE') return;
+    const source = state.entities.find(entity => entity.id === state.offset.sourceId && isEntityEditable(entity));
+    const result = source && offsetEntity(source, state.offset.distance, sidePoint, state.nextId);
+    if (!result) {
+      updatePrompt('Choose a point clearly to one side of valid geometry.');
+      return;
+    }
+    pushHistory();
+    state.nextId += 1;
+    state.entities.push(result);
+    state.selected = new Set([result.id]);
+    setMode('SELECT');
+  }
+
+  function startEdgeEdit(type) {
+    const boundaryIds = state.selected.size
+      ? state.entities.filter(entity => state.selected.has(entity.id) && isEntityEditable(entity)).map(entity => entity.id)
+      : null;
+    setMode(type);
+    state.edit = { type, boundaryIds };
+    state.selected.clear();
+    updatePrompt();
+    draw();
+  }
+
+  function finishEdgeEdit() {
+    state.selected.clear();
+    setMode('SELECT');
+  }
+
+  function hitTestSegment(world, maxPx = 10, excludedIds = null, includeCircular = false) {
+    const cursor = worldToScreen(world);
+    let best = null;
+    for (const entity of state.entities) {
+      if (excludedIds?.has(entity.id) || !isEntityEditable(entity)) continue;
+      const segments = entitySegments(entity);
+      for (let segmentIndex = 0; segmentIndex < segments.length; segmentIndex++) {
+        const [a, b] = segments[segmentIndex];
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const lengthSquared = dx * dx + dy * dy;
+        if (lengthSquared < 1e-12) continue;
+        const t = Math.max(0, Math.min(1, ((world.x - a.x) * dx + (world.y - a.y) * dy) / lengthSquared));
+        const point = { x: a.x + t * dx, y: a.y + t * dy };
+        const screen = worldToScreen(point);
+        const px = Math.hypot(screen.x - cursor.x, screen.y - cursor.y);
+        if (px <= maxPx && (!best || px < best.px)) {
+          best = { entity, kind: 'SEGMENT', segmentIndex, a, b, t, point, px };
+        }
+      }
+      if (includeCircular && ['CIRCLE', 'ARC'].includes(entity.type)) {
+        const angle = angleFromCenter(entity.center, world);
+        if (pointOnCircularEntity(world, entity)) {
+          const point = circularPoint(entity.center, entity.radius, angle);
+          const px = dist(world, point) * state.view.scale;
+          if (px <= maxPx && (!best || px < best.px)) {
+            best = { entity, kind: 'CIRCULAR', angle, point, px };
+          }
+        }
+      }
+    }
+    return best;
+  }
+
+  function editBoundarySegments(targetId, includeTarget = false) {
+    const limitedIds = state.edit?.boundaryIds ? new Set(state.edit.boundaryIds) : null;
+    const boundaries = [];
+    for (const entity of state.entities) {
+      if (!isEntityVisible(entity) || (!includeTarget && entity.id === targetId) || (limitedIds && !limitedIds.has(entity.id))) continue;
+      if (entity.type === 'CIRCLE' || entity.type === 'ARC') {
+        boundaries.push({
+          kind: entity.type,
+          entityId: entity.id,
+          center: entity.center,
+          radius: entity.radius,
+          ...(entity.type === 'ARC' ? { startAngle: entity.startAngle, endAngle: entity.endAngle } : {}),
+        });
+        continue;
+      }
+      const segments = entitySegments(entity);
+      for (let segmentIndex = 0; segmentIndex < segments.length; segmentIndex++) {
+        boundaries.push({ kind: 'SEGMENT', entityId: entity.id, segmentIndex, a: segments[segmentIndex][0], b: segments[segmentIndex][1] });
+      }
+    }
+    return boundaries;
+  }
+
+  function segmentIntersectionParameters(a, b, c, d) {
+    const r = { x: b.x - a.x, y: b.y - a.y };
+    const s = { x: d.x - c.x, y: d.y - c.y };
+    const den = r.x * s.y - r.y * s.x;
+    if (Math.abs(den) < 1e-10) return null;
+    const ca = { x: c.x - a.x, y: c.y - a.y };
+    const t = (ca.x * s.y - ca.y * s.x) / den;
+    const u = (ca.x * r.y - ca.y * r.x) / den;
+    const eps = 1e-9;
+    if (t < -eps || t > 1 + eps || u < -eps || u > 1 + eps) return null;
+    return {
+      t: Math.max(0, Math.min(1, t)),
+      u: Math.max(0, Math.min(1, u)),
+      point: { x: a.x + t * r.x, y: a.y + t * r.y },
+    };
+  }
+
+  function pointAlong(a, b, t) {
+    return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+  }
+
+  function appendDistinct(points, point) {
+    if (!points.length || dist(points[points.length - 1], point) > 1e-8) points.push({ ...point });
+  }
+
+  function cleanPointPath(points) {
+    const cleaned = [];
+    for (const point of points) appendDistinct(cleaned, point);
+    return cleaned;
+  }
+
+  function trimPieceFromPoints(entity, points) {
+    const cleaned = cleanPointPath(points);
+    if (cleaned.length < 2) return null;
+    const length = cleaned.slice(1).reduce((sum, point, index) => sum + dist(cleaned[index], point), 0);
+    if (length < 1e-8) return null;
+    if (entity.type === 'LINE') return { ...entity, a: cleaned[0], b: cleaned[cleaned.length - 1] };
+    return { ...entity, points: cleaned, closed: false };
+  }
+
+  function pointAtPathPosition(entity, position) {
+    const segments = entitySegments(entity);
+    const count = segments.length;
+    if (!count) return null;
+    let normalized = position;
+    if (entity.closed) {
+      normalized = ((position % count) + count) % count;
+    } else {
+      normalized = Math.max(0, Math.min(count, position));
+      if (normalized >= count) return { ...segments[count - 1][1] };
+    }
+    const segmentIndex = Math.min(count - 1, Math.floor(normalized));
+    return pointAlong(segments[segmentIndex][0], segments[segmentIndex][1], normalized - segmentIndex);
+  }
+
+  function pathPointsBetween(entity, start, end) {
+    const points = [];
+    appendDistinct(points, pointAtPathPosition(entity, start));
+    for (let vertex = Math.floor(start + 1e-9) + 1; vertex < end - 1e-9; vertex++) {
+      appendDistinct(points, pointAtPathPosition(entity, vertex));
+    }
+    appendDistinct(points, pointAtPathPosition(entity, end));
+    return points;
+  }
+
+  function buildTrimPieces(entity, pathStart, pathEnd) {
+    const segmentCount = entitySegments(entity).length;
+    const rawPieces = [];
+
+    if (entity.closed) {
+      rawPieces.push(pathPointsBetween(entity, pathEnd, pathStart + segmentCount));
+    } else {
+      if (pathStart > 1e-8) rawPieces.push(pathPointsBetween(entity, 0, pathStart));
+      if (pathEnd < segmentCount - 1e-8) rawPieces.push(pathPointsBetween(entity, pathEnd, segmentCount));
+    }
+
+    return rawPieces.map(points => trimPieceFromPoints(entity, points)).filter(Boolean);
+  }
+
+  function makeArc(entity, startAngle, endAngle) {
+    const sweep = endAngle - startAngle;
+    if (sweep <= 1e-8 || sweep >= TAU - 1e-8) return null;
+    const normalizedStart = normalizeAngle(startAngle);
+    return {
+      ...entity,
+      type: 'ARC',
+      center: { ...entity.center },
+      startAngle: normalizedStart,
+      endAngle: normalizedStart + sweep,
+    };
+  }
+
+  function calculateCircularTrimOperation(hit, boundaries) {
+    const entity = hit.entity;
+    const intersectionAngles = [];
+    for (const boundary of boundaries) {
+      const points = boundary.kind === 'SEGMENT'
+        ? segmentCircularIntersections(boundary.a, boundary.b, entity).map(result => result.point)
+        : circularEntityIntersections(entity, boundary);
+      for (const point of points) intersectionAngles.push(angleFromCenter(entity.center, point));
+    }
+
+    if (entity.type === 'CIRCLE') {
+      intersectionAngles.sort((a, b) => a - b);
+      const unique = intersectionAngles.filter((angle, index) =>
+        index === 0 || Math.abs(angle - intersectionAngles[index - 1]) > 1e-7,
+      );
+      if (unique.length < 2) return { error: 'A circle needs two cutting intersections to trim.' };
+
+      const clickAngle = hit.angle;
+      let previous = [...unique].reverse().find(angle => angle <= clickAngle + 1e-9);
+      let next = unique.find(angle => angle > clickAngle + 1e-9);
+      if (previous === undefined) previous = unique[unique.length - 1] - TAU;
+      if (next === undefined) next = unique[0] + TAU;
+      const removedSweep = next - previous;
+      const kept = makeArc(entity, next, next + TAU - removedSweep);
+      if (!kept) return { error: 'Those cutting intersections do not leave a valid arc.' };
+      return {
+        hit,
+        removeArc: makeArc(entity, previous, next),
+        pieces: [kept],
+      };
+    }
+
+    const start = entity.startAngle;
+    const end = entity.endAngle;
+    const interior = intersectionAngles
+      .map(angle => unwrappedArcAngle(angle, entity))
+      .filter(angle => angle > start + 1e-8 && angle < end - 1e-8)
+      .sort((a, b) => a - b)
+      .filter((angle, index, values) => index === 0 || Math.abs(angle - values[index - 1]) > 1e-7);
+    if (!interior.length) return { error: 'No cutting boundary intersects that arc.' };
+
+    const clickAngle = unwrappedArcAngle(hit.angle, entity);
+    const limits = [start, ...interior, end];
+    let interval = 0;
+    for (let index = 0; index < limits.length - 1; index++) {
+      if (clickAngle >= limits[index] - 1e-9 && clickAngle <= limits[index + 1] + 1e-9) {
+        interval = index;
+        break;
+      }
+    }
+    const removeStart = limits[interval];
+    const removeEnd = limits[interval + 1];
+    const pieces = [
+      makeArc(entity, start, removeStart),
+      makeArc(entity, removeEnd, end),
+    ].filter(Boolean);
+    return {
+      hit,
+      removeArc: makeArc(entity, removeStart, removeEnd),
+      pieces,
+    };
+  }
+
+  function calculateTrimOperation(world) {
+    const excludedIds = state.edit?.boundaryIds ? new Set(state.edit.boundaryIds) : null;
+    const hit = hitTestSegment(world, 10, excludedIds, true);
+    if (!hit) return { error: 'Click the portion of a line, polyline, circle, or arc to trim.' };
+    const includeSelfIntersections = !state.edit?.boundaryIds;
+    const boundaries = editBoundarySegments(hit.entity.id, includeSelfIntersections);
+    if (hit.kind === 'CIRCULAR') return calculateCircularTrimOperation(hit, boundaries);
+
+    const segmentCount = entitySegments(hit.entity).length;
+    const intersections = [];
+
+    for (const boundary of boundaries) {
+      if (boundary.kind === 'SEGMENT' && boundary.entityId === hit.entity.id) {
+        if (boundary.segmentIndex === hit.segmentIndex) continue;
+        const separation = Math.abs(boundary.segmentIndex - hit.segmentIndex);
+        const adjacent = separation === 1 || (hit.entity.closed && separation === segmentCount - 1);
+        if (adjacent) continue;
+      }
+      if (boundary.kind === 'CIRCLE' || boundary.kind === 'ARC') {
+        for (const detail of segmentCircularIntersections(hit.a, hit.b, boundary)) {
+          if (detail.t > 1e-8 && detail.t < 1 - 1e-8) intersections.push(detail.t);
+        }
+      } else {
+        const detail = segmentIntersectionParameters(hit.a, hit.b, boundary.a, boundary.b);
+        if (detail && detail.t > 1e-8 && detail.t < 1 - 1e-8) intersections.push(detail.t);
+      }
+    }
+    intersections.sort((a, b) => a - b);
+    const unique = intersections.filter((value, index) => index === 0 || Math.abs(value - intersections[index - 1]) > 1e-7);
+    if (!unique.length && hit.entity.type === 'LINE') return { error: 'No cutting boundary intersects that line.' };
+
+    let previousIntersection = null;
+    let nextIntersection = null;
+    for (const position of unique) {
+      if (position <= hit.t + 1e-9) previousIntersection = position;
+      else if (nextIntersection === null) nextIntersection = position;
+    }
+    const pathStart = hit.segmentIndex + (previousIntersection ?? 0);
+    const pathEnd = hit.segmentIndex + (nextIntersection ?? 1);
+    return {
+      hit,
+      pathStart,
+      pathEnd,
+      removePoints: pathPointsBetween(hit.entity, pathStart, pathEnd),
+      pieces: buildTrimPieces(hit.entity, pathStart, pathEnd),
+    };
+  }
+
+  function replaceEditedEntity(entity, replacements) {
+    const entityIndex = state.entities.findIndex(candidate => candidate.id === entity.id);
+    if (entityIndex < 0) return;
+    pushHistory();
+    const assigned = replacements.map((replacement, index) => ({
+      ...replacement,
+      id: index === 0 ? entity.id : state.nextId++,
+    }));
+    state.entities.splice(entityIndex, 1, ...assigned);
+    state.selected.clear();
+    updatePrompt();
+    draw();
+  }
+
+  function trimAt(world) {
+    const operation = calculateTrimOperation(world);
+    if (operation.error) {
+      updatePrompt(operation.error);
+      draw();
+      return;
+    }
+    replaceEditedEntity(operation.hit.entity, operation.pieces);
+  }
+
+  function raySegmentIntersection(origin, direction, a, b) {
+    const segment = { x: b.x - a.x, y: b.y - a.y };
+    const den = direction.x * segment.y - direction.y * segment.x;
+    if (Math.abs(den) < 1e-10) return null;
+    const ao = { x: a.x - origin.x, y: a.y - origin.y };
+    const t = (ao.x * segment.y - ao.y * segment.x) / den;
+    const u = (ao.x * direction.y - ao.y * direction.x) / den;
+    if (t <= 1e-9 || u < -1e-9 || u > 1 + 1e-9) return null;
+    return { t, point: { x: origin.x + t * direction.x, y: origin.y + t * direction.y } };
+  }
+
+  function rayCircleIntersections(origin, direction, center, radius) {
+    const dx = direction.x;
+    const dy = direction.y;
+    const fx = origin.x - center.x;
+    const fy = origin.y - center.y;
+    const qa = dx * dx + dy * dy;
+    if (qa < 1e-12 || radius <= 0) return [];
+    const qb = 2 * (fx * dx + fy * dy);
+    const qc = fx * fx + fy * fy - radius * radius;
+    const discriminant = qb * qb - 4 * qa * qc;
+    if (discriminant < -1e-9) return [];
+    const root = Math.sqrt(Math.max(0, discriminant));
+    return [(-qb - root) / (2 * qa), (-qb + root) / (2 * qa)]
+      .filter((t, index, values) => t > 1e-9 && (index === 0 || Math.abs(t - values[0]) > 1e-8))
+      .map(t => ({ t, point: { x: origin.x + t * dx, y: origin.y + t * dy } }));
+  }
+
+  function rayCircularIntersections(origin, direction, circularEntity) {
+    return rayCircleIntersections(origin, direction, circularEntity.center, circularEntity.radius)
+      .filter(intersection => pointOnCircularEntity(intersection.point, circularEntity));
+  }
+
+  function circularExtensionIntersections(target, boundary) {
+    if (boundary.kind === 'SEGMENT') {
+      return segmentCircleIntersections(boundary.a, boundary.b, target.center, target.radius)
+        .map(intersection => intersection.point);
+    }
+    return circleCircleIntersections(target, boundary)
+      .filter(point => pointOnCircularEntity(point, boundary));
+  }
+
+  function extendableEndpoints(entity) {
+    if (entity.type === 'LINE') return [entity.a, entity.b];
+    if (entity.type === 'PLINE' && !entity.closed && entity.points.length >= 2) {
+      return [entity.points[0], entity.points[entity.points.length - 1]];
+    }
+    if (entity.type === 'ARC') {
+      return [
+        circularPoint(entity.center, entity.radius, entity.startAngle),
+        circularPoint(entity.center, entity.radius, entity.endAngle),
+      ];
+    }
+    return [];
+  }
+
+  function hitTestExtendTarget(world, maxPx = 10, excludedIds = null) {
+    let best = null;
+    for (const entity of state.entities) {
+      if (excludedIds?.has(entity.id) || !isEntityEditable(entity)) continue;
+      const endpoints = extendableEndpoints(entity);
+      if (!endpoints.length) continue;
+      const geometryPx = distanceToEntityPx(world, entity);
+      if (geometryPx > maxPx) continue;
+      const endpointPx = Math.min(...endpoints.map(point => dist(world, point) * state.view.scale));
+
+      let point = { ...world };
+      if (entity.type === 'ARC') {
+        const angle = angleFromCenter(entity.center, world);
+        point = angleOnArc(angle, entity)
+          ? circularPoint(entity.center, entity.radius, angle)
+          : endpoints.reduce((nearest, endpoint) => dist(world, endpoint) < dist(world, nearest) ? endpoint : nearest);
+      }
+
+      const geometryTie = best && Math.abs(geometryPx - best.geometryPx) <= 0.75;
+      const endpointTie = best && Math.abs(endpointPx - best.endpointPx) <= 0.1;
+      const isBetter = !best || geometryPx < best.geometryPx - 0.75 ||
+        (geometryTie && endpointPx < best.endpointPx - 0.1) ||
+        (geometryTie && endpointTie && entity.type === 'ARC' && best.entity.type !== 'ARC');
+      if (isBetter) best = { entity, point, world: { ...world }, geometryPx, endpointPx };
+    }
+    return best;
+  }
+
+  function calculateArcExtendOperation(hit) {
+    const entity = hit.entity;
+    const startPoint = circularPoint(entity.center, entity.radius, entity.startAngle);
+    const endPoint = circularPoint(entity.center, entity.radius, entity.endAngle);
+    const extendStart = dist(hit.point, startPoint) <= dist(hit.point, endPoint);
+    const activeEndpoint = extendStart ? startPoint : endPoint;
+    const availableSweep = TAU - arcSweep(entity);
+    if (availableSweep <= 1e-8) return { error: 'That arc has no remaining sweep to extend.' };
+    const endpointTolerance = Math.max(1e-7, entity.radius * 1e-7);
+    const angularTolerance = endpointTolerance / entity.radius;
+
+    let nearest = null;
+    for (const boundary of editBoundarySegments(entity.id)) {
+      const intersections = circularExtensionIntersections(entity, boundary);
+      // A boundary already containing this endpoint is the satisfied boundary.
+      // Skip the entity, not merely the coincident point, so EX advances to the
+      // next distinct element instead of finding the far side of the same one.
+      if (intersections.some(point => dist(point, activeEndpoint) <= endpointTolerance)) continue;
+      for (const point of intersections) {
+        const angle = angleFromCenter(entity.center, point);
+        const delta = extendStart
+          ? normalizeAngle(entity.startAngle - angle)
+          : normalizeAngle(angle - entity.endAngle);
+        if (delta <= angularTolerance || delta >= availableSweep - angularTolerance) continue;
+        if (!nearest || delta < nearest.delta) nearest = { delta, point, angle };
+      }
+    }
+    if (!nearest) return { error: 'No boundary intersects that arc extension direction.' };
+
+    const result = extendStart
+      ? makeArc(entity, entity.startAngle - nearest.delta, entity.endAngle)
+      : makeArc(entity, entity.startAngle, entity.endAngle + nearest.delta);
+    return result ? { hit, result } : { error: 'That extension would close or invalidate the arc.' };
+  }
+
+  function calculateExtendOperation(world) {
+    const excludedIds = state.edit?.boundaryIds ? new Set(state.edit.boundaryIds) : null;
+    const hit = hitTestExtendTarget(world, 10, excludedIds);
+    if (!hit) return { error: 'Click a line, open polyline, or arc near the end to extend.' };
+    if (hit.entity.type === 'ARC') return calculateArcExtendOperation(hit);
+    if (hit.entity.type === 'PLINE' && hit.entity.closed) return { error: 'A closed polyline has no endpoint to extend.' };
+
+    const points = hit.entity.type === 'LINE'
+      ? [hit.entity.a, hit.entity.b]
+      : hit.entity.points;
+    if (points.length < 2) return { error: 'That entity has no extendable endpoint.' };
+    const extendStart = dist(world, points[0]) <= dist(world, points[points.length - 1]);
+    const endpointIndex = extendStart ? 0 : points.length - 1;
+    const adjacentIndex = extendStart ? 1 : points.length - 2;
+    const origin = points[endpointIndex];
+    const adjacent = points[adjacentIndex];
+    const direction = { x: origin.x - adjacent.x, y: origin.y - adjacent.y };
+    if (Math.hypot(direction.x, direction.y) < 1e-9) return { error: 'The selected endpoint has no valid direction.' };
+
+    let nearest = null;
+    for (const boundary of editBoundarySegments(hit.entity.id)) {
+      const intersections = boundary.kind === 'CIRCLE' || boundary.kind === 'ARC'
+        ? rayCircularIntersections(origin, direction, boundary)
+        : [raySegmentIntersection(origin, direction, boundary.a, boundary.b)].filter(Boolean);
+      for (const intersection of intersections) {
+        if (!nearest || intersection.t < nearest.t) nearest = intersection;
+      }
+    }
+    if (!nearest) return { error: 'No boundary intersects that extension direction.' };
+
+    let result;
+    if (hit.entity.type === 'LINE') {
+      result = {
+        ...hit.entity,
+        a: extendStart ? nearest.point : { ...hit.entity.a },
+        b: extendStart ? { ...hit.entity.b } : nearest.point,
+      };
+    } else {
+      const extendedPoints = hit.entity.points.map(point => ({ ...point }));
+      extendedPoints[endpointIndex] = nearest.point;
+      result = { ...hit.entity, points: extendedPoints, closed: false };
+    }
+    return { hit, result };
+  }
+
+  function extendAt(world) {
+    const operation = calculateExtendOperation(world);
+    if (operation.error) {
+      updatePrompt(operation.error);
+      draw();
+      return;
+    }
+    replaceEditedEntity(operation.hit.entity, [operation.result]);
+  }
+
+  function startTransform(type) {
+    setMode(type);
+    const ids = state.entities
+      .filter(entity => state.selected.has(entity.id) && isEntityEditable(entity))
+      .map(entity => entity.id);
+    state.transform = {
+      type,
+      stage: ids.length ? 'BASE' : 'SELECT',
+      ids,
+      base: null,
+      referenceStart: null,
+      referenceLength: null,
+      referenceAngle: null,
+    };
+    updatePrompt();
+    draw();
+  }
+
+  function acceptTransformSelection() {
+    if (!state.transform || state.transform.stage !== 'SELECT') return false;
+    const ids = state.entities
+      .filter(entity => state.selected.has(entity.id) && isEntityEditable(entity))
+      .map(entity => entity.id);
+    if (!ids.length) {
+      updatePrompt('No objects selected.');
+      return true;
+    }
+    state.transform.ids = ids;
+    state.transform.stage = 'BASE';
+    updatePrompt();
+    draw();
+    return true;
+  }
+
+  function applyTransform(destination) {
+    const operation = state.transform;
+    if (!operation?.base || operation.stage !== 'DEST') return;
+    const dx = destination.x - operation.base.x;
+    const dy = destination.y - operation.base.y;
+    if (Math.hypot(dx, dy) < 1e-9) {
+      updatePrompt('Destination must differ from the base point.');
+      return;
+    }
+
+    const idSet = new Set(state.entities
+      .filter(entity => operation.ids.includes(entity.id) && isEntityEditable(entity))
+      .map(entity => entity.id));
+    if (!idSet.size) {
+      updatePrompt('The selected objects are no longer editable.');
+      return;
+    }
+    pushHistory();
+    if (operation.type === 'MOVE') {
+      state.entities = state.entities.map(entity =>
+        idSet.has(entity.id) ? translateEntity(entity, dx, dy) : entity,
+      );
+      state.selected = new Set(idSet);
+    } else {
+      const copies = state.entities
+        .filter(entity => idSet.has(entity.id))
+        .map(entity => translateEntity(entity, dx, dy, state.nextId++));
+      state.entities.push(...copies);
+      state.selected = new Set(copies.map(entity => entity.id));
+    }
+    setMode('SELECT');
+  }
+
+  function applyRotation(angle) {
+    const operation = state.transform;
+    if (!operation?.base || !['ANGLE', 'ROTATE_TARGET'].includes(operation.stage) || operation.type !== 'ROTATE') return;
+    const reducedAngle = Math.atan2(Math.sin(angle), Math.cos(angle));
+    if (Math.abs(reducedAngle) < 1e-10) {
+      updatePrompt('Rotation angle must differ from zero.');
+      return;
+    }
+
+    const idSet = new Set(state.entities
+      .filter(entity => operation.ids.includes(entity.id) && isEntityEditable(entity))
+      .map(entity => entity.id));
+    if (!idSet.size) {
+      updatePrompt('The selected objects are no longer editable.');
+      return;
+    }
+    pushHistory();
+    state.entities = state.entities.map(entity =>
+      idSet.has(entity.id) ? rotateEntity(entity, operation.base, reducedAngle) : entity,
+    );
+    state.selected = new Set(idSet);
+    setMode('SELECT');
+  }
+
+  function applyScale(factor) {
+    const operation = state.transform;
+    if (!operation?.base || !['FACTOR', 'SCALE_REF_NEW'].includes(operation.stage) || operation.type !== 'SCALE') return;
+    if (!Number.isFinite(factor) || factor <= 1e-9) {
+      updatePrompt('Scale factor must be greater than zero.');
+      return;
+    }
+    if (Math.abs(factor - 1) < 1e-10) {
+      updatePrompt('Scale factor must differ from 1.');
+      return;
+    }
+
+    const idSet = new Set(state.entities
+      .filter(entity => operation.ids.includes(entity.id) && isEntityEditable(entity))
+      .map(entity => entity.id));
+    if (!idSet.size) {
+      updatePrompt('The selected objects are no longer editable.');
+      return;
+    }
+
+    const scaled = new Map();
+    for (const entity of state.entities) {
+      if (!idSet.has(entity.id)) continue;
+      const result = scaleEntity(entity, operation.base, factor);
+      const box = entityBBox(result);
+      if (!box || Object.values(box).some(value => !Number.isFinite(value))) {
+        updatePrompt('That scale factor would create invalid geometry.');
+        return;
+      }
+      scaled.set(entity.id, result);
+    }
+
+    pushHistory();
+    state.entities = state.entities.map(entity => scaled.get(entity.id) || entity);
+    state.selected = new Set(idSet);
+    setMode('SELECT');
+  }
+
+  function entityGrips(entity) {
+    if (entity.type === 'LINE') {
+      return [
+        { kind: 'LINE_END', index: 0, point: entity.a },
+        { kind: 'LINE_END', index: 1, point: entity.b },
+      ];
+    }
+    if (entity.type === 'PLINE') {
+      return entity.points.map((point, index) => ({ kind: 'PLINE_VERTEX', index, point }));
+    }
+    if (entity.type === 'CIRCLE') {
+      return [
+        { kind: 'CIRCLE_CENTER', point: entity.center },
+        ...[0, Math.PI / 2, Math.PI, Math.PI * 1.5].map(angle => ({
+          kind: 'CIRCLE_RADIUS',
+          angle,
+          point: circularPoint(entity.center, entity.radius, angle),
+        })),
+      ];
+    }
+    if (entity.type === 'ARC') {
+      return [
+        { kind: 'ARC_CENTER', point: entity.center },
+        { kind: 'ARC_START', point: circularPoint(entity.center, entity.radius, entity.startAngle) },
+        {
+          kind: 'ARC_MID',
+          point: circularPoint(entity.center, entity.radius, entity.startAngle + arcSweep(entity) / 2),
+        },
+        { kind: 'ARC_END', point: circularPoint(entity.center, entity.radius, entity.endAngle) },
+      ];
+    }
+    return [];
+  }
+
+  function hitTestGrip(screen, maxPx = 8) {
+    let best = null;
+    for (const entity of state.entities) {
+      if (!state.selected.has(entity.id) || !isEntityEditable(entity)) continue;
+      for (const descriptor of entityGrips(entity)) {
+        const gripScreen = worldToScreen(descriptor.point);
+        const px = Math.hypot(gripScreen.x - screen.x, gripScreen.y - screen.y);
+        if (px <= maxPx && (!best || px < best.px)) best = { entity, descriptor, px };
+      }
+    }
+    return best;
+  }
+
+  function startGripEdit(hit) {
+    if (!hit?.entity || !isEntityEditable(hit.entity)) return false;
+    const entityId = hit.entity.id;
+    const descriptor = {
+      ...hit.descriptor,
+      point: { ...hit.descriptor.point },
+    };
+    setMode('GRIP');
+    state.grip = {
+      entityId,
+      descriptor,
+      base: { ...descriptor.point },
+    };
+    updatePrompt();
+    draw();
+    return true;
+  }
+
+  function gripEditedEntity(entity, descriptor, point) {
+    if (!entity || !descriptor || !Number.isFinite(point.x) || !Number.isFinite(point.y)) {
+      return { error: 'Grip destination is invalid.' };
+    }
+
+    if (entity.type === 'LINE' && descriptor.kind === 'LINE_END') {
+      const result = {
+        ...entity,
+        a: { ...entity.a },
+        b: { ...entity.b },
+      };
+      if (descriptor.index === 0) result.a = { ...point };
+      else result.b = { ...point };
+      if (dist(result.a, result.b) <= 1e-9) return { error: 'A line must retain a nonzero length.' };
+      return { entity: result };
+    }
+
+    if (entity.type === 'PLINE' && descriptor.kind === 'PLINE_VERTEX') {
+      const index = descriptor.index;
+      if (!Number.isInteger(index) || index < 0 || index >= entity.points.length) {
+        return { error: 'That polyline vertex is no longer available.' };
+      }
+      const points = entity.points.map(value => ({ ...value }));
+      const previousIndex = index > 0 ? index - 1 : entity.closed ? points.length - 1 : null;
+      const nextIndex = index < points.length - 1 ? index + 1 : entity.closed ? 0 : null;
+      if ((previousIndex !== null && dist(point, points[previousIndex]) <= 1e-9) ||
+          (nextIndex !== null && dist(point, points[nextIndex]) <= 1e-9)) {
+        return { error: 'A polyline vertex cannot coincide with an adjacent vertex.' };
+      }
+      points[index] = { ...point };
+      return { entity: { ...entity, points } };
+    }
+
+    if (entity.type === 'CIRCLE') {
+      if (descriptor.kind === 'CIRCLE_CENTER') {
+        return { entity: { ...entity, center: { ...point } } };
+      }
+      if (descriptor.kind === 'CIRCLE_RADIUS') {
+        const radius = dist(entity.center, point);
+        if (radius <= 1e-9) return { error: 'Circle radius must be greater than zero.' };
+        return { entity: { ...entity, center: { ...entity.center }, radius } };
+      }
+    }
+
+    if (entity.type === 'ARC') {
+      if (descriptor.kind === 'ARC_CENTER') {
+        return { entity: { ...entity, center: { ...point } } };
+      }
+      if (['ARC_START', 'ARC_MID', 'ARC_END'].includes(descriptor.kind)) {
+        const start = circularPoint(entity.center, entity.radius, entity.startAngle);
+        const through = circularPoint(entity.center, entity.radius, entity.startAngle + arcSweep(entity) / 2);
+        const end = circularPoint(entity.center, entity.radius, entity.endAngle);
+        const reconstructed = descriptor.kind === 'ARC_START'
+          ? threePointArc(point, through, end, entity.id)
+          : descriptor.kind === 'ARC_MID'
+            ? threePointArc(start, point, end, entity.id)
+            : threePointArc(start, through, point, entity.id);
+        if (!reconstructed) {
+          return { error: 'Arc control points must remain distinct and non-collinear.' };
+        }
+        return {
+          entity: {
+            ...entity,
+            center: { ...reconstructed.center },
+            radius: reconstructed.radius,
+            startAngle: reconstructed.startAngle,
+            endAngle: reconstructed.endAngle,
+          },
+        };
+      }
+    }
+
+    return { error: 'That grip cannot edit this entity.' };
+  }
+
+  function applyGripEdit(point) {
+    const operation = state.grip;
+    const entity = state.entities.find(value => value.id === operation?.entityId);
+    if (!operation || !entity || !isEntityEditable(entity)) {
+      updatePrompt('The gripped object is no longer editable.');
+      return false;
+    }
+    const result = gripEditedEntity(entity, operation.descriptor, point);
+    if (result.error) {
+      updatePrompt(result.error);
+      draw();
+      return false;
+    }
+    if (JSON.stringify(result.entity) === JSON.stringify(entity)) {
+      updatePrompt('Grip destination must change the geometry.');
+      draw();
+      return false;
+    }
+    pushHistory();
+    state.entities = state.entities.map(value => value.id === entity.id ? result.entity : value);
+    setMode('SELECT');
+    return true;
+  }
+
+  function commitPoint(p) {
+    if (state.mode === 'LINE') {
+      if (!state.currentPoints.length) {
+        state.currentPoints.push({ ...p });
+      } else {
+        addLine(state.currentPoints[0], p);
+        state.currentPoints = [{ ...p }];
+      }
+      updatePrompt();
+    } else if (state.mode === 'PLINE') {
+      state.currentPoints.push({ ...p });
+      updatePrompt();
+    } else if (state.mode === 'RECTANGLE') {
+      if (!state.currentPoints.length) {
+        state.currentPoints.push({ ...p });
+        updatePrompt();
+      } else if (addRectangle(state.currentPoints[0], p)) {
+        state.currentPoints = [];
+        setMode('SELECT');
+      } else {
+        updatePrompt('Opposite corner must create nonzero width and height.');
+      }
+    } else if (state.mode === 'CIRCLE') {
+      const operation = state.circle || { method: 'CENTER_RADIUS', stage: 'CENTER' };
+      if (operation.method === 'TWO_POINT') {
+        if (operation.stage === 'FIRST') {
+          state.currentPoints = [{ ...p }];
+          operation.stage = 'SECOND';
+          updatePrompt();
+        } else {
+          const first = state.currentPoints[0];
+          const diameter = dist(first, p);
+          const center = { x: (first.x + p.x) / 2, y: (first.y + p.y) / 2 };
+          if (addCircle(center, diameter / 2)) setMode('SELECT');
+          else updatePrompt('Diameter endpoints must be different.');
+        }
+      } else if (operation.method === 'THREE_POINT') {
+        if (operation.stage === 'FIRST') {
+          state.currentPoints = [{ ...p }];
+          operation.stage = 'SECOND';
+          updatePrompt();
+        } else if (operation.stage === 'SECOND') {
+          state.currentPoints.push({ ...p });
+          operation.stage = 'THIRD';
+          updatePrompt();
+        } else if (addThreePointCircle(state.currentPoints[0], state.currentPoints[1], p)) {
+          setMode('SELECT');
+        } else {
+          updatePrompt('Three circle points must be distinct and non-collinear.');
+        }
+      } else if (operation.stage === 'CENTER') {
+        state.currentPoints = [{ ...p }];
+        operation.stage = 'RADIUS';
+        updatePrompt();
+      } else {
+        const pickedDistance = dist(state.currentPoints[0], p);
+        const radius = operation.method === 'CENTER_DIAMETER' ? pickedDistance / 2 : pickedDistance;
+        if (addCircle(state.currentPoints[0], radius)) setMode('SELECT');
+        else updatePrompt(operation.method === 'CENTER_DIAMETER'
+          ? 'Diameter must be greater than zero.'
+          : 'Radius must be greater than zero.');
+      }
+    } else if (state.mode === 'ARC') {
+      if (state.currentPoints.length < 2) {
+        state.currentPoints.push({ ...p });
+        updatePrompt();
+      } else if (addThreePointArc(state.currentPoints[0], state.currentPoints[1], p)) {
+        state.currentPoints = [];
+        setMode('SELECT');
+      } else {
+        updatePrompt('Points must be distinct and non-collinear.');
+      }
+    } else if (TRANSFORM_COMMANDS.includes(state.mode) && state.transform) {
+      if (state.transform.stage === 'BASE') {
+        state.transform.base = { ...p };
+        state.transform.stage = state.mode === 'ROTATE' ? 'ANGLE' : state.mode === 'SCALE' ? 'FACTOR' : 'DEST';
+        updatePrompt();
+      } else if (state.transform.stage === 'DEST') {
+        applyTransform(p);
+      } else if (state.transform.stage === 'ANGLE') {
+        const dx = p.x - state.transform.base.x;
+        const dy = p.y - state.transform.base.y;
+        if (Math.hypot(dx, dy) < 1e-9) updatePrompt('Rotation point must differ from the base point.');
+        else applyRotation(Math.atan2(dy, dx));
+      } else if (state.transform.stage === 'ROTATE_REF') {
+        const dx = p.x - state.transform.base.x;
+        const dy = p.y - state.transform.base.y;
+        if (Math.hypot(dx, dy) < 1e-9) {
+          updatePrompt('Reference point must differ from the base point.');
+        } else {
+          state.transform.referenceAngle = Math.atan2(dy, dx);
+          state.transform.referenceStart = { ...p };
+          state.transform.stage = 'ROTATE_TARGET';
+          updatePrompt();
+        }
+      } else if (state.transform.stage === 'ROTATE_TARGET') {
+        const dx = p.x - state.transform.base.x;
+        const dy = p.y - state.transform.base.y;
+        if (Math.hypot(dx, dy) < 1e-9) {
+          updatePrompt('Target point must differ from the base point.');
+        } else {
+          applyRotation(Math.atan2(dy, dx) - state.transform.referenceAngle);
+        }
+      } else if (state.transform.stage === 'FACTOR') {
+        applyScale(dist(state.transform.base, p));
+      } else if (state.transform.stage === 'SCALE_REF_FIRST') {
+        state.transform.referenceStart = { ...p };
+        state.transform.stage = 'SCALE_REF_SECOND';
+        updatePrompt();
+      } else if (state.transform.stage === 'SCALE_REF_SECOND') {
+        const referenceLength = dist(state.transform.referenceStart, p);
+        if (referenceLength <= 1e-9) {
+          updatePrompt('Reference points must be different.');
+        } else {
+          state.transform.referenceLength = referenceLength;
+          state.transform.stage = 'SCALE_REF_NEW';
+          updatePrompt();
+        }
+      } else if (state.transform.stage === 'SCALE_REF_NEW') {
+        const anchor = state.transform.referenceStart || state.transform.base;
+        const newLength = dist(anchor, p);
+        if (newLength <= 1e-9) updatePrompt('New length must be greater than zero.');
+        else applyScale(newLength / state.transform.referenceLength);
+      }
+    } else if (state.mode === 'OFFSET' && state.offset?.stage === 'SIDE') {
+      applyOffset(p);
+    } else if (state.mode === 'TRIM') {
+      trimAt(p);
+    } else if (state.mode === 'EXTEND') {
+      extendAt(p);
+    } else if (state.mode === 'GRIP') {
+      applyGripEdit(p);
+    }
+    draw();
+  }
+
+  function finishCurrent() {
+    const finishedMode = state.mode;
+    if (state.mode === 'PLINE' && state.currentPoints.length >= 2) {
+      addPolyline(state.currentPoints);
+    }
+    state.currentPoints = [];
+    if (finishedMode === 'LINE' || finishedMode === 'PLINE') {
+      setMode('SELECT');
+    } else {
+      updatePrompt();
+      draw();
+    }
+  }
+
+  function parseDistance(text) {
+    const s = text.trim().toLowerCase().replace(/\s+/g, '');
+    if (!s) return null;
+
+    // Drawing units are inches in this prototype.
+    const ftIn = s.match(/^([+-]?)(\d+(?:\.\d+)?)'(?:-?(\d+(?:\.\d+)?)"?)?$/);
+    if (ftIn) {
+      const sign = ftIn[1] === '-' ? -1 : 1;
+      return sign * (Number(ftIn[2]) * 12 + Number(ftIn[3] || 0));
+    }
+
+    const inches = s.match(/^(-?\d+(?:\.\d+)?)"$/);
+    if (inches) return Number(inches[1]);
+
+    const bare = Number(s);
+    return Number.isFinite(bare) ? bare : null;
+  }
+
+  function parsePoint(text, basePoint) {
+    const s = text.trim().replace(/\s+/g, '');
+    if (!s) return null;
+
+    const relative = s.startsWith('@');
+    const body = relative ? s.slice(1) : s;
+    const origin = relative ? basePoint : { x: 0, y: 0 };
+    if (relative && !origin) return null;
+
+    const polarSeparator = body.lastIndexOf('<');
+    if (polarSeparator > 0) {
+      const distance = parseDistance(body.slice(0, polarSeparator));
+      const angle = Number(body.slice(polarSeparator + 1));
+      if (distance === null || !Number.isFinite(angle)) return null;
+      const radians = angle * Math.PI / 180;
+      return {
+        x: origin.x + distance * Math.cos(radians),
+        y: origin.y + distance * Math.sin(radians),
+      };
+    }
+
+    const parts = body.split(',');
+    if (parts.length !== 2) return null;
+    const x = parseDistance(parts[0]);
+    const y = parseDistance(parts[1]);
+    if (x === null || y === null) return null;
+    return { x: origin.x + x, y: origin.y + y };
+  }
+
+  function commitPointInput(text) {
+    const acceptsPoint = ['LINE', 'PLINE', 'RECTANGLE', 'CIRCLE', 'ARC'].includes(state.mode) ||
+      (['MOVE', 'COPY'].includes(state.mode) && ['BASE', 'DEST'].includes(state.transform?.stage)) ||
+      (state.mode === 'ROTATE' && ['BASE', 'ANGLE', 'ROTATE_REF', 'ROTATE_TARGET'].includes(state.transform?.stage)) ||
+      (state.mode === 'SCALE' && ['BASE', 'FACTOR', 'SCALE_REF_FIRST', 'SCALE_REF_SECOND', 'SCALE_REF_NEW'].includes(state.transform?.stage)) ||
+      (state.mode === 'GRIP' && state.grip);
+    if (!acceptsPoint) return false;
+    const s = text.trim();
+    if (!s.startsWith('@') && !s.includes(',') && !s.includes('<')) return false;
+    const base = getCommandBasePoint();
+    const point = parsePoint(s, base);
+    if (!point) {
+      updatePrompt(s.startsWith('@') && !base
+        ? 'Specify a first point before relative entry.'
+        : 'Invalid point. Use x,y, @x,y, or @distance<angle.');
+      return true;
+    }
+    commitPoint(point);
+    return true;
+  }
+
+  function commitCircleKeyword(text) {
+    if (state.mode !== 'CIRCLE' || !state.circle) return false;
+    const keyword = text.trim().toUpperCase();
+    if (['2P', '2POINT', 'TWOPOINT'].includes(keyword)) {
+      if (state.circle.stage !== 'CENTER' || state.currentPoints.length) {
+        updatePrompt('Choose 2P before specifying the center point.');
+      } else {
+        state.circle.method = 'TWO_POINT';
+        state.circle.stage = 'FIRST';
+        updatePrompt();
+        draw();
+      }
+      return true;
+    }
+    if (['3P', '3POINT', 'THREEPOINT'].includes(keyword)) {
+      if (state.circle.stage !== 'CENTER' || state.currentPoints.length) {
+        updatePrompt('Choose 3P before specifying the center point.');
+      } else {
+        state.circle.method = 'THREE_POINT';
+        state.circle.stage = 'FIRST';
+        updatePrompt();
+        draw();
+      }
+      return true;
+    }
+    if (['D', 'DIA', 'DIAMETER'].includes(keyword)) {
+      if (state.circle.method !== 'CENTER_RADIUS' || state.circle.stage !== 'RADIUS' || !state.currentPoints.length) {
+        updatePrompt('Specify the circle center before choosing Diameter.');
+      } else {
+        state.circle.method = 'CENTER_DIAMETER';
+        state.circle.stage = 'DIAMETER';
+        updatePrompt();
+        draw();
+      }
+      return true;
+    }
+    return false;
+  }
+
+  function commitDistance(value) {
+    if (setOffsetDistance(value)) return true;
+    if (state.mode === 'CIRCLE' && state.currentPoints.length &&
+        ['CENTER_RADIUS', 'CENTER_DIAMETER'].includes(state.circle?.method)) {
+      const radius = state.circle.method === 'CENTER_DIAMETER' ? value / 2 : value;
+      if (!addCircle(state.currentPoints[0], radius)) {
+        updatePrompt(state.circle.method === 'CENTER_DIAMETER'
+          ? 'Diameter must be greater than zero.'
+          : 'Radius must be greater than zero.');
+      } else {
+        setMode('SELECT');
+      }
+      return true;
+    }
+    const circleUsesDirectedPoint = state.mode === 'CIRCLE' && state.currentPoints.length &&
+      ['TWO_POINT', 'THREE_POINT'].includes(state.circle?.method);
+    const acceptsDistance = ['LINE', 'PLINE', 'ARC'].includes(state.mode) ||
+      circleUsesDirectedPoint ||
+      (['MOVE', 'COPY'].includes(state.mode) && state.transform?.stage === 'DEST') ||
+      (state.mode === 'GRIP' && state.grip);
+    const base = getCommandBasePoint();
+    if (!acceptsDistance || !base) return false;
+    let target = getActivePoint();
+    let dx = target.x - base.x;
+    let dy = target.y - base.y;
+    let len = Math.hypot(dx, dy);
+    if (len < 1e-9) { dx = 1; dy = 0; len = 1; }
+    const p = { x: base.x + value * dx / len, y: base.y + value * dy / len };
+    commitPoint(p);
+    return true;
+  }
+
+  function commitAngleInput(text) {
+    if (state.mode !== 'ROTATE' || !['ANGLE', 'ROTATE_REF', 'ROTATE_TARGET'].includes(state.transform?.stage)) return false;
+    const keyword = text.trim().toUpperCase();
+    if (['R', 'REF', 'REFERENCE'].includes(keyword)) {
+      state.transform.referenceAngle = null;
+      state.transform.referenceStart = null;
+      state.transform.stage = 'ROTATE_REF';
+      updatePrompt();
+      draw();
+      return true;
+    }
+    const match = text.trim().match(/^([+-]?(?:\d+(?:\.\d*)?|\.\d+))(?:°|deg)?$/i);
+    if (!match) {
+      updatePrompt('Invalid angle. Enter degrees, a point, or R for Reference.');
+      return true;
+    }
+    const angle = Number(match[1]) * Math.PI / 180;
+    if (state.transform.stage === 'ANGLE') {
+      applyRotation(angle);
+    } else if (state.transform.stage === 'ROTATE_REF') {
+      state.transform.referenceAngle = angle;
+      state.transform.referenceStart = circularPoint(state.transform.base, 1, angle);
+      state.transform.stage = 'ROTATE_TARGET';
+      updatePrompt();
+      draw();
+    } else {
+      applyRotation(angle - state.transform.referenceAngle);
+    }
+    return true;
+  }
+
+  function commitScaleInput(text) {
+    const operation = state.transform;
+    if (state.mode !== 'SCALE' || !operation || ![
+      'FACTOR', 'SCALE_REF_FIRST', 'SCALE_REF_SECOND', 'SCALE_REF_NEW',
+    ].includes(operation.stage)) return false;
+
+    const keyword = text.trim().toUpperCase();
+    if (['R', 'REF', 'REFERENCE'].includes(keyword)) {
+      operation.referenceStart = null;
+      operation.referenceLength = null;
+      operation.stage = 'SCALE_REF_FIRST';
+      updatePrompt();
+      draw();
+      return true;
+    }
+
+    if (operation.stage === 'FACTOR') {
+      const match = text.trim().match(/^([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)(?:x)?$/i);
+      if (!match) {
+        updatePrompt('Invalid scale factor. Enter a positive number or R for Reference.');
+        return true;
+      }
+      applyScale(Number(match[1]));
+      return true;
+    }
+
+    const length = parseDistance(text);
+    if (length === null || length <= 1e-9) {
+      const expected = operation.stage === 'SCALE_REF_NEW' ? 'new length' : 'reference length';
+      updatePrompt(`Invalid ${expected}. Enter a positive distance or specify a point.`);
+      return true;
+    }
+    if (operation.stage === 'SCALE_REF_FIRST' || operation.stage === 'SCALE_REF_SECOND') {
+      operation.referenceLength = length;
+      operation.stage = 'SCALE_REF_NEW';
+      updatePrompt();
+      draw();
+    } else {
+      applyScale(length / operation.referenceLength);
+    }
+    return true;
+  }
+
+  function distanceToEntityPx(world, entity) {
+    if (entity.type === 'CIRCLE' || entity.type === 'ARC') {
+      const angle = angleFromCenter(entity.center, world);
+      if (angleOnArc(angle, entity)) {
+        return Math.abs(dist(world, entity.center) - entity.radius) * state.view.scale;
+      }
+      const endpoints = [
+        circularPoint(entity.center, entity.radius, entity.startAngle),
+        circularPoint(entity.center, entity.radius, entity.endAngle),
+      ];
+      return Math.min(...endpoints.map(point => dist(world, point))) * state.view.scale;
+    }
+    let best = Infinity;
+    for (const [a, b] of entitySegments(entity)) {
+      const q = pointOnSegmentClosest(world, a, b);
+      const qs = worldToScreen(q);
+      best = Math.min(best, Math.hypot(qs.x - state.mouseScreen.x, qs.y - state.mouseScreen.y));
+    }
+    return best;
+  }
+
+  function selectAt(world, add = false) {
+    let hit = null;
+    let best = 8;
+    for (const e of state.entities) {
+      if (!isEntityEditable(e)) continue;
+      const d = distanceToEntityPx(world, e);
+      if (d < best) { best = d; hit = e; }
+    }
+    if (!add) state.selected.clear();
+    if (hit) {
+      if (add && state.selected.has(hit.id)) state.selected.delete(hit.id);
+      else state.selected.add(hit.id);
+    }
+    if (state.transform?.stage === 'SELECT') updatePrompt();
+    draw();
+  }
+
+  function entityBBox(e) {
+    if (e.type === 'CIRCLE') {
+      return {
+        minX: e.center.x - e.radius,
+        maxX: e.center.x + e.radius,
+        minY: e.center.y - e.radius,
+        maxY: e.center.y + e.radius,
+      };
+    }
+    if (e.type === 'ARC') {
+      const points = [
+        circularPoint(e.center, e.radius, e.startAngle),
+        circularPoint(e.center, e.radius, e.endAngle),
+      ];
+      for (const angle of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+        if (angleOnArc(angle, e)) points.push(circularPoint(e.center, e.radius, angle));
+      }
+      return {
+        minX: Math.min(...points.map(point => point.x)),
+        maxX: Math.max(...points.map(point => point.x)),
+        minY: Math.min(...points.map(point => point.y)),
+        maxY: Math.max(...points.map(point => point.y)),
+      };
+    }
+    const pts = [];
+    for (const [a, b] of entitySegments(e)) pts.push(a, b);
+    if (!pts.length) return null;
+    return {
+      minX: Math.min(...pts.map(p => p.x)), maxX: Math.max(...pts.map(p => p.x)),
+      minY: Math.min(...pts.map(p => p.y)), maxY: Math.max(...pts.map(p => p.y)),
+    };
+  }
+
+  function boxesOverlap(a, b) {
+    return !(a.maxX < b.minX || a.minX > b.maxX || a.maxY < b.minY || a.minY > b.maxY);
+  }
+
+  function boxContains(outer, inner) {
+    return inner.minX >= outer.minX && inner.maxX <= outer.maxX && inner.minY >= outer.minY && inner.maxY <= outer.maxY;
+  }
+
+  function finishBoxSelection(add = false) {
+    const ds = state.dragSelect;
+    if (!ds) return;
+    const a = screenToWorld(ds.start);
+    const b = screenToWorld(ds.end);
+    const box = { minX: Math.min(a.x,b.x), maxX: Math.max(a.x,b.x), minY: Math.min(a.y,b.y), maxY: Math.max(a.y,b.y) };
+    const crossing = ds.end.x < ds.start.x;
+    if (!add) state.selected.clear();
+    for (const e of state.entities) {
+      if (!isEntityEditable(e)) continue;
+      const bb = entityBBox(e);
+      if (!bb) continue;
+      if ((crossing && boxesOverlap(box, bb)) || (!crossing && boxContains(box, bb))) state.selected.add(e.id);
+    }
+    state.dragSelect = null;
+    if (state.transform?.stage === 'SELECT') updatePrompt();
+    draw();
+  }
+
+  function deleteSelected() {
+    const deletable = new Set(state.entities
+      .filter(entity => state.selected.has(entity.id) && isEntityEditable(entity))
+      .map(entity => entity.id));
+    if (!deletable.size) return;
+    pushHistory();
+    state.entities = state.entities.filter(e => !deletable.has(e.id));
+    state.selected.clear();
+    draw();
+  }
+
+  function zoomAt(screen, factor) {
+    const before = screenToWorld(screen);
+    state.view.scale = Math.max(MIN_VIEW_SCALE, Math.min(MAX_VIEW_SCALE, state.view.scale * factor));
+    const afterScreen = worldToScreen(before);
+    state.view.offsetX += screen.x - afterScreen.x;
+    state.view.offsetY += screen.y - afterScreen.y;
+    draw();
+  }
+
+  function zoomExtents() {
+    const visibleEntities = state.entities.filter(isEntityVisible);
+    if (!visibleEntities.length) {
+      state.view.scale = 1.5;
+      state.view.offsetX = canvas.clientWidth / 2;
+      state.view.offsetY = canvas.clientHeight / 2;
+      draw();
+      return;
+    }
+    const boxes = visibleEntities.map(entityBBox).filter(Boolean);
+    const box = {
+      minX: Math.min(...boxes.map(b=>b.minX)), maxX: Math.max(...boxes.map(b=>b.maxX)),
+      minY: Math.min(...boxes.map(b=>b.minY)), maxY: Math.max(...boxes.map(b=>b.maxY)),
+    };
+    const w = Math.max(1, box.maxX - box.minX);
+    const h = Math.max(1, box.maxY - box.minY);
+    const margin = 70;
+    const fitScale = Math.min((canvas.clientWidth - margin*2)/w, (canvas.clientHeight - margin*2)/h);
+    state.view.scale = Math.max(MIN_VIEW_SCALE, Math.min(MAX_VIEW_SCALE, fitScale));
+    const cx = (box.minX + box.maxX)/2;
+    const cy = (box.minY + box.maxY)/2;
+    state.view.offsetX = canvas.clientWidth/2 - cx*state.view.scale;
+    state.view.offsetY = canvas.clientHeight/2 + cy*state.view.scale;
+    draw();
+  }
+
+  function drawGrid() {
+    const scale = state.view.scale;
+    const desiredPx = 60;
+    const rawWorld = desiredPx / scale;
+    const power = Math.pow(10, Math.floor(Math.log10(rawWorld)));
+    const norm = rawWorld / power;
+    const step = (norm < 2 ? 2 : norm < 5 ? 5 : 10) * power;
+
+    const topLeft = screenToWorld({x:0,y:0});
+    const bottomRight = screenToWorld({x:canvas.clientWidth,y:canvas.clientHeight});
+    const minX = Math.floor(topLeft.x/step)*step;
+    const maxX = Math.ceil(bottomRight.x/step)*step;
+    const minY = Math.floor(bottomRight.y/step)*step;
+    const maxY = Math.ceil(topLeft.y/step)*step;
+
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#202020';
+    ctx.beginPath();
+    for (let x=minX; x<=maxX; x+=step) {
+      const s = worldToScreen({x,y:0});
+      ctx.moveTo(s.x,0); ctx.lineTo(s.x,canvas.clientHeight);
+    }
+    for (let y=minY; y<=maxY; y+=step) {
+      const s = worldToScreen({x:0,y});
+      ctx.moveTo(0,s.y); ctx.lineTo(canvas.clientWidth,s.y);
+    }
+    ctx.stroke();
+
+    const origin = worldToScreen({x:0,y:0});
+    ctx.strokeStyle = '#343434';
+    ctx.beginPath();
+    ctx.moveTo(origin.x,0); ctx.lineTo(origin.x,canvas.clientHeight);
+    ctx.moveTo(0,origin.y); ctx.lineTo(canvas.clientWidth,origin.y);
+    ctx.stroke();
+  }
+
+  function drawEntity(e, preview = false) {
+    ctx.lineWidth = preview ? 1 : 1.35;
+    const layerColor = getLayer(e.layerId)?.color || '#d6d6d6';
+    ctx.strokeStyle = preview ? '#bdbdbd' : state.selected.has(e.id) ? '#ffffff' : layerColor;
+    if (preview) ctx.setLineDash([6,4]); else ctx.setLineDash([]);
+    ctx.beginPath();
+    if (e.type === 'CIRCLE') {
+      const center = worldToScreen(e.center);
+      ctx.arc(center.x, center.y, e.radius * state.view.scale, 0, TAU);
+    } else if (e.type === 'ARC') {
+      const center = worldToScreen(e.center);
+      ctx.arc(center.x, center.y, e.radius * state.view.scale, -e.startAngle, -e.endAngle, true);
+    } else {
+      for (const [a,b] of entitySegments(e)) {
+        const sa = worldToScreen(a), sb = worldToScreen(b);
+        ctx.moveTo(sa.x,sa.y); ctx.lineTo(sb.x,sb.y);
+      }
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    if (state.selected.has(e.id) && !preview) {
+      const points = entityGrips(e).map(grip => grip.point);
+      ctx.fillStyle = '#fff';
+      for (const p of points) {
+        const s = worldToScreen(p);
+        ctx.fillRect(s.x-2.5,s.y-2.5,5,5);
+      }
+    }
+  }
+
+  function drawTransformGuide(start, end, label = '', dashed = false) {
+    const startScreen = worldToScreen(start);
+    const endScreen = worldToScreen(end);
+    ctx.strokeStyle = '#ffc857';
+    ctx.fillStyle = '#ffc857';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash(dashed ? [5, 4] : []);
+    ctx.beginPath();
+    ctx.moveTo(startScreen.x - 7, startScreen.y); ctx.lineTo(startScreen.x + 7, startScreen.y);
+    ctx.moveTo(startScreen.x, startScreen.y - 7); ctx.lineTo(startScreen.x, startScreen.y + 7);
+    ctx.moveTo(startScreen.x, startScreen.y); ctx.lineTo(endScreen.x, endScreen.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    if (label) {
+      ctx.font = '11px Arial';
+      ctx.fillText(label, endScreen.x + 8, endScreen.y - 8);
+    }
+  }
+
+  function drawPreview() {
+    if (state.mode === 'GRIP' && state.grip) {
+      const source = state.entities.find(entity => entity.id === state.grip.entityId && isEntityEditable(entity));
+      const destination = getActivePoint();
+      const preview = source && gripEditedEntity(source, state.grip.descriptor, destination);
+      if (preview?.entity) drawEntity(preview.entity, true);
+      drawTransformGuide(state.grip.base, destination, 'Grip');
+      return;
+    }
+    if (state.mode === 'TRIM') {
+      const operation = calculateTrimOperation(state.mouseWorld);
+      if (!operation.error) {
+        ctx.strokeStyle = '#ff9f43';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        if (operation.removeArc) {
+          const center = worldToScreen(operation.removeArc.center);
+          ctx.arc(
+            center.x,
+            center.y,
+            operation.removeArc.radius * state.view.scale,
+            -operation.removeArc.startAngle,
+            -operation.removeArc.endAngle,
+            true,
+          );
+        } else {
+          operation.removePoints.forEach((point, index) => {
+            const screen = worldToScreen(point);
+            if (index === 0) ctx.moveTo(screen.x, screen.y);
+            else ctx.lineTo(screen.x, screen.y);
+          });
+        }
+        ctx.stroke();
+      }
+      return;
+    }
+    if (state.mode === 'EXTEND') {
+      const operation = calculateExtendOperation(state.mouseWorld);
+      if (!operation.error) drawEntity(operation.result, true);
+      return;
+    }
+    if (state.mode === 'OFFSET' && state.offset?.stage === 'SIDE') {
+      const source = state.entities.find(entity => entity.id === state.offset.sourceId && isEntityEditable(entity));
+      const preview = source && offsetEntity(source, state.offset.distance, getActivePoint());
+      if (preview) drawEntity(preview, true);
+      return;
+    }
+    if (['MOVE', 'COPY'].includes(state.mode) && state.transform?.stage === 'DEST') {
+      const p = getActivePoint();
+      const dx = p.x - state.transform.base.x;
+      const dy = p.y - state.transform.base.y;
+      const ids = new Set(state.transform.ids);
+      for (const entity of state.entities) {
+        if (ids.has(entity.id) && isEntityEditable(entity)) drawEntity(translateEntity(entity, dx, dy), true);
+      }
+      const base = worldToScreen(state.transform.base);
+      ctx.strokeStyle = '#ffc857';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(base.x - 7, base.y); ctx.lineTo(base.x + 7, base.y);
+      ctx.moveTo(base.x, base.y - 7); ctx.lineTo(base.x, base.y + 7);
+      ctx.stroke();
+      return;
+    }
+    if (state.mode === 'ROTATE' && ['ANGLE', 'ROTATE_REF', 'ROTATE_TARGET'].includes(state.transform?.stage)) {
+      const p = getActivePoint();
+      const targetAngle = Math.atan2(p.y - state.transform.base.y, p.x - state.transform.base.x);
+      const stage = state.transform.stage;
+      if (stage === 'ROTATE_REF') {
+        drawTransformGuide(
+          state.transform.base,
+          p,
+          `Reference ${(targetAngle * 180 / Math.PI).toFixed(1)}°`,
+          true,
+        );
+        return;
+      }
+
+      const rotation = stage === 'ROTATE_TARGET'
+        ? targetAngle - state.transform.referenceAngle
+        : targetAngle;
+      const ids = new Set(state.transform.ids);
+      for (const entity of state.entities) {
+        if (ids.has(entity.id) && isEntityEditable(entity)) {
+          drawEntity(rotateEntity(entity, state.transform.base, rotation), true);
+        }
+      }
+      if (stage === 'ROTATE_TARGET') {
+        const guideRadius = Math.max(dist(state.transform.base, p), 40 / state.view.scale);
+        const referenceEnd = circularPoint(state.transform.base, guideRadius, state.transform.referenceAngle);
+        drawTransformGuide(state.transform.base, referenceEnd, 'Reference', true);
+      }
+      const label = stage === 'ROTATE_TARGET'
+        ? `Target ${(targetAngle * 180 / Math.PI).toFixed(1)}° · Δ ${(rotation * 180 / Math.PI).toFixed(1)}°`
+        : `Δ ${(rotation * 180 / Math.PI).toFixed(1)}°`;
+      drawTransformGuide(state.transform.base, p, label);
+      return;
+    }
+    if (state.mode === 'SCALE' && [
+      'FACTOR', 'SCALE_REF_FIRST', 'SCALE_REF_SECOND', 'SCALE_REF_NEW',
+    ].includes(state.transform?.stage)) {
+      const p = getActivePoint();
+      const stage = state.transform.stage;
+      if (stage === 'SCALE_REF_FIRST' || stage === 'SCALE_REF_SECOND') {
+        const anchor = stage === 'SCALE_REF_SECOND' ? state.transform.referenceStart : state.transform.base;
+        const length = dist(anchor, p);
+        drawTransformGuide(anchor, p, `${stage === 'SCALE_REF_SECOND' ? 'Reference ' : ''}${length.toFixed(3)}`, true);
+        return;
+      }
+
+      const newLengthAnchor = state.transform.referenceStart || state.transform.base;
+      const candidateLength = dist(newLengthAnchor, p);
+      const factor = stage === 'SCALE_REF_NEW'
+        ? candidateLength / state.transform.referenceLength
+        : candidateLength;
+      const ids = new Set(state.transform.ids);
+      if (factor > 1e-9 && Number.isFinite(factor)) {
+        for (const entity of state.entities) {
+          if (ids.has(entity.id) && isEntityEditable(entity)) {
+            const preview = scaleEntity(entity, state.transform.base, factor);
+            const box = entityBBox(preview);
+            if (box && Object.values(box).every(value => Number.isFinite(value))) drawEntity(preview, true);
+          }
+        }
+      }
+      const label = stage === 'SCALE_REF_NEW'
+        ? `${candidateLength.toFixed(3)} / ${state.transform.referenceLength.toFixed(3)} = ${factor.toFixed(3)}x`
+        : `${factor.toFixed(3)}x`;
+      drawTransformGuide(newLengthAnchor, p, label);
+      return;
+    }
+    if (!['LINE', 'PLINE', 'RECTANGLE', 'CIRCLE', 'ARC'].includes(state.mode) || !state.currentPoints.length) return;
+    const p = getActivePoint();
+    if (state.mode === 'LINE') {
+      drawEntity({type:'LINE',a:state.currentPoints[0],b:p}, true);
+    } else if (state.mode === 'PLINE') {
+      const pts = [...state.currentPoints, p];
+      drawEntity({type:'PLINE',points:pts}, true);
+    } else if (state.mode === 'RECTANGLE') {
+      const first = state.currentPoints[0];
+      drawEntity({
+        type: 'PLINE',
+        points: [first, { x: p.x, y: first.y }, p, { x: first.x, y: p.y }],
+        closed: true,
+      }, true);
+    } else if (state.mode === 'CIRCLE') {
+      const method = state.circle?.method || 'CENTER_RADIUS';
+      if (method === 'TWO_POINT') {
+        const first = state.currentPoints[0];
+        drawEntity({
+          type: 'CIRCLE',
+          center: { x: (first.x + p.x) / 2, y: (first.y + p.y) / 2 },
+          radius: dist(first, p) / 2,
+        }, true);
+      } else if (method === 'THREE_POINT') {
+        if (state.currentPoints.length === 1) {
+          drawEntity({ type: 'LINE', a: state.currentPoints[0], b: p }, true);
+        } else {
+          const circle = circumcircleFromThreePoints(state.currentPoints[0], state.currentPoints[1], p);
+          if (circle) drawEntity({ type: 'CIRCLE', ...circle }, true);
+          else drawEntity({ type: 'PLINE', points: [...state.currentPoints, p] }, true);
+        }
+      } else {
+        const pickedDistance = dist(state.currentPoints[0], p);
+        drawEntity({
+          type: 'CIRCLE',
+          center: state.currentPoints[0],
+          radius: method === 'CENTER_DIAMETER' ? pickedDistance / 2 : pickedDistance,
+        }, true);
+      }
+    } else if (state.mode === 'ARC') {
+      if (state.currentPoints.length === 1) {
+        drawEntity({ type: 'LINE', a: state.currentPoints[0], b: p }, true);
+      } else {
+        const preview = threePointArc(state.currentPoints[0], state.currentPoints[1], p);
+        if (preview) drawEntity(preview, true);
+        else drawEntity({ type: 'PLINE', points: [...state.currentPoints, p] }, true);
+      }
+    }
+  }
+
+  function drawSnap() {
+    if (!state.snapEnabled) {
+      snapStatus.textContent = 'OFF';
+      return;
+    }
+    snapStatus.textContent = state.snap ? state.snap.type : '—';
+    if (!state.snap) return;
+    const s = worldToScreen(state.snap.p);
+    ctx.strokeStyle = '#56d6ff';
+    ctx.fillStyle = '#56d6ff';
+    ctx.lineWidth = 1.5;
+    const r = 6;
+    if (state.snap.type === 'END') {
+      ctx.strokeRect(s.x-r,s.y-r,r*2,r*2);
+    } else if (state.snap.type === 'MID') {
+      ctx.beginPath();
+      ctx.moveTo(s.x,s.y-r-1); ctx.lineTo(s.x-r-1,s.y+r); ctx.lineTo(s.x+r+1,s.y+r); ctx.closePath(); ctx.stroke();
+    } else if (state.snap.type === 'INT') {
+      ctx.beginPath(); ctx.moveTo(s.x-r,s.y-r); ctx.lineTo(s.x+r,s.y+r); ctx.moveTo(s.x+r,s.y-r); ctx.lineTo(s.x-r,s.y+r); ctx.stroke();
+    } else if (state.snap.type === 'PERP') {
+      ctx.strokeRect(s.x-r,s.y-r,r*2,r*2);
+      ctx.fillRect(s.x-1,s.y-1,2,2);
+    } else if (state.snap.type === 'CENTER') {
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
+      ctx.moveTo(s.x-r-2,s.y); ctx.lineTo(s.x+r+2,s.y);
+      ctx.moveTo(s.x,s.y-r-2); ctx.lineTo(s.x,s.y+r+2);
+      ctx.stroke();
+    } else if (state.snap.type === 'QUAD') {
+      ctx.beginPath();
+      ctx.moveTo(s.x,s.y-r-1); ctx.lineTo(s.x+r+1,s.y); ctx.lineTo(s.x,s.y+r+1); ctx.lineTo(s.x-r-1,s.y); ctx.closePath(); ctx.stroke();
+    }
+    ctx.font = '11px Arial';
+    ctx.fillText(state.snap.type, s.x+8, s.y-8);
+  }
+
+  function drawSelectionBox() {
+    if (!state.dragSelect) return;
+    const {start,end} = state.dragSelect;
+    const crossing = end.x < start.x;
+    ctx.fillStyle = crossing ? 'rgba(150,150,150,.10)' : 'rgba(220,220,220,.08)';
+    ctx.strokeStyle = crossing ? '#8f8f8f' : '#cfcfcf';
+    ctx.setLineDash(crossing ? [5,4] : []);
+    ctx.fillRect(start.x,start.y,end.x-start.x,end.y-start.y);
+    ctx.strokeRect(start.x,start.y,end.x-start.x,end.y-start.y);
+    ctx.setLineDash([]);
+  }
+
+  function draw() {
+    ctx.clearRect(0,0,canvas.clientWidth,canvas.clientHeight);
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0,0,canvas.clientWidth,canvas.clientHeight);
+    drawGrid();
+    for (const e of state.entities) {
+      if (isEntityVisible(e)) drawEntity(e);
+    }
+    drawPreview();
+    drawSelectionBox();
+    drawSnap();
+    if (assignLayerBtn) assignLayerBtn.disabled = !state.selected.size;
+    scheduleAutosave();
+  }
+
+  function canvasPoint(ev) {
+    const r = canvas.getBoundingClientRect();
+    return { x: ev.clientX-r.left, y: ev.clientY-r.top };
+  }
+
+  function isSelectionStage() {
+    return state.mode === 'SELECT' ||
+      (TRANSFORM_COMMANDS.includes(state.mode) && state.transform?.stage === 'SELECT') ||
+      (state.mode === 'OFFSET' && state.offset?.stage === 'SOURCE');
+  }
+
+  canvas.addEventListener('mousemove', ev => {
+    state.mouseScreen = canvasPoint(ev);
+    state.mouseWorld = screenToWorld(state.mouseScreen);
+
+    if (state.panning && state.panStart) {
+      const dx = state.mouseScreen.x - state.panStart.screen.x;
+      const dy = state.mouseScreen.y - state.panStart.screen.y;
+      state.view.offsetX = state.panStart.offsetX + dx;
+      state.view.offsetY = state.panStart.offsetY + dy;
+    }
+
+    if (state.dragSelect) state.dragSelect.end = { ...state.mouseScreen };
+    state.activePoint = getActivePoint();
+    coordsEl.innerHTML = `X: ${state.activePoint.x.toFixed(2)}&nbsp;&nbsp;Y: ${state.activePoint.y.toFixed(2)}`;
+    draw();
+  });
+
+  canvas.addEventListener('mousedown', ev => {
+    state.mouseScreen = canvasPoint(ev);
+    state.mouseWorld = screenToWorld(state.mouseScreen);
+    state.mouseDownScreen = { ...state.mouseScreen };
+
+    if (ev.button === 1) {
+      state.panning = true;
+      state.panStart = { screen: { ...state.mouseScreen }, offsetX: state.view.offsetX, offsetY: state.view.offsetY };
+      ev.preventDefault();
+      return;
+    }
+
+    if (ev.button === 0 && isSelectionStage()) {
+      const overGrip = state.mode === 'SELECT' && hitTestGrip(state.mouseScreen);
+      if (overGrip) return;
+      const close = state.entities.some(e => isEntityEditable(e) && distanceToEntityPx(state.mouseWorld,e) <= 8);
+      if (!close) state.dragSelect = { start: { ...state.mouseScreen }, end: { ...state.mouseScreen } };
+    }
+  });
+
+  canvas.addEventListener('mouseup', ev => {
+    state.mouseScreen = canvasPoint(ev);
+    state.mouseWorld = screenToWorld(state.mouseScreen);
+
+    if (ev.button === 1) {
+      state.panning = false;
+      state.panStart = null;
+      return;
+    }
+
+    if (ev.button === 0) {
+      if (isSelectionStage()) {
+        const clickMovement = state.mouseDownScreen
+          ? Math.hypot(state.mouseScreen.x - state.mouseDownScreen.x, state.mouseScreen.y - state.mouseDownScreen.y)
+          : Infinity;
+        const gripHit = state.mode === 'SELECT' && !state.dragSelect && clickMovement <= 5
+          ? hitTestGrip(state.mouseDownScreen, 9)
+          : null;
+        if (gripHit) {
+          startGripEdit(gripHit);
+          return;
+        }
+        const commandSelection = TRANSFORM_COMMANDS.includes(state.mode);
+        if (state.dragSelect) {
+          const moved = Math.hypot(state.dragSelect.end.x-state.dragSelect.start.x, state.dragSelect.end.y-state.dragSelect.start.y);
+          if (moved > 4) finishBoxSelection(ev.shiftKey || commandSelection);
+          else {
+            state.dragSelect = null;
+            selectAt(state.mouseWorld, ev.shiftKey || commandSelection);
+          }
+        } else {
+          selectAt(state.mouseWorld, ev.shiftKey || commandSelection);
+        }
+        if (state.mode === 'OFFSET' && state.offset?.stage === 'SOURCE') acceptOffsetSource();
+      } else {
+        commitPoint(getActivePoint());
+      }
+    }
+  });
+
+  canvas.addEventListener('contextmenu', ev => {
+    ev.preventDefault();
+    if (state.mode === 'PLINE' || state.mode === 'LINE') finishCurrent();
+    else if (state.mode === 'TRIM' || state.mode === 'EXTEND') finishEdgeEdit();
+    else if (state.mode === 'GRIP') setMode('SELECT');
+    else if (TRANSFORM_COMMANDS.includes(state.mode) && state.transform?.stage === 'SELECT') acceptTransformSelection();
+    else if (state.mode === 'OFFSET' && state.offset?.stage === 'SOURCE') acceptOffsetSource();
+  });
+
+  canvas.addEventListener('wheel', ev => {
+    ev.preventDefault();
+    const p = canvasPoint(ev);
+    zoomAt(p, ev.deltaY < 0 ? 1.15 : 1/1.15);
+  }, {passive:false});
+
+  document.addEventListener('keydown', ev => {
+    const editingLayerControl = ev.target === currentLayerSelect || Boolean(ev.target?.dataset?.layerAction);
+    if (editingLayerControl) {
+      if (ev.key === 'Escape') {
+        ev.preventDefault();
+        ev.target.blur?.();
+        canvas.focus();
+      }
+      return;
+    }
+
+    if (ev.key === 'F8') {
+      ev.preventDefault();
+      state.ortho = !state.ortho;
+      orthoBtn.classList.toggle('on', state.ortho);
+      draw();
+      return;
+    }
+
+    if (ev.ctrlKey || ev.metaKey) {
+      const key = ev.key.toLowerCase();
+      if (key === 's') { ev.preventDefault(); saveDrawing(); return; }
+      if (key === 'o') { ev.preventDefault(); chooseOpenFile(); return; }
+      if (key === 'n') { ev.preventDefault(); newDrawing(); return; }
+    }
+
+    if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'z') { ev.preventDefault(); undo(); return; }
+    if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'y') { ev.preventDefault(); redo(); return; }
+
+    if (ev.key === 'Escape') {
+      ev.preventDefault();
+      if (state.mode === 'PLINE' && state.currentPoints.length >= 2) {
+        finishCurrent();
+      } else if (state.mode !== 'SELECT' || state.currentPoints.length) {
+        state.currentPoints = [];
+        setMode('SELECT');
+      } else {
+        state.selected.clear(); draw();
+      }
+      commandInput.value = '';
+      return;
+    }
+
+    if (ev.key === 'Enter' && ev.target !== commandInput) {
+      ev.preventDefault();
+      submitCommandInput();
+      return;
+    }
+
+    if (ev.key === 'Delete' && document.activeElement !== commandInput) {
+      ev.preventDefault(); deleteSelected(); return;
+    }
+
+    if (document.activeElement !== commandInput && !ev.ctrlKey && !ev.metaKey && !ev.altKey && ev.key.length === 1) {
+      commandInput.focus();
+      commandInput.value += ev.key;
+      ev.preventDefault();
+    }
+  });
+
+  function submitCommandInput() {
+    const raw = commandInput.value.trim();
+    commandInput.value = '';
+
+    if (!raw) {
+      if (state.mode === 'PLINE' || state.mode === 'LINE') finishCurrent();
+      else if (state.mode === 'TRIM' || state.mode === 'EXTEND') finishEdgeEdit();
+      else if (state.mode === 'GRIP') setMode('SELECT');
+      else if (TRANSFORM_COMMANDS.includes(state.mode) && state.transform?.stage === 'SELECT') acceptTransformSelection();
+      else if (state.mode === 'OFFSET' && state.offset?.stage === 'SOURCE') acceptOffsetSource();
+      canvas.focus();
+      return;
+    }
+
+    if (commitCircleKeyword(raw)) {
+      canvas.focus();
+      return;
+    }
+
+    if (commitPointInput(raw)) {
+      canvas.focus();
+      return;
+    }
+
+    if (commitAngleInput(raw)) {
+      canvas.focus();
+      return;
+    }
+
+    if (commitScaleInput(raw)) {
+      canvas.focus();
+      return;
+    }
+
+    const d = parseDistance(raw);
+    if (d !== null && commitDistance(d)) {
+      canvas.focus();
+      return;
+    }
+
+    const cmd = raw.toUpperCase();
+    const aliases = {
+      L:'LINE', LINE:'LINE', PL:'PLINE', PLINE:'PLINE', P:'PLINE',
+      REC:'RECTANGLE', RECTANG:'RECTANGLE', RECTANGLE:'RECTANGLE', C:'CIRCLE', CIRCLE:'CIRCLE',
+      A:'ARC', ARC:'ARC',
+      M:'MOVE', MOVE:'MOVE', CO:'COPY', COPY:'COPY', CP:'COPY', RO:'ROTATE', ROTATE:'ROTATE',
+      SC:'SCALE', SCALE:'SCALE',
+      O:'OFFSET', OFFSET:'OFFSET',
+      TR:'TRIM', TRIM:'TRIM', EX:'EXTEND', EXTEND:'EXTEND', S:'SELECT', SELECT:'SELECT',
+      Z:'ZOOMEXTENTS', ZE:'ZOOMEXTENTS',
+    };
+    const resolved = aliases[cmd];
+    if (resolved === 'ZOOMEXTENTS') zoomExtents();
+    else if (TRANSFORM_COMMANDS.includes(resolved)) startTransform(resolved);
+    else if (resolved === 'OFFSET') startOffset();
+    else if (resolved === 'TRIM' || resolved === 'EXTEND') startEdgeEdit(resolved);
+    else if (resolved) activateDrawingMode(resolved);
+    else updatePrompt(`Unknown command: ${raw}`);
+    canvas.focus();
+  }
+
+  commandInput.addEventListener('keydown', ev => {
+    if (ev.key !== 'Enter') return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    submitCommandInput();
+  });
+
+  document.querySelectorAll('[data-command]').forEach(btn => btn.addEventListener('click', () => {
+    if (TRANSFORM_COMMANDS.includes(btn.dataset.command)) startTransform(btn.dataset.command);
+    else if (btn.dataset.command === 'OFFSET') startOffset();
+    else if (btn.dataset.command === 'TRIM' || btn.dataset.command === 'EXTEND') startEdgeEdit(btn.dataset.command);
+    else activateDrawingMode(btn.dataset.command);
+    canvas.focus();
+  }));
+  document.getElementById('undoBtn').addEventListener('click', undo);
+  document.getElementById('redoBtn').addEventListener('click', redo);
+  document.getElementById('fitBtn').addEventListener('click', zoomExtents);
+  document.getElementById('newBtn').addEventListener('click', () => newDrawing());
+  document.getElementById('openBtn').addEventListener('click', chooseOpenFile);
+  document.getElementById('saveBtn').addEventListener('click', saveDrawing);
+  addLayerBtn.addEventListener('click', () => {
+    createLayer();
+    canvas.focus();
+  });
+  assignLayerBtn.addEventListener('click', () => {
+    assignSelectionToLayer();
+    canvas.focus();
+  });
+  currentLayerSelect.addEventListener('change', () => {
+    setCurrentLayer(currentLayerSelect.value);
+    canvas.focus();
+  });
+  layerList.addEventListener('click', event => {
+    const action = event.target?.dataset?.layerAction;
+    const id = event.target?.dataset?.layerId;
+    if (action === 'current') setCurrentLayer(id);
+    else if (action === 'visibility') toggleLayerVisibility(id);
+    else if (action === 'lock') toggleLayerLock(id);
+    else if (action === 'delete') deleteLayer(id);
+  });
+  layerList.addEventListener('change', event => {
+    const action = event.target?.dataset?.layerAction;
+    const id = event.target?.dataset?.layerId;
+    if (action === 'name') renameLayer(id, event.target.value);
+    else if (action === 'color') setLayerColor(id, event.target.value);
+  });
+  openInput.addEventListener('change', async () => {
+    const file = openInput.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      if (loadDocumentText(text, file.name)) canvas.focus();
+    } catch {
+      setFileStatus('Could not read the selected drawing file', true);
+    }
+  });
+  snapBtn.addEventListener('click', () => { state.snapEnabled=!state.snapEnabled; snapBtn.classList.toggle('on',state.snapEnabled); draw(); });
+  orthoBtn.addEventListener('click', () => { state.ortho=!state.ortho; orthoBtn.classList.toggle('on',state.ortho); draw(); });
+
+  window.addEventListener('error', () => {
+    engineStatus.textContent = 'ENGINE: ERROR';
+    engineStatus.classList.remove('loading', 'ready');
+    engineStatus.classList.add('error');
+  });
+
+  window.addEventListener('resize', resize);
+  window.addEventListener('beforeunload', () => {
+    if (!state.documentDirty) return;
+    try {
+      window.localStorage.setItem(AUTOSAVE_KEY, exportDocumentText(false));
+    } catch {
+      // Manual Save remains available when browser storage is unavailable.
+    }
+  });
+  setTimeout(() => help.style.opacity = '0', 12000);
+  renderLayerManager();
+  resize();
+  if (!restoreAutosave()) setMode('SELECT');
+  engineStatus.textContent = 'ENGINE: READY';
+  engineStatus.classList.remove('loading', 'error');
+  engineStatus.classList.add('ready');
+
+  // Small test hook used by automated regression tests for this prototype.
+  window.__cadPrototype = {
+    get mode() { return state.mode; },
+    get entityCount() { return state.entities.length; },
+    get ortho() { return state.ortho; },
+    get snapType() { return state.snap?.type || null; },
+    get entities() { return cloneEntities(); },
+    get selectedIds() { return [...state.selected]; },
+    get operationStage() { return state.transform?.stage || state.offset?.stage || null; },
+    get gripKind() { return state.grip?.descriptor?.kind || null; },
+    get gripEntityId() { return state.grip?.entityId || null; },
+    get circleMethod() { return state.circle?.method || null; },
+    get circleStage() { return state.circle?.stage || null; },
+    get viewScale() { return state.view.scale; },
+    get layers() { return cloneLayers(); },
+    get currentLayerId() { return state.currentLayerId; },
+    get nextLayerId() { return state.nextLayerId; },
+    get drawingName() { return state.drawingName; },
+    get autosaveKey() { return AUTOSAVE_KEY; },
+    exportDocumentText,
+    importDocumentText: loadDocumentText,
+    newDrawing: () => newDrawing(true),
+    restoreAutosave,
+    createLayer,
+    renameLayer,
+    setLayerColor,
+    setCurrentLayer,
+    toggleLayerVisibility,
+    toggleLayerLock,
+    deleteLayer,
+    assignSelectionToLayer,
+  };
+})();
+
+  </script>
+</body>
+</html>
