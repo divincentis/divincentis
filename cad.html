@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>finnCAD v0.14.1</title>
+  <title>zbCAD v0.16.1</title>
   <style>
 :root {
   font-family: Arial, Helvetica, sans-serif;
@@ -13,20 +13,21 @@
 
 * { box-sizing: border-box; }
 html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
-body { display: grid; grid-template-rows: 44px 1fr 36px; }
+body { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-height: 0; }
 
 .topbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 18px;
-  padding: 0 10px;
+  gap: 6px 18px;
+  min-height: 44px;
+  padding: 6px 10px;
   background: #252525;
   border-bottom: 1px solid #3a3a3a;
-  overflow-x: auto;
 }
 .brand { font-weight: 700; white-space: nowrap; }
 .version { color: #9e9e9e; font-size: 11px; font-weight: 400; }
-.tools { display: flex; flex: 0 0 auto; gap: 5px; }
+.tools { display: flex; flex: 1 1 auto; flex-wrap: wrap; gap: 5px; }
 button {
   border: 1px solid #4a4a4a;
   background: #303030;
@@ -116,15 +117,28 @@ button.active, button.on { background: #565656; border-color: #888; }
 .layer-hint { margin-top: auto; color: #888; font-size: 10px; line-height: 1.35; }
 
 .statusbar {
-  display: grid;
-  grid-template-columns: 1fr auto;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  gap: 4px 12px;
+  min-height: 36px;
+  padding: 3px 0;
   background: #252525;
   border-top: 1px solid #3a3a3a;
   font-size: 13px;
 }
-.command-wrap { display: flex; align-items: center; padding-left: 8px; min-width: 0; }
-.prompt { margin-right: 7px; white-space: nowrap; color: #cfcfcf; }
+/* Wide basis so the toggles wrap to their own line before the prompt is
+   squeezed: the prompt is what the user is reading. */
+.command-wrap { display: flex; flex: 1 1 340px; align-items: center; padding-left: 8px; min-width: 0; }
+.prompt {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-right: 7px;
+  overflow: hidden;
+  color: #cfcfcf;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 #commandInput {
   flex: 1;
   min-width: 50px;
@@ -136,7 +150,7 @@ button.active, button.on { background: #565656; border-color: #888; }
   font-size: 13px;
 }
 #commandInput::placeholder { color: #858585; opacity: 1; }
-.toggles { display: flex; align-items: center; gap: 7px; padding-right: 8px; }
+.toggles { display: flex; flex: 0 0 auto; align-items: center; gap: 7px; margin-left: auto; padding-right: 8px; }
 .toggle { font-size: 11px; padding: 3px 6px; }
 kbd { font-size: 9px; opacity: .65; }
 .snap-status {
@@ -152,8 +166,9 @@ kbd { font-size: 9px; opacity: .65; }
 .engine-status.ready { color: #69d285; }
 .engine-status.error { color: #ff6b6b; }
 .file-status {
-  min-width: 120px;
-  max-width: 190px;
+  /* Fixed, not a min/max range: the text changes length as you work, and a
+     variable width here moves every control to its left. */
+  width: 190px;
   overflow: hidden;
   color: #aeb8c2;
   font: 10px Consolas, monospace;
@@ -182,10 +197,11 @@ kbd { font-size: 9px; opacity: .65; }
 }
 
 .help {
-  position: fixed;
+  position: absolute;
   left: 12px;
-  top: 55px;
-  max-width: 520px;
+  bottom: 12px;
+  z-index: 4;
+  max-width: min(520px, calc(100% - 24px));
   padding: 8px 10px;
   background: rgba(30,30,30,.92);
   border: 1px solid #555;
@@ -195,6 +211,49 @@ kbd { font-size: 9px; opacity: .65; }
   pointer-events: none;
   transition: opacity .3s;
 }
+
+/* Results live in their own panel rather than the prompt line: the prompt is one
+   line and gets overwritten by the next command, and these values need to stay
+   put long enough to be read and copied. */
+.inquiry {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  z-index: 5;
+  max-width: 330px;
+  max-height: calc(100% - 24px);
+  overflow-y: auto;
+  padding: 9px 11px 10px;
+  background: rgba(28, 28, 28, .95);
+  border: 1px solid #4d5a63;
+  border-radius: 4px;
+  font: 11px Consolas, monospace;
+  user-select: text;
+}
+.inquiry[hidden] { display: none; }
+.inquiry-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 7px;
+}
+.inquiry-title { color: #56d6ff; font-weight: 700; letter-spacing: .04em; }
+.inquiry-close {
+  padding: 0 5px;
+  color: #b9b9b9;
+  background: transparent;
+  border: 0;
+  font: 13px Consolas, monospace;
+  line-height: 1;
+}
+.inquiry-close:hover { color: #fff; background: transparent; }
+.inquiry-group + .inquiry-group { margin-top: 7px; padding-top: 7px; border-top: 1px solid #383838; }
+.inquiry-group-title { margin-bottom: 3px; color: #d8d8d8; }
+.inquiry-row { display: flex; gap: 10px; justify-content: space-between; line-height: 1.5; }
+.inquiry-row dt { color: #8f8f8f; }
+.inquiry-row dd { margin: 0; color: #e8e8e8; text-align: right; white-space: nowrap; }
+.inquiry-note { margin-top: 6px; color: #8f8f8f; line-height: 1.4; }
 
 .dialog {
   position: fixed;
@@ -216,6 +275,16 @@ kbd { font-size: 9px; opacity: .65; }
 }
 .dialog-card h2 { margin: 0 0 12px; font-size: 14px; }
 .dialog-card label { display: block; margin-bottom: 10px; color: #c8c8c8; }
+.dialog-card input[type="number"] {
+  width: 100%;
+  margin-top: 4px;
+  padding: 5px 6px;
+  color: #eee;
+  background: #303030;
+  border: 1px solid #4a4a4a;
+  border-radius: 3px;
+  font: 12px Consolas, monospace;
+}
 .dialog-card select {
   width: 100%;
   margin-top: 4px;
@@ -244,7 +313,9 @@ kbd { font-size: 9px; opacity: .65; }
 .dialog-actions .primary:hover { background: #37718c; }
 
 .unit-status {
+  width: 118px;
   padding: 2px 6px;
+  text-align: center;
   color: #aeb8c2;
   background: transparent;
   border: 1px solid #3f3f3f;
@@ -275,7 +346,7 @@ kbd { font-size: 9px; opacity: .65; }
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">finnCAD Prototype <span class="version">v0.14.1</span></div>
+    <div class="brand">zbCAD Prototype <span class="version">v0.16.1</span></div>
     <div class="tools">
       <button id="newBtn">New</button>
       <button id="openBtn">Open</button>
@@ -296,6 +367,12 @@ kbd { font-size: 9px; opacity: .65; }
       <button id="undoBtn">Undo</button>
       <button id="redoBtn">Redo</button>
       <button id="fitBtn">Zoom Extents</button>
+      <button data-command="DIST">Dist (DI)</button>
+      <button data-command="AREA">Area (AA)</button>
+      <button data-command="LIST">List (LI)</button>
+      <button data-command="DIMLINEAR">Dim Linear (DLI)</button>
+      <button data-command="DIMALIGNED">Dim Aligned (DAL)</button>
+      <button id="dimStyleBtn">Dim Style (DST)</button>
       <button id="unitsBtn">Units (UN)</button>
     </div>
     <input id="openInput" type="file" accept=".json,.draft2d.json,application/json" hidden />
@@ -304,6 +381,17 @@ kbd { font-size: 9px; opacity: .65; }
   <main class="workspace">
     <div class="canvas-shell">
       <canvas id="cadCanvas" tabindex="0"></canvas>
+      <div id="help" class="help">
+    <strong>Prototype controls:</strong>
+    Ctrl+N/O/S = new/open/save · drawings recover automatically after refresh · select an object, then click a white grip to edit it · L = line · PL = polyline · REC = rectangle · C = circle; choose 2P/3P before the first point or D after the center · A = three-point arc · M = move · CO = copy · RO = rotate · SC = uniform scale · type R after the RO/SC base point for reference mode · O = offset · TR = trim · EX = extend · use the Layers panel to create, rename, color, hide, lock, assign, and safely delete layers · Enter or Space finishes; Esc cancels and discards · Enter/Space at an empty prompt repeats the last command · type C to close or U to step back during a line or polyline · DLI = linear dimension · DAL = aligned dimension · DST = dimension style · DI = distance · AA = area (type O for a single object) · ID = point · LI = list selected · UN opens Drawing Units; distances accept 5'6-1/2", 3-1/2, and 150mm · F8 = ortho · Ctrl+Z/Y = undo/redo
+  </div>
+      <div id="inquiryPanel" class="inquiry" aria-live="polite" hidden>
+        <div class="inquiry-head">
+          <span class="inquiry-title" id="inquiryTitle">RESULT</span>
+          <button class="inquiry-close" id="inquiryClose" title="Close (Esc)" aria-label="Close results">&times;</button>
+        </div>
+        <div id="inquiryBody"></div>
+      </div>
     </div>
     <aside class="layer-panel" aria-label="Layer manager">
       <div class="layer-heading">
@@ -337,10 +425,6 @@ kbd { font-size: 9px; opacity: .65; }
     </div>
   </footer>
 
-  <div id="help" class="help">
-    <strong>Prototype controls:</strong>
-    Ctrl+N/O/S = new/open/save · drawings recover automatically after refresh · select an object, then click a white grip to edit it · L = line · PL = polyline · REC = rectangle · C = circle; choose 2P/3P before the first point or D after the center · A = three-point arc · M = move · CO = copy · RO = rotate · SC = uniform scale · type R after the RO/SC base point for reference mode · O = offset · TR = trim · EX = extend · use the Layers panel to create, rename, color, hide, lock, assign, and safely delete layers · Enter or Space finishes; Esc cancels and discards · Enter/Space at an empty prompt repeats the last command · type C to close or U to step back during a line or polyline · UN opens Drawing Units; distances accept 5'6-1/2", 3-1/2, and 150mm · F8 = ortho · Ctrl+Z/Y = undo/redo
-  </div>
 
   <div id="unitsDialog" class="dialog" hidden>
     <div class="dialog-card" role="dialog" aria-modal="true" aria-labelledby="unitsDialogTitle">
@@ -375,6 +459,48 @@ kbd { font-size: 9px; opacity: .65; }
     </div>
   </div>
 
+  <div id="dimStyleDialog" class="dialog" hidden>
+    <div class="dialog-card" role="dialog" aria-modal="true" aria-labelledby="dimStyleTitle">
+      <h2 id="dimStyleTitle">Dimension Style</h2>
+
+      <label for="dimArrowType">Terminator
+        <select id="dimArrowType"></select>
+      </label>
+      <p class="dialog-note">
+        Ticks are the architectural convention; arrows are the mechanical one.
+      </p>
+
+      <label for="dimScalePreset">Drawing scale
+        <select id="dimScalePreset"></select>
+      </label>
+      <label for="dimScale">Scale multiplier
+        <input id="dimScale" type="number" min="0.01" step="0.01" />
+      </label>
+      <p class="dialog-note">
+        Text and arrow sizes below are paper sizes. They are multiplied by this
+        to get their size in the drawing, which is what makes a 3/16&quot; text
+        height meaningful on a 40-foot building.
+      </p>
+
+      <label for="dimTextHeight">Text height (paper)
+        <input id="dimTextHeight" type="number" min="0.0001" step="0.0001" />
+      </label>
+      <label for="dimArrowSize">Terminator size (paper)
+        <input id="dimArrowSize" type="number" min="0.0001" step="0.0001" />
+      </label>
+      <label for="dimPrecision">Text precision
+        <select id="dimPrecision"></select>
+      </label>
+
+      <div class="dialog-preview">In the drawing: <strong id="dimStylePreview">—</strong></div>
+
+      <div class="dialog-actions">
+        <button id="dimStyleCancel">Cancel</button>
+        <button id="dimStyleApply" class="primary">Apply</button>
+      </div>
+    </div>
+  </div>
+
   <noscript><div class="fatal-error">JavaScript is disabled. This prototype cannot run until JavaScript is enabled.</div></noscript>
 
   <script>
@@ -398,6 +524,9 @@ kbd { font-size: 9px; opacity: .65; }
   const assignLayerBtn = document.getElementById('assignLayerBtn');
   const layerList = document.getElementById('layerList');
   const help = document.getElementById('help');
+  const inquiryPanel = document.getElementById('inquiryPanel');
+  const inquiryTitle = document.getElementById('inquiryTitle');
+  const inquiryBody = document.getElementById('inquiryBody');
   const unitsDialog = document.getElementById('unitsDialog');
   const unitDrawingUnitSelect = document.getElementById('unitDrawingUnit');
   const unitFormatSelect = document.getElementById('unitFormat');
@@ -406,11 +535,19 @@ kbd { font-size: 9px; opacity: .65; }
   const unitRescaleRow = document.getElementById('unitRescaleRow');
   const unitPreview = document.getElementById('unitPreview');
   const unitStatus = document.getElementById('unitStatus');
+  const dimStyleDialog = document.getElementById('dimStyleDialog');
+  const dimArrowTypeSelect = document.getElementById('dimArrowType');
+  const dimScalePresetSelect = document.getElementById('dimScalePreset');
+  const dimScaleInput = document.getElementById('dimScale');
+  const dimTextHeightInput = document.getElementById('dimTextHeight');
+  const dimArrowSizeInput = document.getElementById('dimArrowSize');
+  const dimPrecisionSelect = document.getElementById('dimPrecision');
+  const dimStylePreview = document.getElementById('dimStylePreview');
   const TAU = Math.PI * 2;
   const MIN_VIEW_SCALE = 0.0001;
   const MAX_VIEW_SCALE = 100000;
   const DOCUMENT_FORMAT = 'browser-2d-draft';
-  const DOCUMENT_VERSION = 3;
+  const DOCUMENT_VERSION = 4;
 
   // ---------------------------------------------------------------------------
   // Units
@@ -447,6 +584,8 @@ kbd { font-size: 9px; opacity: .65; }
       precisions: [0, 1, 2, 3, 4, 5, 6],
       defaultPrecision: 2,
       precisionLabel: value => `${value} decimal place${value === 1 ? '' : 's'}`,
+      shortName: 'DEC',
+      precisionShort: value => `${value}dp`,
     },
     architectural: {
       name: 'Architectural',
@@ -455,6 +594,8 @@ kbd { font-size: 9px; opacity: .65; }
       precisions: [1, 2, 4, 8, 16, 32, 64],
       defaultPrecision: 16,
       precisionLabel: value => (value === 1 ? 'whole inch' : `1/${value}"`),
+      shortName: 'ARCH',
+      precisionShort: value => (value === 1 ? '1"' : `1/${value}"`),
     },
     engineering: {
       name: 'Engineering',
@@ -463,6 +604,8 @@ kbd { font-size: 9px; opacity: .65; }
       precisions: [0, 1, 2, 3, 4],
       defaultPrecision: 2,
       precisionLabel: value => `${value} decimal place${value === 1 ? '' : 's'}`,
+      shortName: 'ENG',
+      precisionShort: value => `${value}dp`,
     },
     fractional: {
       name: 'Fractional',
@@ -470,6 +613,8 @@ kbd { font-size: 9px; opacity: .65; }
       precisions: [1, 2, 4, 8, 16, 32, 64],
       defaultPrecision: 16,
       precisionLabel: value => (value === 1 ? 'whole units' : `1/${value}`),
+      shortName: 'FRAC',
+      precisionShort: value => (value === 1 ? '1' : `1/${value}`),
     },
   };
 
@@ -609,10 +754,127 @@ kbd { font-size: 9px; opacity: .65; }
     return `${(radians * 180 / Math.PI).toFixed(settings.anglePrecision)}°`;
   }
 
+  // Areas are always shown in decimal square units: "1'-6 1/2" squared" is not
+  // a thing anyone writes. Where a second unit is the one people actually think
+  // in (square feet on an inch drawing, square metres on a millimetre drawing)
+  // it is shown alongside rather than instead.
+  const AREA_UNITS = {
+    inches:      { symbol: 'in\u00b2', precision: 2, secondary: { symbol: 'ft\u00b2', per: 144, precision: 2 } },
+    feet:        { symbol: 'ft\u00b2', precision: 3 },
+    millimeters: { symbol: 'mm\u00b2', precision: 1, secondary: { symbol: 'm\u00b2', per: 1e6, precision: 3 } },
+    centimeters: { symbol: 'cm\u00b2', precision: 2, secondary: { symbol: 'm\u00b2', per: 1e4, precision: 3 } },
+    meters:      { symbol: 'm\u00b2', precision: 3 },
+  };
+
+  // Areas get large fast; grouping is the difference between a readable number
+  // and one that has to be counted. Done by hand rather than with toLocaleString
+  // so the output does not change with the browser locale.
+  function groupDigits(text) {
+    const [whole, fraction] = text.split('.');
+    const sign = whole.startsWith('-') ? '-' : '';
+    const digits = sign ? whole.slice(1) : whole;
+    const grouped = digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return `${sign}${grouped}${fraction === undefined ? '' : `.${fraction}`}`;
+  }
+
+  function formatArea(value, settings = state.unitSettings) {
+    if (!Number.isFinite(value)) return '—';
+    const spec = AREA_UNITS[settings.drawingUnit];
+    const primary = `${groupDigits(value.toFixed(spec.precision))} ${spec.symbol}`;
+    if (!spec.secondary) return primary;
+    const converted = value / spec.secondary.per;
+    return `${primary} (${groupDigits(converted.toFixed(spec.secondary.precision))} ${spec.secondary.symbol})`;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Dimension styles
+  //
+  // Sizes are stored at PAPER scale and multiplied by `scale` to get model-space
+  // size, which is how DIMSCALE works and the only thing that makes a 3/16" text
+  // height meaningful on a 40-foot building. Until there is a plot scale, the
+  // user sets `scale` to their intended drawing scale (48 for 1/4" = 1'-0").
+  //
+  // arrowType is the single most visible difference between disciplines:
+  // architectural work uses ticks, mechanical work uses arrows.
+  // ---------------------------------------------------------------------------
+
+  const ARROW_TYPES = { tick: 'Architectural tick', arrow: 'Filled arrow' };
+  const DEFAULT_DIM_STYLE_ID = 'standard';
+
+  // Paper sizes, in the drawing's own unit, so a metric drawing does not get a
+  // 3/16 inch text height expressed as 0.1875 millimetres.
+  const DIM_PAPER_DEFAULTS = {
+    inches:      { textHeight: 0.1875, arrowSize: 0.125,  extensionOffset: 0.0625, extensionBeyond: 0.125, textGap: 0.0625 },
+    feet:        { textHeight: 0.015625, arrowSize: 0.0104, extensionOffset: 0.0052, extensionBeyond: 0.0104, textGap: 0.0052 },
+    millimeters: { textHeight: 2.5, arrowSize: 2.5, extensionOffset: 1.5, extensionBeyond: 2.5, textGap: 1 },
+    centimeters: { textHeight: 0.25, arrowSize: 0.25, extensionOffset: 0.15, extensionBeyond: 0.25, textGap: 0.1 },
+    meters:      { textHeight: 0.0025, arrowSize: 0.0025, extensionOffset: 0.0015, extensionBeyond: 0.0025, textGap: 0.001 },
+  };
+
+  function defaultDimStyle(drawingUnit = 'inches') {
+    const paper = DIM_PAPER_DEFAULTS[drawingUnit] || DIM_PAPER_DEFAULTS.inches;
+    return {
+      id: DEFAULT_DIM_STYLE_ID,
+      name: 'Standard',
+      arrowType: drawingUnit === 'millimeters' || drawingUnit === 'meters' || drawingUnit === 'centimeters'
+        ? 'arrow' : 'tick',
+      scale: 1,
+      precision: null,        // null = follow the document's length precision
+      ...paper,
+    };
+  }
+
+  const DIM_NUMERIC_STYLE_FIELDS = ['textHeight', 'arrowSize', 'extensionOffset', 'extensionBeyond', 'textGap', 'scale'];
+
+  function parseDimStyle(value) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return { error: 'is not an object' };
+    const id = typeof value.id === 'string' && value.id.trim() ? value.id.trim() : '';
+    if (!id) return { error: 'has no id' };
+    if (!ARROW_TYPES[value.arrowType]) return { error: `has an unsupported arrow type ${String(value.arrowType)}` };
+    const style = {
+      id,
+      name: typeof value.name === 'string' && value.name.trim() ? value.name.trim() : id,
+      arrowType: value.arrowType,
+      precision: value.precision === null || value.precision === undefined ? null : value.precision,
+    };
+    for (const field of DIM_NUMERIC_STYLE_FIELDS) {
+      if (!Number.isFinite(value[field]) || value[field] <= 0) return { error: `has an invalid ${field}` };
+      style[field] = value[field];
+    }
+    return { style };
+  }
+
+  // Dimension style sizes are paper sizes in the drawing's own unit, so a
+  // drawing switched from inches to millimetres was left with a 0.1875 mm text
+  // height — legible in neither system. Rebase, but only where the user has not
+  // customised the value, so a deliberate choice is never clobbered.
+  function rebaseDimStyleUnit(style, fromUnit, toUnit) {
+    const oldDefaults = defaultDimStyle(fromUnit);
+    const newDefaults = defaultDimStyle(toUnit);
+    const rebased = { ...style };
+    for (const field of ['textHeight', 'arrowSize', 'extensionOffset', 'extensionBeyond', 'textGap']) {
+      if (style[field] === oldDefaults[field]) rebased[field] = newDefaults[field];
+    }
+    if (style.arrowType === oldDefaults.arrowType) rebased.arrowType = newDefaults.arrowType;
+    // `scale` and `precision` are statements about the drawing, not the unit.
+    return rebased;
+  }
+
+  function getDimStyle(id) {
+    return state.dimStyles.find(style => style.id === id) ||
+      state.dimStyles.find(style => style.id === DEFAULT_DIM_STYLE_ID) ||
+      state.dimStyles[0];
+  }
+
+  // Every drawn size derives from the style's paper size times its scale.
+  function dimSize(style, field) {
+    return style[field] * style.scale;
+  }
+
   function unitSummary(settings = state.unitSettings) {
     const spec = LENGTH_FORMATS[settings.format];
     const unit = DRAWING_UNITS[settings.drawingUnit];
-    return `${unit.abbreviation.toUpperCase()} · ${spec.name} ${spec.precisionLabel(settings.precision)}`;
+    return `${unit.abbreviation.toUpperCase()} · ${spec.shortName} ${spec.precisionShort(settings.precision)}`;
   }
 
   const AUTOSAVE_KEY = `${DOCUMENT_FORMAT}.autosave`;
@@ -636,6 +898,8 @@ kbd { font-size: 9px; opacity: .65; }
     currentPoints: [],
     transform: null,
     offset: null,
+    inquiry: null,
+    dimension: null,
     edit: null,
     grip: null,
     circle: null,
@@ -654,18 +918,34 @@ kbd { font-size: 9px; opacity: .65; }
     future: [],
     nextId: 1,
     nextLayerId: 1,
+    dimStyles: [defaultDimStyle()],
   };
+
+  let lastCanvasSize = null;
 
   function resize() {
     const rect = canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = Math.round(rect.width * dpr);
-    canvas.height = Math.round(rect.height * dpr);
+    const width = Math.round(rect.width * dpr);
+    const height = Math.round(rect.height * dpr);
+    // Assigning width/height clears the canvas, so only do it when it changed.
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
+    }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
     if (state.view.offsetX === 0 && state.view.offsetY === 0) {
       state.view.offsetX = rect.width / 2;
       state.view.offsetY = rect.height / 2;
+    } else if (lastCanvasSize) {
+      // Keep whatever is under the centre of the canvas under the centre after
+      // the resize, so a toolbar wrap does not shift the drawing.
+      state.view.offsetX += (rect.width - lastCanvasSize.width) / 2;
+      state.view.offsetY += (rect.height - lastCanvasSize.height) / 2;
     }
+    lastCanvasSize = { width: rect.width, height: rect.height };
     draw();
   }
 
@@ -721,6 +1001,172 @@ kbd { font-size: 9px; opacity: .65; }
     return !isArc(entity) || angleOnArc(angleFromCenter(entity.center, point), entity);
   }
 
+  // ---------------------------------------------------------------------------
+  // Dimension geometry
+  //
+  // A dimension is defined by the two points it measures, a point the dimension
+  // line passes through, and a direction. ALIGNED takes its direction from the
+  // measured points; LINEAR takes it from `rotation`, so it reports the
+  // horizontal or vertical component instead of the true distance.
+  //
+  // `refs` holds a reference to whatever each measured point was snapped to.
+  // It is captured at creation and carried through the file, but nothing reads
+  // it yet: these dimensions are not associative. It exists so that turning
+  // association on later is purely additive.
+  // ---------------------------------------------------------------------------
+
+  const DIM_TYPES = ['ALIGNED', 'LINEAR'];
+  const DIM_REF_PARTS = ['START', 'END', 'CENTER', 'MID', 'QUAD', 'VERTEX', 'POINT'];
+
+  function dimDirection(entity) {
+    if (entity.dimType === 'LINEAR') {
+      return { x: Math.cos(entity.rotation), y: Math.sin(entity.rotation) };
+    }
+    const dx = entity.p2.x - entity.p1.x;
+    const dy = entity.p2.y - entity.p1.y;
+    const length = Math.hypot(dx, dy);
+    if (length <= 1e-12) return { x: 1, y: 0 };
+    return { x: dx / length, y: dy / length };
+  }
+
+  // Everything the renderer, the hit test, and the bounding box need, derived
+  // from the stored definition rather than cached, so there is no second copy
+  // of the truth to keep in step.
+  function dimensionGeometry(entity) {
+    const style = getDimStyle(entity.styleId);
+    const d = dimDirection(entity);
+    const n = { x: -d.y, y: d.x };
+    const along = point => (point.x - entity.linePoint.x) * d.x + (point.y - entity.linePoint.y) * d.y;
+    const t1 = along(entity.p1);
+    const t2 = along(entity.p2);
+    const q1 = { x: entity.linePoint.x + d.x * t1, y: entity.linePoint.y + d.y * t1 };
+    const q2 = { x: entity.linePoint.x + d.x * t2, y: entity.linePoint.y + d.y * t2 };
+    const measure = Math.abs(t2 - t1);
+
+    const offset = dimSize(style, 'extensionOffset');
+    const beyond = dimSize(style, 'extensionBeyond');
+    const extensionFor = (from, to) => {
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const length = Math.hypot(dx, dy);
+      // A measured point sitting on the dimension line has no extension line.
+      if (length <= offset + 1e-9) return null;
+      const ux = dx / length;
+      const uy = dy / length;
+      return [
+        { x: from.x + ux * offset, y: from.y + uy * offset },
+        { x: to.x + ux * beyond, y: to.y + uy * beyond },
+      ];
+    };
+
+    const mid = { x: (q1.x + q2.x) / 2, y: (q1.y + q2.y) / 2 };
+    // Text sits above the dimension line, on the side away from the geometry.
+    const geometryMid = { x: (entity.p1.x + entity.p2.x) / 2, y: (entity.p1.y + entity.p2.y) / 2 };
+    const towardGeometry = (geometryMid.x - mid.x) * n.x + (geometryMid.y - mid.y) * n.y;
+    const away = towardGeometry > 0 ? -1 : 1;
+    const lift = dimSize(style, 'textGap') + dimSize(style, 'textHeight') / 2;
+    const textAnchor = entity.textOffset
+      ? { x: mid.x + entity.textOffset.x, y: mid.y + entity.textOffset.y }
+      : { x: mid.x + n.x * lift * away, y: mid.y + n.y * lift * away };
+
+    return {
+      style, direction: d, normal: n, q1, q2, measure, mid, textAnchor,
+      extension1: extensionFor(entity.p1, q1),
+      extension2: extensionFor(entity.p2, q2),
+    };
+  }
+
+  function dimensionText(entity) {
+    const geometry = dimensionGeometry(entity);
+    const style = geometry.style;
+    if (style.precision === null) return formatLength(geometry.measure);
+    return formatLength(geometry.measure, { ...state.unitSettings, precision: style.precision });
+  }
+
+  // The line work only, used for hit testing and bounds. Text is excluded on
+  // purpose: picking a dimension by its text is a separate affordance.
+  function dimensionSegments(entity) {
+    const geometry = dimensionGeometry(entity);
+    const segments = [[geometry.q1, geometry.q2]];
+    if (geometry.extension1) segments.push(geometry.extension1);
+    if (geometry.extension2) segments.push(geometry.extension2);
+    return segments;
+  }
+
+  // Signed shoelace area. Callers take the absolute value; the sign is only
+  // meaningful for winding direction, which nothing needs yet.
+  function polygonArea(points) {
+    let total = 0;
+    for (let i = 0; i < points.length; i++) {
+      const current = points[i];
+      const next = points[(i + 1) % points.length];
+      total += current.x * next.y - next.x * current.y;
+    }
+    return total / 2;
+  }
+
+  function polylineIsClosed(entity) {
+    return Boolean(entity.closed) && entity.points.length >= 3;
+  }
+
+  // Total length along the entity: perimeter for a closed shape, run length for
+  // an open one, circumference or arc length for circular entities.
+  function entityLength(entity) {
+    if (entity.type === 'CIRCLE') return TAU * entity.radius;
+    if (entity.type === 'ARC') return arcSweep(entity) * entity.radius;
+    let total = 0;
+    for (const [a, b] of entitySegments(entity)) total += dist(a, b);
+    return total;
+  }
+
+  // Null where an area is undefined rather than zero: an open polyline and an
+  // arc do not enclose anything, and saying "0" would be a lie.
+  function entityArea(entity) {
+    if (entity.type === 'CIRCLE') return Math.PI * entity.radius * entity.radius;
+    if (entity.type === 'PLINE' && polylineIsClosed(entity)) return Math.abs(polygonArea(entity.points));
+    return null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Entity identity
+  //
+  // IDs stay monotone integers. The thing that actually matters for references
+  // is not the id format but that every path which duplicates entities rewrites
+  // the references between them, so that goes through one helper.
+  // ---------------------------------------------------------------------------
+
+  function allocateEntityId() {
+    return state.nextId++;
+  }
+
+  function remapEntityReferences(entity, idMap) {
+    if (!Array.isArray(entity.refs)) return entity;
+    entity.refs = entity.refs.map(ref => {
+      if (!ref) return null;
+      const mapped = idMap.get(ref.entityId);
+      // A reference to something outside the copied set keeps pointing at the
+      // original: copying a dimension on its own should still measure the
+      // geometry it was measuring.
+      return mapped === undefined ? { ...ref } : { ...ref, entityId: mapped };
+    });
+    return entity;
+  }
+
+  function duplicateEntities(entities) {
+    const idMap = new Map();
+    const copies = entities.map(entity => {
+      const id = allocateEntityId();
+      idMap.set(entity.id, id);
+      return { ...JSON.parse(JSON.stringify(entity)), id };
+    });
+    for (const copy of copies) remapEntityReferences(copy, idMap);
+    return { entities: copies, idMap };
+  }
+
+  function cloneDimStyles() {
+    return state.dimStyles.map(style => ({ ...style }));
+  }
+
   function cloneEntities() {
     return JSON.parse(JSON.stringify(state.entities));
   }
@@ -760,6 +1206,7 @@ kbd { font-size: 9px; opacity: .65; }
     return {
       entities: cloneEntities(),
       layers: cloneLayers(),
+      dimStyles: cloneDimStyles(),
       unitSettings: { ...state.unitSettings },
       currentLayerId: state.currentLayerId,
       nextId: state.nextId,
@@ -770,6 +1217,7 @@ kbd { font-size: 9px; opacity: .65; }
   function restoreEditSnapshot(snapshot) {
     state.entities = snapshot.entities;
     state.layers = snapshot.layers;
+    if (snapshot.dimStyles) state.dimStyles = snapshot.dimStyles.map(style => ({ ...style }));
     if (snapshot.unitSettings) state.unitSettings = { ...snapshot.unitSettings };
     state.currentLayerId = snapshot.currentLayerId;
     state.nextId = snapshot.nextId;
@@ -783,6 +1231,7 @@ kbd { font-size: 9px; opacity: .65; }
       name: state.drawingName,
       units: { ...state.unitSettings },
       layers: cloneLayers(),
+      dimStyles: cloneDimStyles(),
       currentLayerId: state.currentLayerId,
       nextId: state.nextId,
       nextLayerId: state.nextLayerId,
@@ -797,6 +1246,29 @@ kbd { font-size: 9px; opacity: .65; }
   function cleanPoint(value) {
     if (!value || !Number.isFinite(value.x) || !Number.isFinite(value.y)) return null;
     return { x: value.x, y: value.y };
+  }
+
+  // References are validated but never resolved: see dimensionGeometry. A
+  // reference to a missing entity is accepted rather than rejected, because the
+  // dimension does not depend on it, and dropping it would lose the information
+  // that association would later need.
+  function cleanEntityRefs(value) {
+    if (value === undefined || value === null) return { value: [null, null] };
+    if (!Array.isArray(value) || value.length !== 2) return { error: 'must be a pair' };
+    const cleaned = [];
+    for (const ref of value) {
+      if (ref === null || ref === undefined) { cleaned.push(null); continue; }
+      if (typeof ref !== 'object' || Array.isArray(ref)) return { error: 'must be an object or null' };
+      if (!Number.isSafeInteger(ref.entityId) || ref.entityId <= 0) return { error: 'has an invalid entity id' };
+      if (!DIM_REF_PARTS.includes(ref.part)) return { error: `has an unsupported part ${String(ref.part)}` };
+      const entry = { entityId: ref.entityId, part: ref.part };
+      if (ref.part === 'VERTEX') {
+        if (!Number.isSafeInteger(ref.index) || ref.index < 0) return { error: 'has an invalid vertex index' };
+        entry.index = ref.index;
+      }
+      cleaned.push(entry);
+    }
+    return { value: cleaned };
   }
 
   function cleanEntity(value, layerIds) {
@@ -824,6 +1296,37 @@ kbd { font-size: 9px; opacity: .65; }
       const closed = Boolean(value.closed);
       if (closed && points.length < 3) return { error: 'has too few points to be closed' };
       return { entity: { ...common, points, closed } };
+    }
+
+    if (type === 'DIM') {
+      if (!DIM_TYPES.includes(value.dimType)) return { error: `has an unsupported dimension type ${String(value.dimType)}` };
+      const p1 = cleanPoint(value.p1);
+      const p2 = cleanPoint(value.p2);
+      const linePoint = cleanPoint(value.linePoint);
+      if (!p1 || !p2 || !linePoint) return { error: 'has invalid dimension points' };
+      if (dist(p1, p2) <= 1e-9) return { error: 'measures a zero-length distance' };
+      const rotation = value.dimType === 'LINEAR' ? value.rotation : 0;
+      if (!Number.isFinite(rotation)) return { error: 'has an invalid dimension rotation' };
+      const styleId = typeof value.styleId === 'string' && value.styleId.trim()
+        ? value.styleId.trim() : DEFAULT_DIM_STYLE_ID;
+      const textOffset = value.textOffset === null || value.textOffset === undefined
+        ? null : cleanPoint(value.textOffset);
+      if (value.textOffset !== null && value.textOffset !== undefined && !textOffset) {
+        return { error: 'has an invalid dimension text offset' };
+      }
+      const refs = cleanEntityRefs(value.refs);
+      if (refs.error) return { error: `has an invalid dimension reference: ${refs.error}` };
+      return {
+        entity: {
+          ...common,
+          dimType: value.dimType,
+          p1, p2, linePoint,
+          rotation: normalizeAngle(rotation),
+          styleId,
+          textOffset,
+          refs: refs.value,
+        },
+      };
     }
 
     if (type === 'CIRCLE') {
@@ -906,6 +1409,29 @@ kbd { font-size: 9px; opacity: .65; }
     }
     if (!layerIds.has('0')) return { error: 'The drawing is missing required layer 0.' };
 
+    // Version 3 had no dimension styles. A v3 file gets the default set, which
+    // is exactly what it would have had if it could have held dimensions.
+    let dimStyles;
+    if (value.dimStyles === undefined) {
+      dimStyles = [defaultDimStyle(parsedUnits.settings.drawingUnit)];
+    } else if (!Array.isArray(value.dimStyles) || !value.dimStyles.length) {
+      return { error: 'The drawing has an invalid dimension style table.' };
+    } else {
+      dimStyles = [];
+      const styleIds = new Set();
+      for (let index = 0; index < value.dimStyles.length; index++) {
+        const parsed = parseDimStyle(value.dimStyles[index]);
+        if (parsed.error) return { error: `Dimension style ${index + 1} ${parsed.error}.` };
+        if (styleIds.has(parsed.style.id)) return { error: `Dimension style ${parsed.style.id} is duplicated.` };
+        styleIds.add(parsed.style.id);
+        dimStyles.push(parsed.style);
+      }
+      if (!styleIds.has(DEFAULT_DIM_STYLE_ID)) {
+        return { error: `The drawing is missing required dimension style ${DEFAULT_DIM_STYLE_ID}.` };
+      }
+    }
+    const styleIdSet = new Set(dimStyles.map(style => style.id));
+
     if (!Array.isArray(value.entities)) return { error: 'The drawing has no entity table.' };
     const entities = [];
     const entityIds = new Set();
@@ -913,6 +1439,9 @@ kbd { font-size: 9px; opacity: .65; }
       const cleaned = cleanEntity(value.entities[index], layerIds);
       if (cleaned.error) return { error: `Entity ${index + 1} ${cleaned.error}.` };
       if (entityIds.has(cleaned.entity.id)) return { error: `Entity ID ${cleaned.entity.id} is duplicated.` };
+      if (cleaned.entity.type === 'DIM' && !styleIdSet.has(cleaned.entity.styleId)) {
+        return { error: `Entity ${index + 1} references unknown dimension style ${cleaned.entity.styleId}.` };
+      }
       entityIds.add(cleaned.entity.id);
       entities.push(cleaned.entity);
     }
@@ -930,12 +1459,55 @@ kbd { font-size: 9px; opacity: .65; }
         name,
         unitSettings: parsedUnits.settings,
         layers,
+        dimStyles,
         currentLayerId,
         nextId: Math.max(minimumNextId, suppliedNextId),
         nextLayerId: Math.max(derivedLayerId, suppliedNextLayerId),
         entities,
       },
     };
+  }
+
+  // Report shape: [{ title, rows: [[label, value], ...], note }]
+  function showInquiryReport(title, groups) {
+    inquiryTitle.textContent = title;
+    inquiryBody.textContent = '';
+    for (const group of groups) {
+      const section = document.createElement('div');
+      section.className = 'inquiry-group';
+      if (group.title) {
+        const heading = document.createElement('div');
+        heading.className = 'inquiry-group-title';
+        heading.textContent = group.title;
+        section.appendChild(heading);
+      }
+      const list = document.createElement('dl');
+      list.style.margin = '0';
+      for (const [label, value] of group.rows || []) {
+        const row = document.createElement('div');
+        row.className = 'inquiry-row';
+        const term = document.createElement('dt');
+        term.textContent = label;
+        const detail = document.createElement('dd');
+        detail.textContent = value;
+        row.append(term, detail);
+        list.appendChild(row);
+      }
+      section.appendChild(list);
+      if (group.note) {
+        const note = document.createElement('div');
+        note.className = 'inquiry-note';
+        note.textContent = group.note;
+        section.appendChild(note);
+      }
+      inquiryBody.appendChild(section);
+    }
+    inquiryPanel.hidden = false;
+    inquiryPanel.scrollTop = 0;
+  }
+
+  function hideInquiryReport() {
+    inquiryPanel.hidden = true;
   }
 
   function setFileStatus(message, error = false) {
@@ -1272,12 +1844,101 @@ kbd { font-size: 9px; opacity: .65; }
       const origin = { x: 0, y: 0 };
       state.entities = state.entities.map(entity => scaleEntity(entity, origin, factor));
     }
+    if (next.drawingUnit !== previousUnit) {
+      state.dimStyles = state.dimStyles.map(style =>
+        rebaseDimStyleUnit(style, previousUnit, next.drawingUnit));
+    }
     state.unitSettings = next;
     renderUnitStatus();
     updatePrompt();
     setFileStatus(`${state.drawingName} · Units set to ${unitSummary()}`);
     closeUnitsDialog();
     if (rescale) zoomExtents();
+    draw();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Dimension style dialog
+  // ---------------------------------------------------------------------------
+
+  // Common drawing scales, as the multiplier that turns a paper size into a
+  // model size. 1/4" = 1'-0" is 48 because one paper inch is four model feet.
+  const IMPERIAL_SCALE_PRESETS = [
+    ['Full size (1:1)', 1], ['3" = 1\'-0"', 4], ['1 1/2" = 1\'-0"', 8],
+    ['1" = 1\'-0"', 12], ['3/4" = 1\'-0"', 16], ['1/2" = 1\'-0"', 24],
+    ['3/8" = 1\'-0"', 32], ['1/4" = 1\'-0"', 48], ['3/16" = 1\'-0"', 64],
+    ['1/8" = 1\'-0"', 96], ['1/16" = 1\'-0"', 192],
+  ];
+  const METRIC_SCALE_PRESETS = [
+    ['Full size (1:1)', 1], ['1:2', 2], ['1:5', 5], ['1:10', 10], ['1:20', 20],
+    ['1:50', 50], ['1:100', 100], ['1:200', 200], ['1:500', 500],
+  ];
+
+  function scalePresets() {
+    return state.unitSettings.drawingUnit === 'inches' || state.unitSettings.drawingUnit === 'feet'
+      ? IMPERIAL_SCALE_PRESETS : METRIC_SCALE_PRESETS;
+  }
+
+  let pendingDimStyle = null;
+
+  function refreshDimStyleDialog() {
+    if (!pendingDimStyle) return;
+    fillSelect(dimArrowTypeSelect, Object.keys(ARROW_TYPES),
+      key => ARROW_TYPES[key], pendingDimStyle.arrowType);
+
+    const presets = scalePresets();
+    const match = presets.find(([, value]) => Math.abs(value - pendingDimStyle.scale) < 1e-9);
+    fillSelect(dimScalePresetSelect, ['custom', ...presets.map(([, value]) => value)],
+      value => (value === 'custom' ? 'Custom' : presets.find(([, v]) => v === value)[0]),
+      match ? match[1] : 'custom');
+
+    dimScaleInput.value = String(pendingDimStyle.scale);
+    dimTextHeightInput.value = String(pendingDimStyle.textHeight);
+    dimArrowSizeInput.value = String(pendingDimStyle.arrowSize);
+
+    const spec = LENGTH_FORMATS[state.unitSettings.format];
+    fillSelect(dimPrecisionSelect, ['document', ...spec.precisions],
+      value => (value === 'document'
+        ? `Follow drawing units (${spec.precisionShort(state.unitSettings.precision)})`
+        : spec.precisionLabel(value)),
+      pendingDimStyle.precision === null ? 'document' : pendingDimStyle.precision);
+
+    const textSize = pendingDimStyle.textHeight * pendingDimStyle.scale;
+    const arrowSizeValue = pendingDimStyle.arrowSize * pendingDimStyle.scale;
+    dimStylePreview.textContent =
+      `text ${formatLengthLabel(textSize)} · terminator ${formatLengthLabel(arrowSizeValue)}`;
+  }
+
+  function openDimStyleDialog() {
+    pendingDimStyle = { ...getDimStyle(DEFAULT_DIM_STYLE_ID) };
+    dimStyleDialog.hidden = false;
+    refreshDimStyleDialog();
+    dimArrowTypeSelect.focus();
+  }
+
+  function closeDimStyleDialog() {
+    pendingDimStyle = null;
+    dimStyleDialog.hidden = true;
+    canvas.focus();
+  }
+
+  function applyDimStyleDialog() {
+    if (!pendingDimStyle) return;
+    const candidate = { ...getDimStyle(DEFAULT_DIM_STYLE_ID), ...pendingDimStyle };
+    const parsed = parseDimStyle(candidate);
+    if (parsed.error) {
+      updatePrompt(`The dimension style ${parsed.error}.`);
+      return;
+    }
+    const current = getDimStyle(DEFAULT_DIM_STYLE_ID);
+    const unchanged = DIM_NUMERIC_STYLE_FIELDS.every(field => current[field] === parsed.style[field]) &&
+      current.arrowType === parsed.style.arrowType && current.precision === parsed.style.precision;
+    if (unchanged) { closeDimStyleDialog(); return; }
+    pushHistory();
+    state.dimStyles = state.dimStyles.map(style =>
+      style.id === parsed.style.id ? parsed.style : style);
+    setFileStatus(`${state.drawingName} · Dimension style updated`);
+    closeDimStyleDialog();
     draw();
   }
 
@@ -1320,6 +1981,7 @@ kbd { font-size: 9px; opacity: .65; }
     state.currentLayerId = documentData.currentLayerId;
     state.drawingName = documentData.name;
     state.unitSettings = { ...documentData.unitSettings };
+    state.dimStyles = documentData.dimStyles.map(style => ({ ...style }));
     state.nextId = documentData.nextId;
     state.nextLayerId = documentData.nextLayerId || derivedNextLayerId(state.layers);
     state.selected.clear();
@@ -1386,6 +2048,7 @@ kbd { font-size: 9px; opacity: .65; }
     state.currentLayerId = '0';
     state.drawingName = 'Untitled';
     state.unitSettings = defaultUnitSettings();
+    state.dimStyles = [defaultDimStyle()];
     state.nextId = 1;
     state.nextLayerId = 1;
     state.selected.clear();
@@ -1466,6 +2129,8 @@ kbd { font-size: 9px; opacity: .65; }
     state.currentPoints = [];
     state.transform = null;
     state.offset = null;
+    state.inquiry = null;
+    state.dimension = null;
     state.edit = null;
     state.grip = null;
     state.circle = mode === 'CIRCLE'
@@ -1517,6 +2182,30 @@ kbd { font-size: 9px; opacity: .65; }
       if (!state.currentPoints.length) p = 'ARC — Specify start point:';
       else if (state.currentPoints.length === 1) p = 'ARC — Specify point on arc:';
       else p = 'ARC — Specify endpoint:';
+    } else if (state.mode === 'DIM') {
+      const label = state.dimension?.dimType === 'ALIGNED' ? 'DIMALIGNED' : 'DIMLINEAR';
+      p = state.currentPoints.length === 0
+        ? `${label} — Specify first extension line origin:`
+        : state.currentPoints.length === 1
+          ? `${label} — Specify second extension line origin:`
+          : `${label} — Specify dimension line location:`;
+    } else if (INQUIRY_COMMANDS.includes(state.mode)) {
+      const inquiry = state.inquiry;
+      if (state.mode === 'DIST') {
+        p = state.currentPoints.length ? 'DIST — Specify second point:' : 'DIST — Specify first point:';
+      } else if (state.mode === 'ID') {
+        p = 'ID — Specify point:';
+      } else if (state.mode === 'LIST') {
+        p = state.selected.size
+          ? `LIST — ${state.selected.size} selected; Enter or right-click to report:`
+          : 'LIST — Select objects, then press Enter or right-click:';
+      } else if (inquiry?.stage === 'SELECT') {
+        p = 'AREA Object — Select one closed polyline or circle, then Enter:';
+      } else {
+        p = state.currentPoints.length >= 3
+          ? `AREA — Specify next point or Enter to total (${state.currentPoints.length} picked):`
+          : `AREA — Specify point or [Object] (${state.currentPoints.length} picked):`;
+      }
     } else if (state.mode === 'SELECT') {
       p = 'Command:';
     } else if (state.mode === 'GRIP') {
@@ -1578,6 +2267,14 @@ kbd { font-size: 9px; opacity: .65; }
       return segs;
     }
     return [];
+  }
+
+  // Geometry for picking and bounds. Dimensions are pickable but are
+  // deliberately absent from entitySegments: snapping to a dimension line, or
+  // trimming to one, is never what anybody wants.
+  function pickSegments(entity) {
+    if (entity.type === 'DIM') return dimensionSegments(entity);
+    return entitySegments(entity);
   }
 
   function snapSegments(excludedEntityId = null) {
@@ -1776,7 +2473,7 @@ kbd { font-size: 9px; opacity: .65; }
   }
 
   function getCommandBasePoint() {
-    if (['LINE', 'PLINE', 'RECTANGLE', 'CIRCLE', 'ARC'].includes(state.mode) && state.currentPoints.length) {
+    if (['LINE', 'PLINE', 'RECTANGLE', 'CIRCLE', 'ARC', 'DIST', 'AREA', 'DIM'].includes(state.mode) && state.currentPoints.length) {
       return state.currentPoints[state.currentPoints.length - 1];
     }
     if (['MOVE', 'COPY'].includes(state.mode) && state.transform?.stage === 'DEST') {
@@ -1800,7 +2497,10 @@ kbd { font-size: 9px; opacity: .65; }
       return { ...state.mouseWorld };
     }
     const base = getCommandBasePoint();
-    const useOrtho = ['LINE', 'PLINE'].includes(state.mode) ||
+    // ORTHO helps for the two extension line origins but would fight the user
+    // when placing the dimension line, which is a free offset.
+    const useOrtho = ['LINE', 'PLINE', 'DIST', 'AREA'].includes(state.mode) ||
+      (state.mode === 'DIM' && state.currentPoints.length < 2) ||
       (['MOVE', 'COPY'].includes(state.mode) && state.transform?.stage === 'DEST') ||
       (state.mode === 'ROTATE' && state.transform?.stage === 'ANGLE') ||
       state.mode === 'GRIP';
@@ -1963,6 +2663,16 @@ kbd { font-size: 9px; opacity: .65; }
         center: { x: entity.center.x + dx, y: entity.center.y + dy },
       };
     }
+    if (entity.type === 'DIM') {
+      return {
+        ...entity,
+        id,
+        p1: { x: entity.p1.x + dx, y: entity.p1.y + dy },
+        p2: { x: entity.p2.x + dx, y: entity.p2.y + dy },
+        linePoint: { x: entity.linePoint.x + dx, y: entity.linePoint.y + dy },
+        refs: entity.refs.map(ref => (ref ? { ...ref } : null)),
+      };
+    }
     return JSON.parse(JSON.stringify(entity));
   }
 
@@ -2006,6 +2716,21 @@ kbd { font-size: 9px; opacity: .65; }
         endAngle: rotatedStart + arcSweep(entity),
       };
     }
+    if (entity.type === 'DIM') {
+      return {
+        ...entity,
+        id,
+        p1: rotatePoint(entity.p1, base, angle),
+        p2: rotatePoint(entity.p2, base, angle),
+        linePoint: rotatePoint(entity.linePoint, base, angle),
+        // A LINEAR dimension measures along a fixed direction, so the direction
+        // has to turn with it or the measurement silently changes.
+        rotation: normalizeAngle(entity.rotation + angle),
+        textOffset: entity.textOffset
+          ? rotatePoint(entity.textOffset, { x: 0, y: 0 }, angle) : null,
+        refs: entity.refs.map(ref => (ref ? { ...ref } : null)),
+      };
+    }
     return JSON.parse(JSON.stringify(entity));
   }
 
@@ -2038,6 +2763,18 @@ kbd { font-size: 9px; opacity: .65; }
         id,
         center: scalePoint(entity.center, base, factor),
         radius: entity.radius * factor,
+      };
+    }
+    if (entity.type === 'DIM') {
+      return {
+        ...entity,
+        id,
+        p1: scalePoint(entity.p1, base, factor),
+        p2: scalePoint(entity.p2, base, factor),
+        linePoint: scalePoint(entity.linePoint, base, factor),
+        textOffset: entity.textOffset
+          ? { x: entity.textOffset.x * factor, y: entity.textOffset.y * factor } : null,
+        refs: entity.refs.map(ref => (ref ? { ...ref } : null)),
       };
     }
     return JSON.parse(JSON.stringify(entity));
@@ -2667,6 +3404,346 @@ kbd { font-size: 9px; opacity: .65; }
     replaceEditedEntity(operation.hit.entity, [operation.result]);
   }
 
+  // ---------------------------------------------------------------------------
+  // Dimension commands
+  // ---------------------------------------------------------------------------
+
+  // References are resolved from the committed point rather than captured from
+  // the snap, so a typed coordinate that lands exactly on a vertex is recorded
+  // too. The tolerance is deliberately tight: a reference should only exist
+  // where the point genuinely coincides with a feature, otherwise a future
+  // associative build would inherit references nobody asked for.
+  const REFERENCE_TOLERANCE = 1e-7;
+
+  function entityReferenceCandidates(entity) {
+    if (entity.type === 'LINE') {
+      return [
+        { part: 'START', point: entity.a },
+        { part: 'END', point: entity.b },
+        { part: 'MID', point: { x: (entity.a.x + entity.b.x) / 2, y: (entity.a.y + entity.b.y) / 2 } },
+      ];
+    }
+    if (entity.type === 'PLINE') {
+      return entity.points.map((point, index) => ({ part: 'VERTEX', index, point }));
+    }
+    if (entity.type === 'CIRCLE') {
+      return [
+        { part: 'CENTER', point: entity.center },
+        ...[0, Math.PI / 2, Math.PI, Math.PI * 1.5].map(angle => ({
+          part: 'QUAD', point: circularPoint(entity.center, entity.radius, angle),
+        })),
+      ];
+    }
+    if (entity.type === 'ARC') {
+      return [
+        { part: 'CENTER', point: entity.center },
+        { part: 'START', point: circularPoint(entity.center, entity.radius, entity.startAngle) },
+        { part: 'END', point: circularPoint(entity.center, entity.radius, entity.endAngle) },
+      ];
+    }
+    return [];
+  }
+
+  function resolveEntityReference(point) {
+    for (const entity of state.entities) {
+      if (entity.type === 'DIM' || !isEntityVisible(entity)) continue;
+      for (const candidate of entityReferenceCandidates(entity)) {
+        if (dist(point, candidate.point) > REFERENCE_TOLERANCE) continue;
+        const ref = { entityId: entity.id, part: candidate.part };
+        if (candidate.part === 'VERTEX') ref.index = candidate.index;
+        return ref;
+      }
+    }
+    return null;
+  }
+
+  // AutoCAD decides horizontal versus vertical from where the dimension line is
+  // dragged: pull it above or below and you measure the horizontal component.
+  function linearDimensionRotation(p1, p2, linePoint) {
+    const midX = (p1.x + p2.x) / 2;
+    const midY = (p1.y + p2.y) / 2;
+    return Math.abs(linePoint.y - midY) >= Math.abs(linePoint.x - midX) ? 0 : Math.PI / 2;
+  }
+
+  function buildDimension(dimType, p1, p2, linePoint, refs) {
+    const rotation = dimType === 'LINEAR' ? linearDimensionRotation(p1, p2, linePoint) : 0;
+    return {
+      id: 0,
+      type: 'DIM',
+      layerId: state.currentLayerId,
+      dimType,
+      p1: { ...p1 },
+      p2: { ...p2 },
+      linePoint: { ...linePoint },
+      rotation,
+      styleId: getDimStyle(DEFAULT_DIM_STYLE_ID).id,
+      textOffset: null,
+      refs: refs || [null, null],
+    };
+  }
+
+  function addDimension(dimType, p1, p2, linePoint, refs) {
+    if (!currentLayerIsEditable()) return false;
+    if (dist(p1, p2) <= 1e-9) {
+      updatePrompt('A dimension needs two distinct points.');
+      return false;
+    }
+    const entity = buildDimension(dimType, p1, p2, linePoint, refs);
+    const geometry = dimensionGeometry(entity);
+    if (geometry.measure <= 1e-9) {
+      updatePrompt('That dimension line direction measures nothing. Try the other side.');
+      return false;
+    }
+    pushHistory();
+    entity.id = allocateEntityId();
+    state.entities.push(entity);
+    return true;
+  }
+
+  function startDimension(dimType) {
+    if (!currentLayerIsEditable()) {
+      updatePrompt('The current layer is locked or hidden.');
+      return false;
+    }
+    setMode('DIM');
+    state.dimension = { dimType, refs: [null, null] };
+    updatePrompt();
+    draw();
+    return true;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Inquiry commands
+  //
+  // All read-only: no history entry, no document change, no schema impact. They
+  // also serve as the only way to check the geometry engine numerically, which
+  // is why they exist before annotation rather than after.
+  // ---------------------------------------------------------------------------
+
+  const INQUIRY_COMMANDS = ['DIST', 'AREA', 'ID', 'LIST'];
+
+  function describePoint(point) {
+    return `${formatLength(point.x)}, ${formatLength(point.y)}`;
+  }
+
+  function reportDistance(from, to) {
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    showInquiryReport('DISTANCE', [{
+      rows: [
+        ['Distance', formatLengthLabel(Math.hypot(dx, dy))],
+        ['Angle in XY plane', formatAngle(normalizeAngle(Math.atan2(dy, dx)))],
+        ['Delta X', formatLengthLabel(dx)],
+        ['Delta Y', formatLengthLabel(dy)],
+        ['From', describePoint(from)],
+        ['To', describePoint(to)],
+      ],
+    }]);
+  }
+
+  function reportPoint(point) {
+    showInquiryReport('POINT', [{
+      rows: [['X', formatLength(point.x)], ['Y', formatLength(point.y)]],
+    }]);
+  }
+
+  function reportPolygonArea(points) {
+    const area = Math.abs(polygonArea(points));
+    let perimeter = 0;
+    for (let i = 0; i < points.length; i++) {
+      perimeter += dist(points[i], points[(i + 1) % points.length]);
+    }
+    showInquiryReport('AREA', [{
+      rows: [
+        ['Area', formatArea(area)],
+        ['Perimeter', formatLengthLabel(perimeter)],
+        ['Points', String(points.length)],
+      ],
+      note: 'Picked points are treated as a closed boundary. Self-intersecting outlines give a signed result and are not reliable.',
+    }]);
+  }
+
+  function reportEntityArea(entity) {
+    const area = entityArea(entity);
+    if (area === null) {
+      updatePrompt('That object does not enclose an area. Pick a circle or a closed polyline.');
+      return false;
+    }
+    showInquiryReport('AREA', [{
+      title: `${entity.type} on layer ${getLayer(entity.layerId)?.name || '0'}`,
+      rows: [
+        ['Area', formatArea(area)],
+        [entity.type === 'CIRCLE' ? 'Circumference' : 'Perimeter', formatLengthLabel(entityLength(entity))],
+      ],
+    }]);
+    return true;
+  }
+
+  function entityReportGroup(entity) {
+    const layer = getLayer(entity.layerId);
+    const rows = [['Layer', layer?.name || '0'], ['ID', String(entity.id)]];
+    if (entity.type === 'LINE') {
+      const dx = entity.b.x - entity.a.x;
+      const dy = entity.b.y - entity.a.y;
+      rows.push(
+        ['From', describePoint(entity.a)],
+        ['To', describePoint(entity.b)],
+        ['Length', formatLengthLabel(entityLength(entity))],
+        ['Angle', formatAngle(normalizeAngle(Math.atan2(dy, dx)))],
+      );
+    } else if (entity.type === 'PLINE') {
+      const closed = polylineIsClosed(entity);
+      rows.push(
+        ['Vertices', String(entity.points.length)],
+        ['Closed', closed ? 'Yes' : 'No'],
+        [closed ? 'Perimeter' : 'Length', formatLengthLabel(entityLength(entity))],
+      );
+      if (closed) rows.push(['Area', formatArea(entityArea(entity))]);
+    } else if (entity.type === 'CIRCLE') {
+      rows.push(
+        ['Center', describePoint(entity.center)],
+        ['Radius', formatLengthLabel(entity.radius)],
+        ['Diameter', formatLengthLabel(entity.radius * 2)],
+        ['Circumference', formatLengthLabel(entityLength(entity))],
+        ['Area', formatArea(entityArea(entity))],
+      );
+    } else if (entity.type === 'DIM') {
+      const geometry = dimensionGeometry(entity);
+      rows.push(
+        ['Dimension type', entity.dimType],
+        ['Measurement', dimensionText(entity)],
+        ['Exact value', formatLengthLabel(geometry.measure)],
+        ['From', describePoint(entity.p1)],
+        ['To', describePoint(entity.p2)],
+        ['Style', geometry.style.name],
+        ['Associative', 'No'],
+      );
+      const referenced = entity.refs.filter(Boolean).length;
+      rows.push(['References captured', `${referenced} of 2`]);
+    } else if (entity.type === 'ARC') {
+      rows.push(
+        ['Center', describePoint(entity.center)],
+        ['Radius', formatLengthLabel(entity.radius)],
+        ['Start angle', formatAngle(normalizeAngle(entity.startAngle))],
+        ['End angle', formatAngle(normalizeAngle(entity.endAngle))],
+        ['Included angle', formatAngle(arcSweep(entity))],
+        ['Arc length', formatLengthLabel(entityLength(entity))],
+        ['Chord', formatLengthLabel(dist(
+          circularPoint(entity.center, entity.radius, entity.startAngle),
+          circularPoint(entity.center, entity.radius, entity.endAngle),
+        ))],
+      );
+    }
+    return { title: entity.type, rows };
+  }
+
+  const LIST_REPORT_LIMIT = 20;
+
+  function reportEntityList(entities) {
+    const shown = entities.slice(0, LIST_REPORT_LIMIT);
+    const groups = shown.map(entityReportGroup);
+    let totalLength = 0;
+    let totalArea = 0;
+    let areaCount = 0;
+    for (const entity of entities) {
+      totalLength += entityLength(entity);
+      const area = entityArea(entity);
+      if (area !== null) { totalArea += area; areaCount += 1; }
+    }
+    if (entities.length > 1) {
+      const rows = [['Objects', String(entities.length)], ['Total length', formatLengthLabel(totalLength)]];
+      if (areaCount) rows.push([`Total area (${areaCount})`, formatArea(totalArea)]);
+      groups.unshift({ title: 'Selection', rows });
+    }
+    if (entities.length > shown.length) {
+      groups.push({ note: `${entities.length - shown.length} more object(s) not listed individually.` });
+    }
+    showInquiryReport('LIST', groups);
+  }
+
+  function startInquiry(type) {
+    setMode(type);
+    const selected = state.entities.filter(entity =>
+      state.selected.has(entity.id) && isEntityVisible(entity));
+
+    if (type === 'LIST') {
+      if (selected.length) {
+        reportEntityList(selected);
+        setMode('SELECT');
+        return true;
+      }
+      state.inquiry = { type, stage: 'SELECT' };
+    } else if (type === 'AREA') {
+      state.inquiry = { type, stage: 'POINTS', mode: 'POINTS' };
+    } else {
+      state.inquiry = { type, stage: 'POINTS' };
+    }
+    updatePrompt();
+    draw();
+    return true;
+  }
+
+  function acceptInquirySelection() {
+    if (state.inquiry?.stage !== 'SELECT') return false;
+    const selected = state.entities.filter(entity =>
+      state.selected.has(entity.id) && isEntityVisible(entity));
+    if (!selected.length) {
+      updatePrompt('No objects selected.');
+      return true;
+    }
+    if (state.inquiry.type === 'AREA') {
+      if (selected.length !== 1) {
+        updatePrompt('Select exactly one closed polyline or circle.');
+        return true;
+      }
+      if (!reportEntityArea(selected[0])) return true;
+    } else {
+      reportEntityList(selected);
+    }
+    setMode('SELECT');
+    return true;
+  }
+
+  function finishInquiryPoints() {
+    if (state.inquiry?.stage !== 'POINTS') return false;
+    if (state.inquiry.type === 'AREA') {
+      if (state.currentPoints.length < 3) {
+        updatePrompt('Pick at least three points to enclose an area.');
+        return true;
+      }
+      reportPolygonArea(state.currentPoints);
+      setMode('SELECT');
+      return true;
+    }
+    // DIST and ID simply abandon an incomplete pick.
+    setMode('SELECT');
+    return true;
+  }
+
+  // AREA switches between picking points and picking an object.
+  function commitAreaKeyword(text) {
+    if (state.mode !== 'AREA' || !state.inquiry) return false;
+    const keyword = text.trim().toUpperCase();
+    if (['O', 'OBJECT'].includes(keyword)) {
+      state.inquiry.mode = 'OBJECT';
+      state.inquiry.stage = 'SELECT';
+      state.currentPoints = [];
+      state.selected.clear();
+      updatePrompt();
+      draw();
+      return true;
+    }
+    if (['P', 'POINT', 'POINTS'].includes(keyword)) {
+      state.inquiry.mode = 'POINTS';
+      state.inquiry.stage = 'POINTS';
+      state.selected.clear();
+      updatePrompt();
+      draw();
+      return true;
+    }
+    return false;
+  }
+
   function startTransform(type) {
     setMode(type);
     const ids = state.entities
@@ -2725,9 +3802,10 @@ kbd { font-size: 9px; opacity: .65; }
       );
       state.selected = new Set(idSet);
     } else {
-      const copies = state.entities
+      const moved = state.entities
         .filter(entity => idSet.has(entity.id))
-        .map(entity => translateEntity(entity, dx, dy, state.nextId++));
+        .map(entity => translateEntity(entity, dx, dy));
+      const { entities: copies } = duplicateEntities(moved);
       state.entities.push(...copies);
       state.selected = new Set(copies.map(entity => entity.id));
     }
@@ -2805,6 +3883,13 @@ kbd { font-size: 9px; opacity: .65; }
     }
     if (entity.type === 'PLINE') {
       return entity.points.map((point, index) => ({ kind: 'PLINE_VERTEX', index, point }));
+    }
+    if (entity.type === 'DIM') {
+      return [
+        { kind: 'DIM_POINT', index: 0, point: entity.p1 },
+        { kind: 'DIM_POINT', index: 1, point: entity.p2 },
+        { kind: 'DIM_LINE', point: dimensionGeometry(entity).mid },
+      ];
     }
     if (entity.type === 'CIRCLE') {
       return [
@@ -2892,6 +3977,25 @@ kbd { font-size: 9px; opacity: .65; }
       }
       points[index] = { ...point };
       return { entity: { ...entity, points } };
+    }
+
+    if (entity.type === 'DIM' && descriptor.kind === 'DIM_POINT') {
+      const next = { ...entity, p1: { ...entity.p1 }, p2: { ...entity.p2 },
+        refs: entity.refs.map(ref => (ref ? { ...ref } : null)) };
+      if (descriptor.index === 0) next.p1 = { ...point }; else next.p2 = { ...point };
+      if (dist(next.p1, next.p2) <= 1e-9) return { error: 'A dimension needs two distinct points.' };
+      if (dimensionGeometry(next).measure <= 1e-9) {
+        return { error: 'That would leave the dimension measuring nothing.' };
+      }
+      // The measured point moved by hand, so whatever it used to reference is no
+      // longer what it measures.
+      next.refs[descriptor.index] = resolveEntityReference(point);
+      return { entity: next };
+    }
+
+    if (entity.type === 'DIM' && descriptor.kind === 'DIM_LINE') {
+      return { entity: { ...entity, linePoint: { ...point },
+        refs: entity.refs.map(ref => (ref ? { ...ref } : null)) } };
     }
 
     if (entity.type === 'CIRCLE') {
@@ -3085,6 +4189,32 @@ kbd { font-size: 9px; opacity: .65; }
         if (newLength <= 1e-9) updatePrompt('New length must be greater than zero.');
         else applyScale(newLength / state.transform.referenceLength);
       }
+    } else if (state.mode === 'DIM' && state.dimension) {
+      if (state.currentPoints.length < 2) {
+        state.dimension.refs[state.currentPoints.length] = resolveEntityReference(p);
+        state.currentPoints.push({ ...p });
+        updatePrompt();
+      } else if (addDimension(
+        state.dimension.dimType,
+        state.currentPoints[0], state.currentPoints[1], p,
+        state.dimension.refs,
+      )) {
+        setMode('SELECT');
+      }
+    } else if (state.mode === 'DIST') {
+      if (!state.currentPoints.length) {
+        state.currentPoints.push({ ...p });
+        updatePrompt();
+      } else {
+        reportDistance(state.currentPoints[0], p);
+        setMode('SELECT');
+      }
+    } else if (state.mode === 'ID') {
+      reportPoint(p);
+      setMode('SELECT');
+    } else if (state.mode === 'AREA' && state.inquiry?.stage === 'POINTS') {
+      state.currentPoints.push({ ...p });
+      updatePrompt();
     } else if (state.mode === 'OFFSET' && state.offset?.stage === 'SIDE') {
       applyOffset(p);
     } else if (state.mode === 'TRIM') {
@@ -3280,7 +4410,9 @@ kbd { font-size: 9px; opacity: .65; }
       (['MOVE', 'COPY'].includes(state.mode) && ['BASE', 'DEST'].includes(state.transform?.stage)) ||
       (state.mode === 'ROTATE' && ['BASE', 'ANGLE', 'ROTATE_REF', 'ROTATE_TARGET'].includes(state.transform?.stage)) ||
       (state.mode === 'SCALE' && ['BASE', 'FACTOR', 'SCALE_REF_FIRST', 'SCALE_REF_SECOND', 'SCALE_REF_NEW'].includes(state.transform?.stage)) ||
-      (state.mode === 'GRIP' && state.grip);
+      (state.mode === 'GRIP' && state.grip) ||
+      ['DIST', 'ID', 'DIM'].includes(state.mode) ||
+      (state.mode === 'AREA' && state.inquiry?.stage === 'POINTS');
     if (!acceptsPoint) return false;
     const s = text.trim();
     if (!s.startsWith('@') && !s.includes(',') && !s.includes('<')) return false;
@@ -3454,7 +4586,7 @@ kbd { font-size: 9px; opacity: .65; }
       return Math.min(...endpoints.map(point => dist(world, point))) * state.view.scale;
     }
     let best = Infinity;
-    for (const [a, b] of entitySegments(entity)) {
+    for (const [a, b] of pickSegments(entity)) {
       const q = pointOnSegmentClosest(world, a, b);
       const qs = worldToScreen(q);
       best = Math.min(best, Math.hypot(qs.x - state.mouseScreen.x, qs.y - state.mouseScreen.y));
@@ -3504,7 +4636,10 @@ kbd { font-size: 9px; opacity: .65; }
       };
     }
     const pts = [];
-    for (const [a, b] of entitySegments(e)) pts.push(a, b);
+    for (const [a, b] of pickSegments(e)) pts.push(a, b);
+    // The measured points sit outside the line work when extension lines are
+    // suppressed, and zoom-extents should still frame them.
+    if (e.type === 'DIM') pts.push(e.p1, e.p2, dimensionGeometry(e).textAnchor);
     if (!pts.length) return null;
     return {
       minX: Math.min(...pts.map(p => p.x)), maxX: Math.max(...pts.map(p => p.x)),
@@ -3552,7 +4687,7 @@ kbd { font-size: 9px; opacity: .65; }
     if (entity.type === 'CIRCLE' || entity.type === 'ARC') {
       return edges.some(([a, b]) => segmentCircularIntersections(a, b, entity).length > 0);
     }
-    for (const [a, b] of entitySegments(entity)) {
+    for (const [a, b] of pickSegments(entity)) {
       if (pointInBox(a, box) || pointInBox(b, box)) return true;
       if (edges.some(([c, d]) => segmentIntersection(a, b, c, d))) return true;
     }
@@ -3698,10 +4833,97 @@ kbd { font-size: 9px; opacity: .65; }
     ctx.stroke();
   }
 
+  function drawArrowHead(tip, direction, sizePx, color) {
+    const width = sizePx * 0.36;
+    const backX = tip.x - direction.x * sizePx;
+    const backY = tip.y - direction.y * sizePx;
+    const nx = -direction.y;
+    const ny = direction.x;
+    ctx.beginPath();
+    ctx.moveTo(tip.x, tip.y);
+    ctx.lineTo(backX + nx * width, backY + ny * width);
+    ctx.lineTo(backX - nx * width, backY - ny * width);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+
+  function drawDimension(entity, preview, color) {
+    const geometry = dimensionGeometry(entity);
+    const style = geometry.style;
+    const scale = state.view.scale;
+    const q1 = worldToScreen(geometry.q1);
+    const q2 = worldToScreen(geometry.q2);
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = preview ? 1 : 1.1;
+    ctx.setLineDash(preview ? [6, 4] : []);
+    ctx.beginPath();
+    ctx.moveTo(q1.x, q1.y);
+    ctx.lineTo(q2.x, q2.y);
+    for (const extension of [geometry.extension1, geometry.extension2]) {
+      if (!extension) continue;
+      const a = worldToScreen(extension[0]);
+      const b = worldToScreen(extension[1]);
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Terminators. Screen direction, not world direction, because the Y axis is
+    // flipped between the two.
+    const span = Math.hypot(q2.x - q1.x, q2.y - q1.y);
+    if (span > 0.5) {
+      const ux = (q2.x - q1.x) / span;
+      const uy = (q2.y - q1.y) / span;
+      const sizePx = dimSize(style, 'arrowSize') * scale;
+      if (style.arrowType === 'tick') {
+        // A 45 degree slash through the dimension line at each end.
+        const tx = (ux + uy) * sizePx * 0.5;
+        const ty = (uy - ux) * sizePx * 0.5;
+        ctx.beginPath();
+        ctx.moveTo(q1.x - tx, q1.y - ty); ctx.lineTo(q1.x + tx, q1.y + ty);
+        ctx.moveTo(q2.x - tx, q2.y - ty); ctx.lineTo(q2.x + tx, q2.y + ty);
+        ctx.stroke();
+      } else {
+        drawArrowHead(q1, { x: -ux, y: -uy }, sizePx, color);
+        drawArrowHead(q2, { x: ux, y: uy }, sizePx, color);
+      }
+    }
+
+    // Text, rotated along the dimension line and never upside down.
+    const text = dimensionText(entity);
+    const heightPx = dimSize(style, 'textHeight') * scale;
+    if (heightPx >= 4) {
+      const anchor = worldToScreen(geometry.textAnchor);
+      let angle = Math.atan2(q2.y - q1.y, q2.x - q1.x);
+      if (angle > Math.PI / 2 || angle < -Math.PI / 2) angle += Math.PI;
+      ctx.save();
+      ctx.translate(anchor.x, anchor.y);
+      ctx.rotate(angle);
+      ctx.font = `${heightPx}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const width = ctx.measureText(text).width;
+      ctx.fillStyle = 'rgba(17, 17, 17, .82)';
+      ctx.fillRect(-width / 2 - heightPx * 0.2, -heightPx * 0.62, width + heightPx * 0.4, heightPx * 1.24);
+      ctx.fillStyle = color;
+      ctx.fillText(text, 0, 0);
+      ctx.restore();
+      ctx.textAlign = 'start';
+      ctx.textBaseline = 'alphabetic';
+    }
+  }
+
   function drawEntity(e, preview = false) {
     ctx.lineWidth = preview ? 1 : 1.35;
     const layerColor = getLayer(e.layerId)?.color || '#d6d6d6';
     ctx.strokeStyle = preview ? '#bdbdbd' : state.selected.has(e.id) ? '#ffffff' : layerColor;
+    if (e.type === 'DIM') {
+      drawDimension(e, preview, preview ? '#bdbdbd' : state.selected.has(e.id) ? '#ffffff' : layerColor);
+      return;
+    }
     if (preview) ctx.setLineDash([6,4]); else ctx.setLineDash([]);
     ctx.beginPath();
     if (e.type === 'CIRCLE') {
@@ -3729,6 +4951,63 @@ kbd { font-size: 9px; opacity: .65; }
     }
   }
 
+  // Labels used to be drawn at a fixed +8/-8 from their anchor, so the snap type
+  // and the transform readout printed on top of each other whenever a snap was
+  // acquired mid-command. ROTATE and SCALE also draw two guides whose labels can
+  // collide with each other. Everything now goes through one placement pass that
+  // remembers what it has already put down this frame.
+  const LABEL_HEIGHT = 12;
+  const LABEL_ASCENT = 9;
+  let frameLabelBoxes = [];
+
+  function resetFrameLabels() {
+    frameLabelBoxes = [];
+  }
+
+  function labelBoxesOverlap(a, b) {
+    return !(a.x + a.w < b.x || b.x + b.w < a.x || a.y + a.h < b.y || b.y + b.h < a.y);
+  }
+
+  // Offsets are tried in order, so the first caller each frame keeps the
+  // conventional above-right position and later ones step out of the way.
+  function labelPlacements(width) {
+    return [
+      [12, -8], [12, 18], [-12 - width, -8], [-12 - width, 18],
+      [12, -26], [12, 36], [-12 - width, -26], [-12 - width, 36],
+    ];
+  }
+
+  function labelInsideCanvas(box) {
+    const margin = 2;
+    return box.x >= margin && box.y >= margin &&
+      box.x + box.w <= canvas.clientWidth - margin &&
+      box.y + box.h <= canvas.clientHeight - margin;
+  }
+
+  function drawFloatingLabel(text, anchorX, anchorY, color) {
+    if (!text) return null;
+    ctx.font = '11px Arial';
+    const width = ctx.measureText(text).width;
+    const boxes = labelPlacements(width).map(([dx, dy]) => ({
+      x: anchorX + dx, y: anchorY + dy - LABEL_ASCENT, w: width, h: LABEL_HEIGHT,
+    }));
+    const clear = box => !frameLabelBoxes.some(existing => labelBoxesOverlap(existing, box));
+    // Preference order: on screen and clear, then on screen, then clear, then
+    // anything — so a readout near the right edge flips to the left of the
+    // cursor rather than being drawn off the canvas.
+    const chosen = boxes.find(box => labelInsideCanvas(box) && clear(box)) ||
+      boxes.find(labelInsideCanvas) ||
+      boxes.find(clear) ||
+      boxes[0];
+    frameLabelBoxes.push(chosen);
+    // A dim backing keeps the text readable where it crosses geometry.
+    ctx.fillStyle = 'rgba(17, 17, 17, .74)';
+    ctx.fillRect(chosen.x - 3, chosen.y - 1, width + 6, LABEL_HEIGHT + 2);
+    ctx.fillStyle = color;
+    ctx.fillText(text, chosen.x, chosen.y + LABEL_ASCENT);
+    return chosen;
+  }
+
   function drawTransformGuide(start, end, label = '', dashed = false) {
     const startScreen = worldToScreen(start);
     const endScreen = worldToScreen(end);
@@ -3742,10 +5021,7 @@ kbd { font-size: 9px; opacity: .65; }
     ctx.moveTo(startScreen.x, startScreen.y); ctx.lineTo(endScreen.x, endScreen.y);
     ctx.stroke();
     ctx.setLineDash([]);
-    if (label) {
-      ctx.font = '11px Arial';
-      ctx.fillText(label, endScreen.x + 8, endScreen.y - 8);
-    }
+    drawFloatingLabel(label, endScreen.x, endScreen.y, '#ffc857');
   }
 
   function drawPreview() {
@@ -3878,6 +5154,53 @@ kbd { font-size: 9px; opacity: .65; }
       drawTransformGuide(newLengthAnchor, p, label);
       return;
     }
+    if (state.mode === 'DIM' && state.dimension && state.currentPoints.length) {
+      const p = getActivePoint();
+      if (state.currentPoints.length === 1) {
+        drawEntity({ type: 'LINE', a: state.currentPoints[0], b: p }, true);
+      } else {
+        const preview = buildDimension(
+          state.dimension.dimType, state.currentPoints[0], state.currentPoints[1], p, [null, null],
+        );
+        if (dimensionGeometry(preview).measure > 1e-9) drawEntity(preview, true);
+      }
+      return;
+    }
+    if (state.mode === 'DIST' && state.currentPoints.length) {
+      const p = getActivePoint();
+      const from = state.currentPoints[0];
+      const dx = p.x - from.x;
+      const dy = p.y - from.y;
+      drawEntity({ type: 'LINE', a: from, b: p }, true);
+      drawTransformGuide(from, p, `${formatLengthLabel(Math.hypot(dx, dy))} @ ${formatAngle(normalizeAngle(Math.atan2(dy, dx)))}`);
+      return;
+    }
+    if (state.mode === 'AREA' && state.inquiry?.stage === 'POINTS' && state.currentPoints.length) {
+      const p = getActivePoint();
+      const points = [...state.currentPoints, p];
+      // Shade the boundary as it is built so an accidental extra pick is obvious
+      // before the total is taken.
+      if (points.length >= 3) {
+        ctx.beginPath();
+        points.forEach((point, index) => {
+          const screen = worldToScreen(point);
+          if (index === 0) ctx.moveTo(screen.x, screen.y);
+          else ctx.lineTo(screen.x, screen.y);
+        });
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(86, 214, 255, .12)';
+        ctx.fill();
+      }
+      drawEntity({ type: 'PLINE', points, closed: points.length >= 3 }, true);
+      if (points.length >= 3) {
+        drawTransformGuide(
+          state.currentPoints[state.currentPoints.length - 1],
+          p,
+          formatArea(Math.abs(polygonArea(points))),
+        );
+      }
+      return;
+    }
     if (!['LINE', 'PLINE', 'RECTANGLE', 'CIRCLE', 'ARC'].includes(state.mode) || !state.currentPoints.length) return;
     const p = getActivePoint();
     if (state.mode === 'LINE') {
@@ -3960,8 +5283,7 @@ kbd { font-size: 9px; opacity: .65; }
       ctx.beginPath();
       ctx.moveTo(s.x,s.y-r-1); ctx.lineTo(s.x+r+1,s.y); ctx.lineTo(s.x,s.y+r+1); ctx.lineTo(s.x-r-1,s.y); ctx.closePath(); ctx.stroke();
     }
-    ctx.font = '11px Arial';
-    ctx.fillText(state.snap.type, s.x+8, s.y-8);
+    drawFloatingLabel(state.snap.type, s.x, s.y, '#56d6ff');
   }
 
   function drawSelectionBox() {
@@ -3977,6 +5299,7 @@ kbd { font-size: 9px; opacity: .65; }
   }
 
   function render() {
+    resetFrameLabels();
     state.activePoint = getActivePoint();
     coordXEl.textContent = formatLength(state.activePoint.x);
     coordYEl.textContent = formatLength(state.activePoint.y);
@@ -4020,6 +5343,7 @@ kbd { font-size: 9px; opacity: .65; }
 
   function isSelectionStage() {
     return state.mode === 'SELECT' ||
+      (INQUIRY_COMMANDS.includes(state.mode) && state.inquiry?.stage === 'SELECT') ||
       (TRANSFORM_COMMANDS.includes(state.mode) && state.transform?.stage === 'SELECT') ||
       (state.mode === 'OFFSET' && state.offset?.stage === 'SOURCE');
   }
@@ -4103,6 +5427,8 @@ kbd { font-size: 9px; opacity: .65; }
     ev.preventDefault();
     if (state.mode === 'PLINE' || state.mode === 'LINE') finishCurrent();
     else if (state.mode === 'TRIM' || state.mode === 'EXTEND') finishEdgeEdit();
+    else if (state.inquiry?.stage === 'SELECT') acceptInquirySelection();
+    else if (state.inquiry?.stage === 'POINTS') finishInquiryPoints();
     else if (state.mode === 'GRIP') setMode('SELECT');
     else if (TRANSFORM_COMMANDS.includes(state.mode) && state.transform?.stage === 'SELECT') acceptTransformSelection();
     else if (state.mode === 'OFFSET' && state.offset?.stage === 'SOURCE') acceptOffsetSource();
@@ -4120,6 +5446,12 @@ kbd { font-size: 9px; opacity: .65; }
     if (!unitsDialog.hidden) {
       if (ev.key === 'Escape') { ev.preventDefault(); closeUnitsDialog(); }
       else if (ev.key === 'Enter') { ev.preventDefault(); applyUnitsDialog(); }
+      return;
+    }
+
+    if (!dimStyleDialog.hidden) {
+      if (ev.key === 'Escape') { ev.preventDefault(); closeDimStyleDialog(); }
+      else if (ev.key === 'Enter') { ev.preventDefault(); applyDimStyleDialog(); }
       return;
     }
 
@@ -4159,6 +5491,8 @@ kbd { font-size: 9px; opacity: .65; }
       if (state.mode !== 'SELECT' || state.currentPoints.length) {
         state.currentPoints = [];
         setMode('SELECT');
+      } else if (!inquiryPanel.hidden) {
+        hideInquiryReport();
       } else {
         state.selected.clear(); draw();
       }
@@ -4196,6 +5530,8 @@ kbd { font-size: 9px; opacity: .65; }
     if (!raw) {
       if (state.mode === 'PLINE' || state.mode === 'LINE') finishCurrent();
       else if (state.mode === 'TRIM' || state.mode === 'EXTEND') finishEdgeEdit();
+      else if (state.inquiry?.stage === 'SELECT') acceptInquirySelection();
+      else if (state.inquiry?.stage === 'POINTS') finishInquiryPoints();
       else if (state.mode === 'GRIP') setMode('SELECT');
       else if (TRANSFORM_COMMANDS.includes(state.mode) && state.transform?.stage === 'SELECT') acceptTransformSelection();
       else if (state.mode === 'OFFSET' && state.offset?.stage === 'SOURCE') acceptOffsetSource();
@@ -4217,6 +5553,11 @@ kbd { font-size: 9px; opacity: .65; }
         canvas.focus();
         return;
       }
+    }
+
+    if (commitAreaKeyword(raw)) {
+      canvas.focus();
+      return;
     }
 
     if (commitCircleKeyword(raw)) {
@@ -4256,6 +5597,12 @@ kbd { font-size: 9px; opacity: .65; }
       TR:'TRIM', TRIM:'TRIM', EX:'EXTEND', EXTEND:'EXTEND', S:'SELECT', SELECT:'SELECT',
       Z:'ZOOMEXTENTS', ZE:'ZOOMEXTENTS',
       UN:'UNITS', UNITS:'UNITS', DDUNITS:'UNITS',
+      DI:'DIST', DIST:'DIST', DISTANCE:'DIST',
+      DLI:'DIMLINEAR', DIMLINEAR:'DIMLINEAR', DIMLIN:'DIMLINEAR',
+      DAL:'DIMALIGNED', DIMALIGNED:'DIMALIGNED', DIMALI:'DIMALIGNED',
+      DST:'DIMSTYLE', DIMSTYLE:'DIMSTYLE', DDIM:'DIMSTYLE',
+      AA:'AREA', AREA:'AREA',
+      ID:'ID', LI:'LIST', LIST:'LIST',
     };
     const resolved = aliases[cmd];
 
@@ -4276,6 +5623,17 @@ kbd { font-size: 9px; opacity: .65; }
   function startCommand(name) {
     if (name === 'ZOOMEXTENTS') { zoomExtents(); return true; }
     if (name === 'UNITS') { openUnitsDialog(); return true; }
+    if (name === 'DIMSTYLE') { openDimStyleDialog(); return true; }
+    if (name === 'DIMLINEAR' || name === 'DIMALIGNED') {
+      const started = startDimension(name === 'DIMLINEAR' ? 'LINEAR' : 'ALIGNED');
+      if (started) state.lastCommand = name;
+      return started;
+    }
+    if (INQUIRY_COMMANDS.includes(name)) {
+      startInquiry(name);
+      state.lastCommand = name;
+      return true;
+    }
     let started;
     if (TRANSFORM_COMMANDS.includes(name)) { startTransform(name); started = true; }
     else if (name === 'OFFSET') { startOffset(); started = true; }
@@ -4305,6 +5663,10 @@ kbd { font-size: 9px; opacity: .65; }
   document.getElementById('redoBtn').addEventListener('click', redo);
   document.getElementById('fitBtn').addEventListener('click', zoomExtents);
   document.getElementById('unitsBtn').addEventListener('click', openUnitsDialog);
+  document.getElementById('inquiryClose').addEventListener('click', () => {
+    hideInquiryReport();
+    canvas.focus();
+  });
   unitStatus.addEventListener('click', openUnitsDialog);
   document.getElementById('unitsCancel').addEventListener('click', closeUnitsDialog);
   document.getElementById('unitsApply').addEventListener('click', applyUnitsDialog);
@@ -4326,6 +5688,36 @@ kbd { font-size: 9px; opacity: .65; }
     refreshUnitsDialog();
   });
   unitRescaleCheck.addEventListener('change', refreshUnitsDialog);
+
+  document.getElementById('dimStyleBtn').addEventListener('click', openDimStyleDialog);
+  document.getElementById('dimStyleCancel').addEventListener('click', closeDimStyleDialog);
+  document.getElementById('dimStyleApply').addEventListener('click', applyDimStyleDialog);
+  dimStyleDialog.addEventListener('click', ev => { if (ev.target === dimStyleDialog) closeDimStyleDialog(); });
+  dimArrowTypeSelect.addEventListener('change', () => {
+    if (!pendingDimStyle) return;
+    pendingDimStyle.arrowType = dimArrowTypeSelect.value;
+    refreshDimStyleDialog();
+  });
+  dimScalePresetSelect.addEventListener('change', () => {
+    if (!pendingDimStyle || dimScalePresetSelect.value === 'custom') return;
+    pendingDimStyle.scale = Number(dimScalePresetSelect.value);
+    refreshDimStyleDialog();
+  });
+  for (const [input, field] of [[dimScaleInput, 'scale'], [dimTextHeightInput, 'textHeight'], [dimArrowSizeInput, 'arrowSize']]) {
+    input.addEventListener('input', () => {
+      if (!pendingDimStyle) return;
+      const value = Number(input.value);
+      if (!Number.isFinite(value) || value <= 0) return;
+      pendingDimStyle[field] = value;
+      refreshDimStyleDialog();
+    });
+  }
+  dimPrecisionSelect.addEventListener('change', () => {
+    if (!pendingDimStyle) return;
+    pendingDimStyle.precision = dimPrecisionSelect.value === 'document'
+      ? null : Number(dimPrecisionSelect.value);
+    refreshDimStyleDialog();
+  });
   document.getElementById('newBtn').addEventListener('click', () => newDrawing());
   document.getElementById('openBtn').addEventListener('click', chooseOpenFile);
   document.getElementById('saveBtn').addEventListener('click', saveDrawing);
@@ -4375,6 +5767,11 @@ kbd { font-size: 9px; opacity: .65; }
   });
 
   window.addEventListener('resize', resize);
+  // A window resize is not the only thing that changes the canvas size now: the
+  // toolbar wraps to a second row and takes height from the canvas.
+  if (window.ResizeObserver) {
+    new ResizeObserver(() => resize()).observe(canvas.parentElement);
+  }
   window.addEventListener('beforeunload', () => {
     if (!state.documentDirty) return;
     try {
@@ -4422,6 +5819,36 @@ kbd { font-size: 9px; opacity: .65; }
     parseUnitSettings,
     chooseGridStep,
     coordinateFieldChars,
+    worldToScreen,
+    screenToWorld,
+    zoomExtents,
+    entityLength,
+    entityArea,
+    polygonArea,
+    polylineIsClosed,
+    formatArea,
+    groupDigits,
+    get inquiryStage() { return state.inquiry?.stage || null; },
+    get inquiryMode() { return state.inquiry?.mode || null; },
+    get inquiryVisible() { return !inquiryPanel.hidden; },
+    get labelBoxes() { return frameLabelBoxes.map(box => ({ ...box })); },
+    get dimStyles() { return state.dimStyles.map(style => ({ ...style })); },
+    dimensionGeometry,
+    gripsFor: entityGrips,
+    dimensionText,
+    dimensionSegments,
+    buildDimension,
+    resolveEntityReference,
+    rebaseDimStyleUnit,
+    linearDimensionRotation,
+    defaultDimStyle,
+    parseDimStyle,
+    duplicateEntities,
+    openDimStyleDialog,
+    closeDimStyleDialog,
+    applyDimStyleDialog,
+    setPendingDimStyle(patch) { if (pendingDimStyle) { Object.assign(pendingDimStyle, patch); refreshDimStyleDialog(); } },
+    get inquiryText() { return inquiryPanel.hidden ? null : inquiryBody.textContent; },
     openUnitsDialog,
     closeUnitsDialog,
     applyUnitsDialog,
