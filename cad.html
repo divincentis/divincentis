@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>zbCAD v0.19.0</title>
+  <title>zbCAD v0.22.0</title>
   <style>
 :root {
   font-family: Arial, Helvetica, sans-serif;
@@ -160,6 +160,18 @@ kbd { font-size: 9px; opacity: .65; }
   color: #56d6ff;
   font: 700 10px Consolas, monospace;
   text-align: center;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.snap-status:hover { color: #8fe6ff; }
+.snap-row { display: flex !important; gap: 7px; align-items: center; margin-bottom: 7px; }
+.snap-row input { margin: 0; }
+.snap-row code {
+  margin-left: auto;
+  color: #8f8f8f;
+  font: 700 10px Consolas, monospace;
 }
 .engine-status { min-width: 98px; font: 10px Consolas, monospace; text-align: center; }
 .engine-status.loading { color: #ffc857; }
@@ -346,7 +358,7 @@ kbd { font-size: 9px; opacity: .65; }
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">zbCAD Prototype <span class="version">v0.19.0</span></div>
+    <div class="brand">zbCAD Prototype <span class="version">v0.22.0</span></div>
     <div class="tools">
       <button id="newBtn">New</button>
       <button id="openBtn">Open</button>
@@ -364,6 +376,9 @@ kbd { font-size: 9px; opacity: .65; }
       <button data-command="OFFSET">Offset (O)</button>
       <button data-command="TRIM">Trim (TR)</button>
       <button data-command="EXTEND">Extend (EX)</button>
+      <button data-command="JOIN">Join (J)</button>
+      <button data-command="EXPLODE">Explode (X)</button>
+      <button data-command="STRETCH">Stretch (ST)</button>
       <button id="undoBtn">Undo</button>
       <button id="redoBtn">Redo</button>
       <button id="fitBtn">Zoom Extents</button>
@@ -383,7 +398,7 @@ kbd { font-size: 9px; opacity: .65; }
       <canvas id="cadCanvas" tabindex="0"></canvas>
       <div id="help" class="help">
     <strong>Prototype controls:</strong>
-    Ctrl+N/O/S = new/open/save · drawings recover automatically after refresh · select an object, then click a white grip to edit it · L = line · PL = polyline · REC = rectangle · C = circle; choose 2P/3P before the first point or D after the center · A = three-point arc · M = move · CO = copy · RO = rotate · SC = uniform scale · type R after the RO/SC base point for reference mode · O = offset · TR = trim · EX = extend · use the Layers panel to create, rename, color, hide, lock, assign, and safely delete layers · Enter or Space finishes; Esc cancels and discards · Enter/Space/right-click at an empty prompt repeats the last command · type C to close or U to step back during a line or polyline · DLI = linear dimension · DAL = aligned dimension · DST = dimension style · DI = distance · AA = area (type O for a single object) · ID = point · LI = list selected · UN opens Drawing Units; distances accept 5'6-1/2", 3-1/2, and 150mm · F8 = ortho · Ctrl+Z/Y cancels an active command first, then undoes/redoes
+    Ctrl+N/O/S = new/open/save · drawings recover automatically after refresh · select an object, then click a white grip to edit it · L = line · PL = polyline · REC = rectangle · C = circle; choose 2P/3P before the first point or D after the center · A = three-point arc · M = move · CO = copy · RO = rotate · SC = uniform scale · type R after the RO/SC base point for reference mode · O = offset · TR = trim · EX = extend · J = join lines and open polylines end to end · X = explode a polyline or rectangle into lines · ST = stretch the vertices inside a crossing window · use the Layers panel to create, rename, color, hide, lock, assign, and safely delete layers · Enter or Space finishes; Esc cancels and discards · Enter/Space/right-click at an empty prompt repeats the last command · type C to close or U to step back during a line or polyline · DLI = linear dimension · DAL = aligned dimension · DST = dimension style · DI = distance · AA = area (type O for a single object) · ID = point · LI = list selected · UN opens Drawing Units; distances accept 5'6-1/2", 3-1/2, and 150mm · F8 = ortho · F10 = polar tracking, with the increment beside the button · SNAP toggles object snapping and the readout beside it chooses which snaps are active · Ctrl+Z/Y cancels an active command first, then undoes/redoes
   </div>
       <div id="inquiryPanel" class="inquiry" aria-live="polite" hidden>
         <div class="inquiry-head">
@@ -413,8 +428,10 @@ kbd { font-size: 9px; opacity: .65; }
     </div>
     <div class="toggles">
       <button id="snapBtn" class="toggle on">SNAP</button>
-      <span id="snapStatus" class="snap-status">—</span>
+      <button id="snapStatus" class="snap-status" title="Choose which object snaps are active">—</button>
       <button id="orthoBtn" class="toggle">ORTHO <kbd>F8</kbd></button>
+      <button id="polarBtn" class="toggle">POLAR <kbd>F10</kbd></button>
+      <button id="polarStatus" class="snap-status" title="Polar tracking increment">45&deg;</button>
       <button id="unitStatus" class="unit-status" title="Drawing units and display format">—</button>
       <span id="fileStatus" class="file-status">Untitled</span>
       <span id="engineStatus" class="engine-status loading">ENGINE: LOADING</span>
@@ -455,6 +472,39 @@ kbd { font-size: 9px; opacity: .65; }
       <div class="dialog-actions">
         <button id="unitsCancel">Cancel</button>
         <button id="unitsApply" class="primary">Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="polarDialog" class="dialog" hidden>
+    <div class="dialog-card" role="dialog" aria-modal="true" aria-labelledby="polarDialogTitle">
+      <h2 id="polarDialogTitle">Polar Tracking</h2>
+      <p class="dialog-note">
+        With polar tracking on, a point being dragged from an existing one locks
+        to the nearest multiple of this angle when the cursor comes close to it,
+        and reports the distance and bearing along the lock.
+      </p>
+      <label for="polarIncrement">Increment
+        <select id="polarIncrement"></select>
+      </label>
+      <div class="dialog-actions">
+        <button id="polarDone" class="primary">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="snapDialog" class="dialog" hidden>
+    <div class="dialog-card" role="dialog" aria-modal="true" aria-labelledby="snapDialogTitle">
+      <h2 id="snapDialogTitle">Object Snaps</h2>
+      <p class="dialog-note">
+        Which points the cursor will acquire. Nearest offers a point only when no
+        other snap is in range, so turning it on cannot displace an endpoint.
+      </p>
+      <div id="snapTypeList"></div>
+      <div class="dialog-actions">
+        <button id="snapAllOn">All on</button>
+        <button id="snapAllOff">All off</button>
+        <button id="snapDone" class="primary">Done</button>
       </div>
     </div>
   </div>
@@ -515,7 +565,13 @@ kbd { font-size: 9px; opacity: .65; }
   const coordYEl = document.getElementById('coordY');
   const snapBtn = document.getElementById('snapBtn');
   const snapStatus = document.getElementById('snapStatus');
+  const snapDialog = document.getElementById('snapDialog');
+  const snapTypeList = document.getElementById('snapTypeList');
   const orthoBtn = document.getElementById('orthoBtn');
+  const polarBtn = document.getElementById('polarBtn');
+  const polarStatus = document.getElementById('polarStatus');
+  const polarDialog = document.getElementById('polarDialog');
+  const polarIncrementSelect = document.getElementById('polarIncrement');
   const engineStatus = document.getElementById('engineStatus');
   const fileStatus = document.getElementById('fileStatus');
   const openInput = document.getElementById('openInput');
@@ -887,6 +943,8 @@ kbd { font-size: 9px; opacity: .65; }
     SC:'SCALE', SCALE:'SCALE',
     O:'OFFSET', OFFSET:'OFFSET',
     TR:'TRIM', TRIM:'TRIM', EX:'EXTEND', EXTEND:'EXTEND', S:'SELECT', SELECT:'SELECT',
+    J:'JOIN', JOIN:'JOIN', X:'EXPLODE', EXPLODE:'EXPLODE',
+    ST:'STRETCH', STRETCH:'STRETCH',
     Z:'ZOOMEXTENTS', ZE:'ZOOMEXTENTS',
     UN:'UNITS', UNITS:'UNITS', DDUNITS:'UNITS',
     DI:'DIST', DIST:'DIST', DISTANCE:'DIST',
@@ -905,6 +963,38 @@ kbd { font-size: 9px; opacity: .65; }
     return [{ id: '0', name: '0', color: '#d6d6d6', visible: true, locked: false }];
   }
 
+  // Object snaps in priority order, which is also the order they are listed in
+  // the settings dialog. The first six are the set the tool has always offered
+  // and stay on by default. Tangent and nearest are off: a running NEAREST can
+  // offer a point anywhere along any curve under the aperture, so it would
+  // quietly capture points that were meant to be free.
+  const SNAP_TYPES = Object.freeze([
+    { type: 'END', label: 'Endpoint', on: true },
+    { type: 'INT', label: 'Intersection', on: true },
+    { type: 'MID', label: 'Midpoint', on: true },
+    { type: 'CENTER', label: 'Center', on: true },
+    { type: 'QUAD', label: 'Quadrant', on: true },
+    { type: 'PERP', label: 'Perpendicular', on: true },
+    { type: 'TAN', label: 'Tangent', on: false },
+    { type: 'NEAR', label: 'Nearest', on: false },
+  ]);
+
+  const SNAP_RANK = Object.fromEntries(SNAP_TYPES.map((entry, index) => [entry.type, index]));
+
+  function defaultSnapTypes() {
+    return Object.fromEntries(SNAP_TYPES.map(entry => [entry.type, entry.on]));
+  }
+
+  // The increments a draughtsman actually works to. 90 is ORTHO expressed as a
+  // polar angle, which is why the two are mutually exclusive rather than
+  // combined.
+  const POLAR_INCREMENTS = Object.freeze([90, 45, 30, 22.5, 15, 10, 5]);
+
+  // How close the cursor has to come to an alignment ray before it locks. This
+  // is a screen distance, not an angle, so a lock is equally easy to acquire
+  // near the base point and far from it.
+  const POLAR_APERTURE_PX = 12;
+
   const state = {
     entities: [],
     layers: createDefaultLayers(),
@@ -917,6 +1007,8 @@ kbd { font-size: 9px; opacity: .65; }
     activeCommandName: null,
     lastCommand: null,
     currentPoints: [],
+    // A note the next prompt will append once, then discard.
+    promptNote: null,
     transform: null,
     offset: null,
     inquiry: null,
@@ -929,7 +1021,13 @@ kbd { font-size: 9px; opacity: .65; }
     activePoint: { x: 0, y: 0 },
     snap: null,
     snapEnabled: true,
+    snapTypes: defaultSnapTypes(),
     ortho: false,
+    polar: false,
+    polarIncrement: 45,
+    // The alignment the cursor is currently locked to, for the guide and the
+    // status readout. Recomputed every frame by getActivePoint.
+    polarLock: null,
     view: { scale: 1.5, offsetX: 0, offsetY: 0 },
     panning: false,
     panStart: null,
@@ -1965,6 +2063,113 @@ kbd { font-size: 9px; opacity: .65; }
   }
 
   // ---------------------------------------------------------------------------
+  // Object snap settings
+  //
+  // Applied as they are changed rather than on a confirmation: there is nothing
+  // to validate and nothing that can be half-entered, so a Cancel button would
+  // only be a way to lose a change already visible on the cursor.
+  // ---------------------------------------------------------------------------
+
+  // ORTHO and polar tracking both answer "which direction is this point allowed
+  // to go", so having both on at once would mean one silently doing nothing.
+  function setOrtho(on) {
+    state.ortho = Boolean(on);
+    if (state.ortho) state.polar = false;
+    refreshTrackingButtons();
+    draw();
+  }
+
+  function setPolar(on) {
+    state.polar = Boolean(on);
+    if (state.polar) state.ortho = false;
+    refreshTrackingButtons();
+    draw();
+  }
+
+  function setPolarIncrement(degrees) {
+    const value = Number(degrees);
+    if (!POLAR_INCREMENTS.includes(value)) return false;
+    state.polarIncrement = value;
+    refreshTrackingButtons();
+    draw();
+    return true;
+  }
+
+  function refreshTrackingButtons() {
+    orthoBtn.classList.toggle('on', state.ortho);
+    polarBtn.classList.toggle('on', state.polar);
+    polarStatus.textContent = `${state.polarIncrement}\u00b0`;
+    if (polarIncrementSelect.value !== String(state.polarIncrement)) {
+      polarIncrementSelect.value = String(state.polarIncrement);
+    }
+  }
+
+  function openPolarDialog() {
+    fillSelect(
+      polarIncrementSelect,
+      POLAR_INCREMENTS,
+      value => `${value}\u00b0`,
+      state.polarIncrement,
+    );
+    polarDialog.hidden = false;
+  }
+
+  function closePolarDialog() {
+    polarDialog.hidden = true;
+    canvas.focus();
+  }
+
+  function renderSnapDialog() {
+    if (snapTypeList.children.length) {
+      for (const entry of SNAP_TYPES) {
+        const input = snapTypeList.querySelector(`#snapType-${entry.type}`);
+        if (input) input.checked = Boolean(state.snapTypes[entry.type]);
+      }
+      return;
+    }
+    for (const entry of SNAP_TYPES) {
+      const row = document.createElement('label');
+      row.className = 'snap-row';
+      row.setAttribute('for', `snapType-${entry.type}`);
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.id = `snapType-${entry.type}`;
+      input.checked = Boolean(state.snapTypes[entry.type]);
+      input.addEventListener('change', () => setSnapType(entry.type, input.checked));
+      const label = document.createElement('span');
+      label.textContent = entry.label;
+      const tag = document.createElement('code');
+      tag.textContent = entry.type;
+      row.append(input, label, tag);
+      snapTypeList.append(row);
+    }
+  }
+
+  function setSnapType(type, on) {
+    if (!(type in state.snapTypes)) return false;
+    state.snapTypes[type] = Boolean(on);
+    renderSnapDialog();
+    draw();
+    return true;
+  }
+
+  function setAllSnapTypes(on) {
+    for (const entry of SNAP_TYPES) state.snapTypes[entry.type] = on;
+    renderSnapDialog();
+    draw();
+  }
+
+  function openSnapDialog() {
+    renderSnapDialog();
+    snapDialog.hidden = false;
+  }
+
+  function closeSnapDialog() {
+    snapDialog.hidden = true;
+    canvas.focus();
+  }
+
+  // ---------------------------------------------------------------------------
   // Command registry
   //
   // A command's behaviour used to be spread across nine functions, each with its
@@ -1986,6 +2191,8 @@ kbd { font-size: 9px; opacity: .65; }
   //   takesDistance    boolean or predicate: a typed number is a direct distance
   //   additiveSelection  clicks during a selection stage add rather than replace
   //   selectsObjects() whether this stage is gathering a selection
+  //   noteSelection()  how each object entered the selection: the window that
+  //                    caught it, or the fact that it was picked outright
   //   commitsOnPick    a single pick completes the selection stage outright
   //   usesSnap         boolean or predicate: false takes the raw cursor and
   //                    reports no snap, for picks that name a place on the
@@ -2501,6 +2708,10 @@ kbd { font-size: 9px; opacity: .65; }
       return state.inquiry?.stage === 'POINTS';
     },
 
+    selectsObjects() {
+      return state.inquiry?.stage === 'SELECT';
+    },
+
     point(p) {
       if (state.inquiry?.stage !== 'POINTS') return;
       state.currentPoints.push({ ...p });
@@ -2592,6 +2803,10 @@ kbd { font-size: 9px; opacity: .65; }
       return state.selected.size
         ? `LIST — ${state.selected.size} selected; Enter or right-click to report:`
         : 'LIST — Select objects, then press Enter or right-click:';
+    },
+
+    selectsObjects() {
+      return state.inquiry?.stage === 'SELECT';
     },
 
     finish() {
@@ -3290,12 +3505,21 @@ kbd { font-size: 9px; opacity: .65; }
     draw();
   }
 
+  // A one-shot note for the next prompt. A command that finishes as it starts
+  // has no later turn to speak in: setMode() rewrites the prompt on its way
+  // out, so the message is left here for that rewrite to pick up.
+  function notePrompt(message) {
+    if (message) state.promptNote = message;
+  }
+
   function updatePrompt(extra = '') {
     // SELECT is the resting state and has no command of its own, so the bare
     // prompt is what remains when nothing is registered for the active mode.
     const command = activeCommand();
     const p = command?.prompt ? command.prompt() : 'Command:';
-    promptEl.textContent = extra ? `${p} ${extra}` : p;
+    const note = extra || state.promptNote || '';
+    state.promptNote = null;
+    promptEl.textContent = note ? `${p} ${note}` : p;
   }
 
   function pointOnSegmentClosest(p, a, b) {
@@ -3412,7 +3636,6 @@ kbd { font-size: 9px; opacity: .65; }
   // different places; this only settles the case where two snaps land on the
   // same spot, such as a crossing at the midpoint of a line. Reorder this list
   // to change which snap wins there.
-  const SNAP_RANK = { END: 0, INT: 1, MID: 2, CENTER: 3, QUAD: 4, PERP: 5 };
 
   // Two candidates within this many pixels of each other count as the same
   // place, which keeps the ranking from turning on sub-pixel rounding.
@@ -3442,45 +3665,63 @@ kbd { font-size: 9px; opacity: .65; }
       return Math.abs(radial - entity.radius) <= aperture || radial <= aperture;
     });
 
+    // Each type is skipped at the source rather than filtered afterwards, so a
+    // snap that is switched off costs nothing to have.
+    const wants = type => Boolean(state.snapTypes[type]);
+
     for (const [a, b] of segs) {
-      candidates.push({ type: 'END', p: a });
-      candidates.push({ type: 'END', p: b });
-      candidates.push({ type: 'MID', p: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } });
+      if (wants('END')) {
+        candidates.push({ type: 'END', p: a });
+        candidates.push({ type: 'END', p: b });
+      }
+      if (wants('MID')) candidates.push({ type: 'MID', p: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } });
     }
 
-    for (let i = 0; i < segs.length; i++) {
-      for (let j = i + 1; j < segs.length; j++) {
-        const p = segmentIntersection(segs[i][0], segs[i][1], segs[j][0], segs[j][1]);
-        if (p) candidates.push({ type: 'INT', p });
+    if (wants('INT')) {
+      for (let i = 0; i < segs.length; i++) {
+        for (let j = i + 1; j < segs.length; j++) {
+          const p = segmentIntersection(segs[i][0], segs[i][1], segs[j][0], segs[j][1]);
+          if (p) candidates.push({ type: 'INT', p });
+        }
       }
     }
 
     for (const circularEntity of circularEntities) {
       if (circularEntity.type === 'ARC') {
-        candidates.push({ type: 'END', p: circularPoint(circularEntity.center, circularEntity.radius, circularEntity.startAngle) });
-        candidates.push({ type: 'END', p: circularPoint(circularEntity.center, circularEntity.radius, circularEntity.endAngle) });
-        candidates.push({ type: 'MID', p: circularPoint(circularEntity.center, circularEntity.radius, circularEntity.startAngle + arcSweep(circularEntity) / 2) });
+        if (wants('END')) {
+          candidates.push({ type: 'END', p: circularPoint(circularEntity.center, circularEntity.radius, circularEntity.startAngle) });
+          candidates.push({ type: 'END', p: circularPoint(circularEntity.center, circularEntity.radius, circularEntity.endAngle) });
+        }
+        if (wants('MID')) candidates.push({ type: 'MID', p: circularPoint(circularEntity.center, circularEntity.radius, circularEntity.startAngle + arcSweep(circularEntity) / 2) });
       }
-      candidates.push({ type: 'CENTER', p: circularEntity.center });
-      for (const angle of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
-        if (angleOnArc(angle, circularEntity)) {
-          candidates.push({ type: 'QUAD', p: circularPoint(circularEntity.center, circularEntity.radius, angle) });
+      if (wants('CENTER')) candidates.push({ type: 'CENTER', p: circularEntity.center });
+      if (wants('QUAD')) {
+        for (const angle of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+          if (angleOnArc(angle, circularEntity)) {
+            candidates.push({ type: 'QUAD', p: circularPoint(circularEntity.center, circularEntity.radius, angle) });
+          }
         }
       }
-      for (const [a, b] of segs) {
-        for (const intersection of segmentCircularIntersections(a, b, circularEntity)) {
-          candidates.push({ type: 'INT', p: intersection.point });
+      if (wants('INT')) {
+        for (const [a, b] of segs) {
+          for (const intersection of segmentCircularIntersections(a, b, circularEntity)) {
+            candidates.push({ type: 'INT', p: intersection.point });
+          }
         }
       }
     }
 
-    for (let i = 0; i < circularEntities.length; i++) {
-      for (let j = i + 1; j < circularEntities.length; j++) {
-        for (const p of circularEntityIntersections(circularEntities[i], circularEntities[j])) candidates.push({ type: 'INT', p });
+    if (wants('INT')) {
+      for (let i = 0; i < circularEntities.length; i++) {
+        for (let j = i + 1; j < circularEntities.length; j++) {
+          for (const p of circularEntityIntersections(circularEntities[i], circularEntities[j])) candidates.push({ type: 'INT', p });
+        }
       }
     }
 
-    if (basePoint) {
+    // Perpendicular and tangent are both measured from the point the command is
+    // already working from, so neither exists until there is one.
+    if (basePoint && wants('PERP')) {
       for (const [a, b] of segs) {
         const proj = pointOnInfiniteLine(basePoint, a, b);
         if (proj && pointWithinSegment(proj, a, b)) candidates.push({ type: 'PERP', p: proj });
@@ -3498,18 +3739,60 @@ kbd { font-size: 9px; opacity: .65; }
       }
     }
 
-    let best = null;
-    for (const c of candidates) {
-      const s = worldToScreen(c.p);
-      const px = Math.hypot(s.x - state.mouseScreen.x, s.y - state.mouseScreen.y);
-      if (px > maxPx) continue;
-      if (!best) { best = { ...c, px }; continue; }
-      const nearer = px < best.px - SNAP_COINCIDENT_PX;
-      const sameSpot = Math.abs(px - best.px) <= SNAP_COINCIDENT_PX;
-      const outranks = sameSpot && (SNAP_RANK[c.type] ?? 99) < (SNAP_RANK[best.type] ?? 99);
-      if (nearer || outranks) best = { ...c, px };
+    if (basePoint && wants('TAN')) {
+      for (const circularEntity of circularEntities) {
+        const away = dist(basePoint, circularEntity.center);
+        // The touch point sees the centre at a right angle, so the angle it
+        // subtends at the centre from the base direction is acos(r / d). From
+        // inside the curve there is no tangent, and from exactly on it the
+        // touch point is the base point itself, which is no use as a
+        // destination.
+        if (away <= circularEntity.radius + 1e-9) continue;
+        const toward = angleFromCenter(circularEntity.center, basePoint);
+        const spread = Math.acos(circularEntity.radius / away);
+        for (const angle of [toward + spread, toward - spread]) {
+          const touch = normalizeAngle(angle);
+          if (angleOnArc(touch, circularEntity)) {
+            candidates.push({ type: 'TAN', p: circularPoint(circularEntity.center, circularEntity.radius, touch) });
+          }
+        }
+      }
     }
-    return best;
+
+    // Nearest can always produce a point on any curve under the aperture, so it
+    // is gathered apart from the rest and only consulted when nothing else is
+    // in range. Letting it compete on distance would let a point on a line beat
+    // an endpoint a few pixels away, which is not what a draughtsman means.
+    const nearCandidates = [];
+    if (wants('NEAR')) {
+      for (const [a, b] of segs) {
+        nearCandidates.push({ type: 'NEAR', p: pointOnSegmentClosest(cursor, a, b) });
+      }
+      for (const circularEntity of circularEntities) {
+        if (dist(cursor, circularEntity.center) < 1e-9) continue;
+        const angle = angleFromCenter(circularEntity.center, cursor);
+        if (angleOnArc(angle, circularEntity)) {
+          nearCandidates.push({ type: 'NEAR', p: circularPoint(circularEntity.center, circularEntity.radius, angle) });
+        }
+      }
+    }
+
+    function closestCandidate(list) {
+      let best = null;
+      for (const c of list) {
+        const s = worldToScreen(c.p);
+        const px = Math.hypot(s.x - state.mouseScreen.x, s.y - state.mouseScreen.y);
+        if (px > maxPx) continue;
+        if (!best) { best = { ...c, px }; continue; }
+        const nearer = px < best.px - SNAP_COINCIDENT_PX;
+        const sameSpot = Math.abs(px - best.px) <= SNAP_COINCIDENT_PX;
+        const outranks = sameSpot && (SNAP_RANK[c.type] ?? 99) < (SNAP_RANK[best.type] ?? 99);
+        if (nearer || outranks) best = { ...c, px };
+      }
+      return best;
+    }
+
+    return closestCandidate(candidates) || closestCandidate(nearCandidates);
   }
 
   function pointOnInfiniteLine(p, a, b) {
@@ -3525,6 +3808,35 @@ kbd { font-size: 9px; opacity: .65; }
     const eps = 1e-7;
     return p.x >= Math.min(a.x, b.x) - eps && p.x <= Math.max(a.x, b.x) + eps &&
       p.y >= Math.min(a.y, b.y) - eps && p.y <= Math.max(a.y, b.y) + eps;
+  }
+
+  // Locks the cursor onto the nearest multiple of the polar increment, but only
+  // once it is close to that ray on screen. Away from every alignment the point
+  // is left alone, which is what separates polar tracking from ORTHO: ORTHO is
+  // always in force, polar only when the cursor asks for it.
+  function applyPolar(p, base) {
+    state.polarLock = null;
+    if (!state.polar || state.ortho || !base) return p;
+    const dx = p.x - base.x;
+    const dy = p.y - base.y;
+    const reach = Math.hypot(dx, dy);
+    if (reach < 1e-9) return p;
+
+    const step = state.polarIncrement * Math.PI / 180;
+    const angle = Math.atan2(dy, dx);
+    const locked = Math.round(angle / step) * step;
+    // The cursor's distance from the alignment ray is the component across it,
+    // which is what the aperture is measured against.
+    const across = Math.abs(reach * Math.sin(angle - locked));
+    if (across * state.view.scale > POLAR_APERTURE_PX) return p;
+
+    // Project onto the ray rather than rotating the point, so the cursor's
+    // reach along the alignment is preserved instead of being stretched.
+    const along = reach * Math.cos(angle - locked);
+    if (along <= 1e-9) return p;
+    const point = { x: base.x + along * Math.cos(locked), y: base.y + along * Math.sin(locked) };
+    state.polarLock = { base: { ...base }, point, angle: normalizeAngle(locked), distance: along };
+    return point;
   }
 
   function applyOrtho(p, base) {
@@ -3557,10 +3869,15 @@ kbd { font-size: 9px; opacity: .65; }
     }
     const base = getCommandBasePoint();
     // Registered commands may opt into ORTHO for every point or only for the
-    // stages where a constraint makes sense.
-    let p = commandUsesOrtho(command) ? applyOrtho(state.mouseWorld, base) : { ...state.mouseWorld };
+    // stages where a constraint makes sense. Polar tracking answers to the same
+    // opt-in, because it constrains the same points for the same reason.
+    let p = { ...state.mouseWorld };
+    if (commandUsesOrtho(command)) p = applyPolar(applyOrtho(p, base), base);
+    else state.polarLock = null;
     state.snap = getSnap(p, base, command?.snapExcludes?.() ?? null);
-    if (state.snap) p = state.snap.p;
+    // An acquired snap is a definite point the draughtsman asked for, so it
+    // outranks a tracking guess, and the guide is dropped with it.
+    if (state.snap) { p = state.snap.p; state.polarLock = null; }
     return p;
   }
 
@@ -5053,6 +5370,397 @@ kbd { font-size: 9px; opacity: .65; }
     },
   });
 
+  // ---------------------------------------------------------------------------
+  // Join and explode
+  //
+  // Inverse operations on a selection: several open paths become one polyline,
+  // or one polyline becomes its segments. Neither takes a point, so both are
+  // finished from the selection stage alone.
+  // ---------------------------------------------------------------------------
+
+  // Endpoints that met through a snap are exactly equal, but a point typed to
+  // the displayed precision can miss by a rounding step, so ends are matched
+  // with a tolerance rather than by equality.
+  const JOIN_TOLERANCE = 1e-6;
+
+  // Only open lines and polylines can be joined: a closed shape has no free end
+  // to attach to, and joining an arc would need a polyline bulge, which this
+  // drawing format does not have.
+  function joinablePath(entity) {
+    if (entity.type === 'LINE') return [{ ...entity.a }, { ...entity.b }];
+    if (entity.type === 'PLINE' && !entity.closed) return entity.points.map(point => ({ ...point }));
+    return null;
+  }
+
+  // Grows one chain outwards from the first path, reversing whatever attaches
+  // backwards, until nothing else fits. Returns null if anything is left over,
+  // which is what "these do not form a single chain" means. Where three paths
+  // meet at one point the choice is arbitrary; the result is still a valid
+  // chain through that vertex, just not necessarily the one the eye expects.
+  function chainPaths(paths) {
+    let chain = paths[0].slice();
+    const remaining = paths.slice(1);
+    let attached = true;
+    while (remaining.length && attached) {
+      attached = false;
+      for (let i = 0; i < remaining.length; i++) {
+        const path = remaining[i];
+        const head = chain[0];
+        const tail = chain[chain.length - 1];
+        const first = path[0];
+        const last = path[path.length - 1];
+        let merged = null;
+        if (dist(tail, first) < JOIN_TOLERANCE) merged = chain.concat(path.slice(1));
+        else if (dist(tail, last) < JOIN_TOLERANCE) merged = chain.concat(path.slice(0, -1).reverse());
+        else if (dist(head, last) < JOIN_TOLERANCE) merged = path.slice(0, -1).concat(chain);
+        else if (dist(head, first) < JOIN_TOLERANCE) merged = path.slice(1).reverse().concat(chain);
+        if (!merged) continue;
+        chain = merged;
+        remaining.splice(i, 1);
+        attached = true;
+        break;
+      }
+    }
+    return remaining.length ? null : chain;
+  }
+
+  function joinSelection() {
+    const selected = visibleSelectedEntities().filter(isEntityEditable);
+    if (selected.length < 2) {
+      return { error: 'Select at least two open lines or polylines to join.' };
+    }
+    const paths = selected.map(joinablePath);
+    if (paths.some(path => !path)) {
+      return { error: 'Only open lines and polylines can be joined.' };
+    }
+
+    const chain = chainPaths(paths);
+    if (!chain) return { error: 'The selected objects do not meet end to end.' };
+
+    // A chain that returns to its own start is a closed shape, and a closed
+    // polyline stores the start once rather than repeating it at the end.
+    const closed = chain.length >= 4 && dist(chain[0], chain[chain.length - 1]) < JOIN_TOLERANCE;
+    if (closed) chain.pop();
+
+    pushHistory();
+    const sourceIds = new Set(selected.map(entity => entity.id));
+    const joined = {
+      id: state.nextId++,
+      type: 'PLINE',
+      // The result belongs where the first source object lived, which is the
+      // only choice that does not depend on the order they were picked in.
+      layerId: selected[0].layerId,
+      points: chain,
+      closed,
+    };
+    state.entities = state.entities.filter(entity => !sourceIds.has(entity.id));
+    state.entities.push(joined);
+    state.selected = new Set([joined.id]);
+    return { joined: selected.length };
+  }
+
+  // Rectangles are stored as closed polylines, so this covers both.
+  function explodedPieces(entity) {
+    if (entity.type !== 'PLINE') return null;
+    const points = entity.points;
+    const segmentCount = entity.closed ? points.length : points.length - 1;
+    const pieces = [];
+    for (let i = 0; i < segmentCount; i++) {
+      const a = points[i];
+      const b = points[(i + 1) % points.length];
+      if (dist(a, b) <= 1e-9) continue;
+      pieces.push({ type: 'LINE', layerId: entity.layerId, a: { ...a }, b: { ...b } });
+    }
+    return pieces.length ? pieces : null;
+  }
+
+  function explodeSelection() {
+    const selected = visibleSelectedEntities().filter(isEntityEditable);
+    if (!selected.length) return { error: 'No objects selected.' };
+
+    const pieces = new Map();
+    for (const entity of selected) {
+      const exploded = explodedPieces(entity);
+      if (exploded) pieces.set(entity.id, exploded);
+    }
+    if (!pieces.size) return { error: 'Select a polyline or rectangle to explode.' };
+
+    pushHistory();
+    const created = [];
+    // Replacing in place rather than appending keeps the new segments in the
+    // draw order the polyline occupied.
+    state.entities = state.entities.flatMap(entity => {
+      const exploded = pieces.get(entity.id);
+      if (!exploded) return [entity];
+      return exploded.map(piece => {
+        const line = { id: state.nextId++, ...piece };
+        created.push(line.id);
+        return line;
+      });
+    });
+    state.selected = new Set(created);
+    return { exploded: pieces.size, skipped: selected.length - pieces.size, created: created.length };
+  }
+
+  function joinNote(result) {
+    return result.joined > 2 ? `Joined ${result.joined} objects into one polyline.` : '';
+  }
+
+  function explodeNote(result) {
+    if (!result.skipped) return '';
+    // The roadmap's rule: something that could not be done is reported, never
+    // dropped quietly.
+    return `Exploded ${result.exploded} of ${result.exploded + result.skipped} objects; `
+      + `${result.skipped} cannot be exploded.`;
+  }
+
+  // Both commands read a selection and nothing else, so they share a shape: act
+  // on a preselection immediately, otherwise gather one and act on Enter.
+  function selectionEditCommand(type, label, apply, note) {
+    return {
+      additiveSelection: true,
+
+      begin() {
+        state.edit = { type, stage: 'SELECT' };
+        if (!state.selected.size) return undefined;
+        // A preselection is the whole instruction, so there is nothing left to
+        // ask for. On a refusal the command stays open with the objects still
+        // selected, which lets the reason be acted on rather than just read.
+        const result = apply();
+        notePrompt(result.error || note(result));
+        return result.error ? undefined : COMMAND_COMPLETE;
+      },
+
+      selectsObjects() {
+        return state.edit?.stage === 'SELECT';
+      },
+
+      // No acceptsPoint override is needed: neither command has a point hook,
+      // which is already what "takes no typed point" means.
+
+      prompt() {
+        const count = state.selected.size;
+        return count
+          ? `${type} — ${count} selected; press Enter or right-click to ${label}:`
+          : `${type} — Select objects to ${label}, then press Enter or right-click:`;
+      },
+
+      finish() {
+        const result = apply();
+        if (result.error) {
+          updatePrompt(result.error);
+          return true;
+        }
+        setMode('SELECT');
+        notePrompt(note(result));
+        updatePrompt();
+        return true;
+      },
+    };
+  }
+
+  defineCommand('JOIN', selectionEditCommand('JOIN', 'join', joinSelection, joinNote));
+  defineCommand('EXPLODE', selectionEditCommand('EXPLODE', 'explode', explodeSelection, explodeNote));
+
+  // ---------------------------------------------------------------------------
+  // Stretch
+  //
+  // The one editing command whose operand is not a set of objects but a set of
+  // points: vertices caught by a crossing window move, the rest stay, and an
+  // object caught entirely is simply carried along. That is what lets a wall be
+  // lengthened without redrawing what it connects to.
+  // ---------------------------------------------------------------------------
+
+  function pointInStretchWindow(point, windows) {
+    return windows.some(box => pointInBox(point, box));
+  }
+
+  // Curves have no vertices to pull, so they answer to their centre: caught,
+  // the whole curve travels; missed, it stays put and its ends do not follow
+  // the geometry they were drawn against. That limit is deliberate — stretching
+  // an arc endpoint would have to invent a new radius.
+  function stretchedEntity(entity, dx, dy, caught) {
+    const shift = point => (caught(point) ? { x: point.x + dx, y: point.y + dy } : { ...point });
+    if (entity.type === 'LINE') return { ...entity, a: shift(entity.a), b: shift(entity.b) };
+    if (entity.type === 'PLINE') return { ...entity, points: entity.points.map(shift) };
+    if (entity.type === 'CIRCLE' || entity.type === 'ARC') {
+      return { ...entity, center: shift(entity.center) };
+    }
+    if (entity.type === 'DIM') {
+      // Each measured point moves on its own, so a dimension across a stretched
+      // wall reports the new length rather than the old one.
+      return {
+        ...entity,
+        p1: shift(entity.p1),
+        p2: shift(entity.p2),
+        linePoint: shift(entity.linePoint),
+        refs: entity.refs.map(ref => (ref ? { ...ref } : null)),
+      };
+    }
+    return { ...entity };
+  }
+
+  function stretchIsDegenerate(entity) {
+    if (entity.type === 'LINE') return dist(entity.a, entity.b) <= 1e-9;
+    if (entity.type === 'PLINE') {
+      return entity.points.some((point, index) => index > 0 && dist(point, entity.points[index - 1]) <= 1e-9);
+    }
+    if (entity.type === 'DIM') return dimensionGeometry(entity).measure <= 1e-9;
+    return false;
+  }
+
+  function applyStretch(destination) {
+    const operation = state.edit;
+    if (!operation?.base || operation.stage !== 'DEST') return;
+    const dx = destination.x - operation.base.x;
+    const dy = destination.y - operation.base.y;
+    if (Math.hypot(dx, dy) < 1e-9) {
+      updatePrompt('Destination must differ from the base point.');
+      return;
+    }
+
+    const editable = new Set(state.entities
+      .filter(entity => operation.ids.includes(entity.id) && isEntityEditable(entity))
+      .map(entity => entity.id));
+    if (!editable.size) {
+      updatePrompt('The selected objects are no longer editable.');
+      return;
+    }
+
+    const stretched = new Map();
+    for (const entity of state.entities) {
+      if (!editable.has(entity.id)) continue;
+      // An object named by a bare click has no window around it, so all of it
+      // travels — which is what picking an object rather than windowing part of
+      // it asks for.
+      const whole = operation.pickedIds.includes(entity.id);
+      const result = stretchedEntity(
+        entity, dx, dy,
+        point => whole || pointInStretchWindow(point, operation.windows),
+      );
+      if (stretchIsDegenerate(result)) {
+        updatePrompt('That stretch would collapse geometry.');
+        return;
+      }
+      stretched.set(entity.id, result);
+    }
+
+    pushHistory();
+    state.entities = state.entities.map(entity => stretched.get(entity.id) || entity);
+    state.selected = new Set(editable);
+    setMode('SELECT');
+  }
+
+  defineCommand('STRETCH', {
+    additiveSelection: true,
+
+    begin() {
+      // A preselection carries no record of how it was made, and without the
+      // windows there is nothing to say which vertices were meant. The command
+      // asks for its own.
+      state.selected.clear();
+      state.edit = {
+        type: 'STRETCH',
+        stage: 'SELECT',
+        ids: [],
+        windows: [],
+        pickedIds: [],
+        base: null,
+      };
+    },
+
+    selectsObjects() {
+      return state.edit?.stage === 'SELECT';
+    },
+
+    // Recorded as the selection is gathered, because which vertices move
+    // depends on how each object was caught, not merely on which were.
+    noteSelection(detail) {
+      if (state.edit?.stage !== 'SELECT') return;
+      if (detail.box) state.edit.windows.push({ ...detail.box });
+      if (detail.entityId !== undefined && !state.edit.pickedIds.includes(detail.entityId)) {
+        state.edit.pickedIds.push(detail.entityId);
+      }
+    },
+
+    usesOrtho() {
+      return state.edit?.stage === 'DEST';
+    },
+
+    takesDistance() {
+      return state.edit?.stage === 'DEST';
+    },
+
+    basePoint() {
+      return state.edit?.stage === 'DEST' ? state.edit.base : null;
+    },
+
+    acceptsPoint() {
+      return ['BASE', 'DEST'].includes(state.edit?.stage);
+    },
+
+    prompt() {
+      const stage = state.edit?.stage || 'SELECT';
+      if (stage === 'SELECT') {
+        const count = state.selected.size;
+        return count
+          ? `STRETCH — ${count} selected; press Enter or right-click to continue:`
+          : 'STRETCH — Select with a crossing window, then press Enter or right-click:';
+      }
+      if (stage === 'BASE') return 'STRETCH — Specify base point:';
+      return 'STRETCH — Specify destination, distance, or relative point:';
+    },
+
+    point(p) {
+      if (state.edit?.stage === 'BASE') {
+        state.edit.base = { ...p };
+        state.edit.stage = 'DEST';
+        updatePrompt();
+      } else if (state.edit?.stage === 'DEST') {
+        applyStretch(p);
+      }
+    },
+
+    previewReady() {
+      return state.edit?.stage === 'DEST';
+    },
+
+    preview(p) {
+      const operation = state.edit;
+      const dx = p.x - operation.base.x;
+      const dy = p.y - operation.base.y;
+      const ids = new Set(operation.ids);
+      for (const entity of state.entities) {
+        if (!ids.has(entity.id) || !isEntityEditable(entity)) continue;
+        const whole = operation.pickedIds.includes(entity.id);
+        const result = stretchedEntity(
+          entity, dx, dy,
+          point => whole || pointInStretchWindow(point, operation.windows),
+        );
+        if (!stretchIsDegenerate(result)) drawEntity(result, true);
+      }
+      drawTransformGuide(
+        operation.base,
+        p,
+        `${formatLengthLabel(Math.hypot(dx, dy))} @ ${formatAngle(Math.atan2(dy, dx))}`,
+      );
+    },
+
+    finish() {
+      if (state.edit?.stage !== 'SELECT') return false;
+      const ids = editableSelectionIds();
+      if (!ids.length) {
+        updatePrompt('No objects selected.');
+        return true;
+      }
+      state.edit.ids = ids;
+      state.edit.stage = 'BASE';
+      updatePrompt();
+      draw();
+      return true;
+    },
+  });
+
   function startGripEdit(hit) {
     if (!hit?.entity || !isEntityEditable(hit.entity)) return false;
     const entityId = hit.entity.id;
@@ -5434,8 +6142,10 @@ kbd { font-size: 9px; opacity: .65; }
     if (hit) {
       if (add && state.selected.has(hit.id)) state.selected.delete(hit.id);
       else state.selected.add(hit.id);
+      activeCommand()?.noteSelection?.({ entityId: hit.id });
     }
-    if (state.transform?.stage === 'SELECT') updatePrompt();
+    // Any command gathering a selection may be reporting how many it has.
+    if (commandSelectsObjects()) updatePrompt();
     draw();
   }
 
@@ -5540,8 +6250,9 @@ kbd { font-size: 9px; opacity: .65; }
       const hit = crossing ? entityCrossesBox(e, box) : boxContains(box, bb);
       if (hit) state.selected.add(e.id);
     }
+    activeCommand()?.noteSelection?.({ box, crossing });
     state.dragSelect = null;
-    if (state.transform?.stage === 'SELECT') updatePrompt();
+    if (commandSelectsObjects()) updatePrompt();
     draw();
   }
 
@@ -5890,6 +6601,34 @@ kbd { font-size: 9px; opacity: .65; }
     if (command?.preview && commandPreviewReady(command)) command.preview(getActivePoint());
   }
 
+  function drawPolarTracking() {
+    const lock = state.polarLock;
+    if (!lock) return;
+    // The ray is drawn past the locked point so the alignment reads as a
+    // direction being followed rather than a segment being drawn.
+    const overshoot = 40 / state.view.scale;
+    const end = {
+      x: lock.base.x + (lock.distance + overshoot) * Math.cos(lock.angle),
+      y: lock.base.y + (lock.distance + overshoot) * Math.sin(lock.angle),
+    };
+    const a = worldToScreen(lock.base);
+    const b = worldToScreen(end);
+    ctx.save();
+    ctx.strokeStyle = '#7ee081';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.stroke();
+    ctx.restore();
+    const at = worldToScreen(lock.point);
+    drawFloatingLabel(
+      `${formatLengthLabel(lock.distance)} < ${formatAngle(lock.angle)}`,
+      at.x, at.y, '#7ee081',
+    );
+  }
+
   function drawSnap() {
     if (!state.snapEnabled) {
       snapStatus.textContent = 'OFF';
@@ -5921,6 +6660,18 @@ kbd { font-size: 9px; opacity: .65; }
     } else if (state.snap.type === 'QUAD') {
       ctx.beginPath();
       ctx.moveTo(s.x,s.y-r-1); ctx.lineTo(s.x+r+1,s.y); ctx.lineTo(s.x,s.y+r+1); ctx.lineTo(s.x-r-1,s.y); ctx.closePath(); ctx.stroke();
+    } else if (state.snap.type === 'TAN') {
+      // A circle with the tangent line resting on it.
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
+      ctx.moveTo(s.x-r-1, s.y-r); ctx.lineTo(s.x+r+1, s.y-r);
+      ctx.stroke();
+    } else if (state.snap.type === 'NEAR') {
+      // An hourglass, which is the conventional nearest marker.
+      ctx.beginPath();
+      ctx.moveTo(s.x-r,s.y-r); ctx.lineTo(s.x+r,s.y-r);
+      ctx.lineTo(s.x-r,s.y+r); ctx.lineTo(s.x+r,s.y+r);
+      ctx.closePath(); ctx.stroke();
     }
     drawFloatingLabel(state.snap.type, s.x, s.y, '#56d6ff');
   }
@@ -5950,6 +6701,7 @@ kbd { font-size: 9px; opacity: .65; }
       if (isEntityVisible(e)) drawEntity(e);
     }
     drawPreview();
+    drawPolarTracking();
     drawSelectionBox();
     drawSnap();
     if (assignLayerBtn) assignLayerBtn.disabled = !state.selected.size;
@@ -5981,8 +6733,7 @@ kbd { font-size: 9px; opacity: .65; }
   }
 
   function isSelectionStage() {
-    if (commandSelectsObjects()) return true;
-    return state.mode === 'SELECT' || state.inquiry?.stage === 'SELECT';
+    return commandSelectsObjects() || state.mode === 'SELECT';
   }
 
   // Central cancellation policy. Keep this separate from the DOM key handler
@@ -6134,6 +6885,15 @@ kbd { font-size: 9px; opacity: .65; }
       else if (ev.key === 'Enter') { ev.preventDefault(); applyDimStyleDialog(); }
       return;
     }
+    if (!polarDialog.hidden) {
+      if (ev.key === 'Escape' || ev.key === 'Enter') { ev.preventDefault(); closePolarDialog(); }
+      return;
+    }
+    if (!snapDialog.hidden) {
+      // Changes are already applied, so both keys mean the same thing here.
+      if (ev.key === 'Escape' || ev.key === 'Enter') { ev.preventDefault(); closeSnapDialog(); }
+      return;
+    }
 
     const editingLayerControl = ev.target === currentLayerSelect || Boolean(ev.target?.dataset?.layerAction);
     if (editingLayerControl) {
@@ -6147,9 +6907,13 @@ kbd { font-size: 9px; opacity: .65; }
 
     if (ev.key === 'F8') {
       ev.preventDefault();
-      state.ortho = !state.ortho;
-      orthoBtn.classList.toggle('on', state.ortho);
-      draw();
+      setOrtho(!state.ortho);
+      return;
+    }
+
+    if (ev.key === 'F10') {
+      ev.preventDefault();
+      setPolar(!state.polar);
       return;
     }
 
@@ -6286,6 +7050,16 @@ kbd { font-size: 9px; opacity: .65; }
     canvas.focus();
   });
   unitStatus.addEventListener('click', openUnitsDialog);
+  snapStatus.addEventListener('click', openSnapDialog);
+  polarBtn.addEventListener('click', () => setPolar(!state.polar));
+  polarStatus.addEventListener('click', openPolarDialog);
+  polarIncrementSelect.addEventListener('change', () => setPolarIncrement(polarIncrementSelect.value));
+  document.getElementById('polarDone').addEventListener('click', closePolarDialog);
+  polarDialog.addEventListener('click', ev => { if (ev.target === polarDialog) closePolarDialog(); });
+  document.getElementById('snapDone').addEventListener('click', closeSnapDialog);
+  document.getElementById('snapAllOn').addEventListener('click', () => setAllSnapTypes(true));
+  document.getElementById('snapAllOff').addEventListener('click', () => setAllSnapTypes(false));
+  snapDialog.addEventListener('click', ev => { if (ev.target === snapDialog) closeSnapDialog(); });
   document.getElementById('unitsCancel').addEventListener('click', closeUnitsDialog);
   document.getElementById('unitsApply').addEventListener('click', applyUnitsDialog);
   unitsDialog.addEventListener('click', ev => { if (ev.target === unitsDialog) closeUnitsDialog(); });
@@ -6376,7 +7150,7 @@ kbd { font-size: 9px; opacity: .65; }
     }
   });
   snapBtn.addEventListener('click', () => { state.snapEnabled=!state.snapEnabled; snapBtn.classList.toggle('on',state.snapEnabled); draw(); });
-  orthoBtn.addEventListener('click', () => { state.ortho=!state.ortho; orthoBtn.classList.toggle('on',state.ortho); draw(); });
+  orthoBtn.addEventListener('click', () => setOrtho(!state.ortho));
 
   window.addEventListener('error', () => {
     engineStatus.textContent = 'ENGINE: ERROR';
@@ -6402,6 +7176,7 @@ kbd { font-size: 9px; opacity: .65; }
   renderLayerManager();
   renderUnitStatus();
   resize();
+  refreshTrackingButtons();
   if (!restoreAutosave()) setMode('SELECT');
   engineStatus.textContent = 'ENGINE: READY';
   engineStatus.classList.remove('loading', 'error');
@@ -6437,9 +7212,27 @@ kbd { font-size: 9px; opacity: .65; }
     get entityCount() { return state.entities.length; },
     get ortho() { return state.ortho; },
     get snapType() { return state.snap?.type || null; },
+    get snapTypes() { return { ...state.snapTypes }; },
+    get polar() { return state.polar; },
+    get polarIncrement() { return state.polarIncrement; },
+    get polarLock() { return state.polarLock ? { ...state.polarLock } : null; },
+    get polarIncrements() { return [...POLAR_INCREMENTS]; },
+    setOrtho,
+    setPolar,
+    setPolarIncrement,
+    openPolarDialog,
+    closePolarDialog,
+    get polarDialogVisible() { return !polarDialog.hidden; },
+    get snapTypeOrder() { return SNAP_TYPES.map(entry => entry.type); },
+    setSnapType,
+    setAllSnapTypes,
+    defaultSnapTypes,
+    openSnapDialog,
+    closeSnapDialog,
+    get snapDialogVisible() { return !snapDialog.hidden; },
     get entities() { return cloneEntities(); },
     get selectedIds() { return [...state.selected]; },
-    get operationStage() { return state.transform?.stage || state.offset?.stage || null; },
+    get operationStage() { return state.transform?.stage || state.offset?.stage || state.edit?.stage || null; },
     // How the active command answers each staged hook at this moment. Some
     // answers are unreachable through the UI — a command cannot be asked for a
     // direct distance before it has a base point — so this is the only way to
@@ -6743,6 +7536,13 @@ kbd { font-size: 9px; opacity: .65; }
 
     function entityById(id) {
       return cad.entities.find(entity => entity.id === id) || null;
+    }
+
+    // Selecting everything by dragging depends on the view; commands that act
+    // on a whole selection care about the set, not how it was gathered.
+    function selectAll() {
+      cad.state.selected.clear();
+      cad.entities.forEach(entity => cad.state.selected.add(entity.id));
     }
 
     function only() {
@@ -7360,7 +8160,7 @@ kbd { font-size: 9px; opacity: .65; }
           'LINE', 'PLINE', 'RECTANGLE', 'CIRCLE', 'ARC',
           'DIST', 'ID', 'AREA', 'LIST', 'DIMLINEAR', 'DIMALIGNED',
           'MOVE', 'COPY', 'ROTATE', 'SCALE',
-          'OFFSET', 'TRIM', 'EXTEND', 'GRIP',
+          'OFFSET', 'TRIM', 'EXTEND', 'GRIP', 'JOIN', 'EXPLODE', 'STRETCH',
         ]) {
           ok(cad.registeredCommands.includes(name), `${name} is registered`);
         }
@@ -7864,6 +8664,646 @@ kbd { font-size: 9px; opacity: .65; }
       });
     });
 
+    group('Polar tracking', () => {
+      function withPolar(increment, body) {
+        const ortho = cad.state.ortho;
+        const polar = cad.polar;
+        const step = cad.polarIncrement;
+        cad.setPolar(true);
+        cad.setPolarIncrement(increment);
+        try {
+          body();
+        } finally {
+          cad.setPolarIncrement(step);
+          cad.setPolar(polar);
+          cad.setOrtho(ortho);
+        }
+      }
+
+      test('polar is off by default and excludes ORTHO', () => {
+        notOk(cad.polar);
+        eq(cad.polarIncrement, 45);
+        // Both answer the same question about a point's direction, so having
+        // both on would mean one of them silently doing nothing.
+        cad.setPolar(true);
+        cad.setOrtho(true);
+        notOk(cad.polar, 'ORTHO displaces polar');
+        cad.setPolar(true);
+        notOk(cad.state.ortho, 'and polar displaces ORTHO');
+        cad.setPolar(false);
+        cad.setOrtho(false);
+      });
+
+      test('the cursor locks near an alignment and is free away from one', () => {
+        withPolar(45, () => {
+          cad.startCommand('LINE');
+          cad.commitPoint({ x: 0, y: 0 });
+          hover({ x: 120, y: 118 });
+          ok(cad.polarLock, 'close to 45 degrees');
+          near(cad.polarLock.angle, Math.PI / 4, 1e-9);
+          near(cad.state.activePoint.x, cad.state.activePoint.y, 1e-6);
+          hover({ x: 120, y: 40 });
+          eq(cad.polarLock, null, 'nowhere near an alignment');
+          // Away from a lock the cursor is reported exactly as it lies.
+          nearPoint(cad.state.activePoint, asClicked({ x: 120, y: 40 }), 1e-6);
+        });
+      });
+
+      test('the increment decides which alignments exist', () => {
+        withPolar(45, () => {
+          cad.startCommand('LINE');
+          cad.commitPoint({ x: 0, y: 0 });
+          hover({ x: 170, y: 99 });
+          eq(cad.polarLock, null, '30 degrees is not a multiple of 45');
+          cad.setPolarIncrement(30);
+          hover({ x: 170, y: 99 });
+          ok(cad.polarLock);
+          near(cad.polarLock.angle, Math.PI / 6, 1e-9);
+        });
+        notOk(cad.setPolarIncrement(37), 'an unlisted increment is refused');
+      });
+
+      test('polar needs a base point and yields to a snap', () => {
+        line({ x: 200, y: 198 }, { x: 260, y: 198 });
+        withPolar(45, () => {
+          cad.startCommand('LINE');
+          hover({ x: 120, y: 118 });
+          eq(cad.polarLock, null, 'nothing to track from yet');
+          cad.commitPoint({ x: 0, y: 0 });
+          hover({ x: 120, y: 118 });
+          ok(cad.polarLock);
+          // An endpoint is a point the draughtsman asked for; the alignment is
+          // a guess, so the guess gives way and its guide goes with it.
+          hover({ x: 200, y: 198 });
+          eq(cad.snapType, 'END');
+          eq(cad.polarLock, null);
+        });
+      });
+
+      test('a committed point and a typed distance follow the alignment', () => {
+        withPolar(45, () => {
+          cad.startCommand('LINE');
+          cad.commitPoint({ x: 0, y: 0 });
+          click({ x: 120, y: 118 });
+          const drawn = only();
+          near(drawn.b.x, drawn.b.y, 1e-6, 'the committed point is on the alignment');
+          cad.cancelCurrent();
+
+          // A typed distance runs along whatever direction is acquired, so the
+          // lock has to be held from a fresh base rather than from the point
+          // just committed, which the cursor is already sitting on.
+          cad.startCommand('LINE');
+          cad.commitPoint({ x: 0, y: 0 });
+          // Tracking back along 135 degrees, where the line just drawn is not
+          // sitting under the cursor waiting to offer its endpoint instead.
+          hover({ x: -120, y: 118 });
+          ok(cad.polarLock, 'the alignment is acquired');
+          cad.commitDistance(100);
+          const second = cad.entities[cad.entityCount - 1];
+          near(Math.hypot(second.b.x - second.a.x, second.b.y - second.a.y), 100, 1e-6);
+          near(second.b.x - second.a.x, -(second.b.y - second.a.y), 1e-6);
+        });
+      });
+
+      test('polar tracks only where ORTHO would constrain', () => {
+        // It answers the same opt-in, so a stage that is a free pick under
+        // ORTHO stays a free pick under polar.
+        line({ x: 0, y: 0 }, { x: 100, y: 0 });
+        click({ x: 50, y: 0 });
+        withPolar(45, () => {
+          cad.startCommand('MOVE');
+          hover({ x: 120, y: 118 });
+          eq(cad.polarLock, null, 'the base point is a free pick');
+          cad.commitPoint({ x: 0, y: 0 });
+          hover({ x: 120, y: 118 });
+          ok(cad.polarLock, 'the destination is not');
+        });
+      });
+
+      test('the locked point is the cursor projected onto the ray', () => {
+        // Not the cursor rotated onto it: the reach along the alignment is what
+        // the cursor reached, so pulling back across the ray does not lengthen
+        // the point being placed.
+        withPolar(45, () => {
+          cad.startCommand('LINE');
+          cad.commitPoint({ x: 0, y: 0 });
+          const cursor = asClicked({ x: 120, y: 118 });
+          hover({ x: 120, y: 118 });
+          ok(cad.polarLock);
+          const along = cursor.x * Math.cos(Math.PI / 4) + cursor.y * Math.sin(Math.PI / 4);
+          near(cad.polarLock.distance, along, 1e-6);
+          ok(along < Math.hypot(cursor.x, cursor.y), 'shorter than the raw reach');
+        });
+      });
+
+      test('ORTHO wins outright when both are somehow set', () => {
+        // The toggles keep this from happening, but the guard is what makes
+        // that a guarantee rather than a convention — and without it a polar
+        // guide would be drawn over work ORTHO had already done.
+        withPolar(45, () => {
+          cad.state.ortho = true;
+          try {
+            cad.startCommand('LINE');
+            cad.commitPoint({ x: 0, y: 0 });
+            hover({ x: 120, y: 118 });
+            eq(cad.polarLock, null);
+            near(cad.state.activePoint.y, 0, 1e-6, 'constrained to an axis');
+          } finally {
+            cad.state.ortho = false;
+          }
+        });
+      });
+
+      test('the increment dialog opens and closes', () => {
+        notOk(cad.polarDialogVisible);
+        cad.openPolarDialog();
+        ok(cad.polarDialogVisible);
+        cad.closePolarDialog();
+        notOk(cad.polarDialogVisible);
+      });
+    });
+
+    group('Stretch', () => {
+      test('a crossing window moves only the vertices it catches', () => {
+        const entity = line({ x: 0, y: 0 }, { x: 200, y: 0 });
+        cad.startCommand('STRETCH');
+        eq(cad.promptText, 'STRETCH \u2014 Select with a crossing window, then press Enter or right-click:');
+        drag({ x: 260, y: -40 }, { x: 150, y: 40 });
+        ok(cad.acceptDefaultAction());
+        eq(cad.operationStage, 'BASE');
+        cad.commitPoint({ x: 0, y: 0 });
+        cad.commitPoint({ x: 0, y: 60 });
+        const stretched = entityById(entity.id);
+        nearPoint(stretched.a, { x: 0, y: 0 }, 1e-6, 'the end outside the window stays');
+        nearPoint(stretched.b, { x: 200, y: 60 }, 1e-6);
+      });
+
+      test('an object caught entirely is carried along', () => {
+        const entity = line({ x: 0, y: 0 }, { x: 200, y: 0 });
+        cad.startCommand('STRETCH');
+        drag({ x: 260, y: -40 }, { x: -40, y: 40 });
+        cad.acceptDefaultAction();
+        cad.commitPoint({ x: 0, y: 0 });
+        cad.commitPoint({ x: 0, y: 60 });
+        const moved = entityById(entity.id);
+        nearPoint(moved.a, { x: 0, y: 60 }, 1e-6);
+        nearPoint(moved.b, { x: 200, y: 60 }, 1e-6);
+      });
+
+      test('an object named by a bare pick moves whole', () => {
+        // A click carries no window, so there is nothing to say which part was
+        // meant; all of it is.
+        const entity = line({ x: 0, y: 0 }, { x: 200, y: 0 });
+        cad.startCommand('STRETCH');
+        click({ x: 100, y: 0 });
+        cad.acceptDefaultAction();
+        cad.commitPoint({ x: 0, y: 0 });
+        cad.commitPoint({ x: 0, y: 60 });
+        nearPoint(entityById(entity.id).a, { x: 0, y: 60 }, 1e-6);
+      });
+
+      test('a polyline keeps the vertices outside the window', () => {
+        const shape = polyline([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }]);
+        cad.startCommand('STRETCH');
+        drag({ x: 160, y: 60 }, { x: 60, y: 160 });
+        cad.acceptDefaultAction();
+        cad.commitPoint({ x: 0, y: 0 });
+        cad.commitPoint({ x: 50, y: 0 });
+        const points = entityById(shape.id).points;
+        nearPoint(points[0], { x: 0, y: 0 }, 1e-6);
+        nearPoint(points[1], { x: 100, y: 0 }, 1e-6);
+        nearPoint(points[2], { x: 150, y: 100 }, 1e-6);
+      });
+
+      test('several windows accumulate', () => {
+        const left = line({ x: 0, y: 0 }, { x: 100, y: 0 });
+        const right = line({ x: 200, y: 0 }, { x: 300, y: 0 });
+        cad.startCommand('STRETCH');
+        drag({ x: 120, y: -30 }, { x: 80, y: 30 });
+        drag({ x: 320, y: -30 }, { x: 280, y: 30 });
+        eq(cad.selectedIds.length, 2);
+        cad.acceptDefaultAction();
+        cad.commitPoint({ x: 0, y: 0 });
+        cad.commitPoint({ x: 0, y: 50 });
+        nearPoint(entityById(left.id).b, { x: 100, y: 50 }, 1e-6);
+        nearPoint(entityById(left.id).a, { x: 0, y: 0 }, 1e-6);
+        nearPoint(entityById(right.id).b, { x: 300, y: 50 }, 1e-6);
+      });
+
+      test('a curve travels only if its centre is caught', () => {
+        // There is no vertex on a curve to pull, and moving an endpoint would
+        // have to invent a new radius, so the centre decides.
+        const stays = circle({ x: 0, y: 0 }, 40);
+        const goes = circle({ x: 300, y: 0 }, 40);
+        cad.startCommand('STRETCH');
+        drag({ x: 400, y: -60 }, { x: 260, y: 60 });
+        cad.acceptDefaultAction();
+        cad.commitPoint({ x: 0, y: 0 });
+        cad.commitPoint({ x: 0, y: 80 });
+        nearPoint(entityById(stays.id).center, { x: 0, y: 0 }, 1e-6);
+        nearPoint(entityById(goes.id).center, { x: 300, y: 80 }, 1e-6);
+      });
+
+      test('a curve caught by its rim alone does not travel', () => {
+        // Selected, because the window crosses it; unmoved, because the centre
+        // is the only point a curve offers and the window missed it.
+        const entity = circle({ x: 0, y: 0 }, 80);
+        cad.startCommand('STRETCH');
+        drag({ x: 140, y: -20 }, { x: 60, y: 20 });
+        eq(cad.selectedIds.length, 1, 'the rim was caught');
+        cad.acceptDefaultAction();
+        cad.commitPoint({ x: 0, y: 0 });
+        cad.commitPoint({ x: 0, y: 100 });
+        nearPoint(entityById(entity.id).center, { x: 0, y: 0 }, 1e-6);
+      });
+
+      test('ORTHO constrains the stretch destination', () => {
+        const entity = line({ x: 0, y: 0 }, { x: 200, y: 0 });
+        cad.startCommand('STRETCH');
+        drag({ x: 260, y: -40 }, { x: 150, y: 40 });
+        cad.acceptDefaultAction();
+        cad.state.ortho = true;
+        try {
+          ok(cad.commandCapabilities.usesOrtho === false, 'not while picking the base');
+          cad.commitPoint({ x: 0, y: 0 });
+          ok(cad.commandCapabilities.usesOrtho, 'but yes at the destination');
+          click({ x: 200, y: 40 });
+          near(entityById(entity.id).b.y, 0, 1e-6, 'held to the horizontal');
+        } finally {
+          cad.state.ortho = false;
+        }
+      });
+
+      test('a destination on the base point is refused', () => {
+        const entity = line({ x: 0, y: 0 }, { x: 200, y: 0 });
+        cad.startCommand('STRETCH');
+        drag({ x: 260, y: -40 }, { x: 150, y: 40 });
+        cad.acceptDefaultAction();
+        cad.commitPoint({ x: 20, y: 20 });
+        cad.commitPoint({ x: 20, y: 20 });
+        eq(cad.operationStage, 'DEST');
+        eq(
+          cad.promptText,
+          'STRETCH \u2014 Specify destination, distance, or relative point: '
+          + 'Destination must differ from the base point.',
+        );
+        nearPoint(entityById(entity.id).b, { x: 200, y: 0 }, 1e-6);
+      });
+
+      test('locked geometry is never an operand', () => {
+        // Locking drops objects from the selection, so reaching the filter
+        // needs the set built directly — but the rule holds either way.
+        const layer = cad.createLayer('Locked');
+        cad.setCurrentLayer(layer);
+        const entity = line({ x: 0, y: 0 }, { x: 200, y: 0 });
+        cad.setCurrentLayer('0');
+        cad.toggleLayerLock(layer);
+        cad.startCommand('STRETCH');
+        cad.state.selected.add(entity.id);
+        ok(cad.acceptDefaultAction());
+        eq(cad.operationStage, 'SELECT', 'a locked object is no selection at all');
+        eq(cad.promptText, 'STRETCH \u2014 1 selected; press Enter or right-click to continue: No objects selected.');
+      });
+
+      test('a dimension across the stretch reports the new length', () => {
+        line({ x: 0, y: 0 }, { x: 200, y: 0 });
+        cad.startCommand('DIMLINEAR');
+        cad.commitPoint({ x: 0, y: 0 });
+        cad.commitPoint({ x: 200, y: 0 });
+        cad.commitPoint({ x: 100, y: -40 });
+        cad.cancelCurrent();
+        cad.startCommand('STRETCH');
+        drag({ x: 260, y: -60 }, { x: 150, y: 40 });
+        cad.acceptDefaultAction();
+        cad.commitPoint({ x: 0, y: 0 });
+        cad.commitPoint({ x: 60, y: 0 });
+        const dimension = cad.entities.find(entity => entity.type === 'DIM');
+        near(cad.dimensionGeometry(dimension).measure, 260, 1e-6);
+      });
+
+      test('a preselection is discarded rather than guessed at', () => {
+        // The selection alone does not record which windows made it, and
+        // without those there is nothing to say which vertices were meant.
+        line({ x: 0, y: 0 }, { x: 200, y: 0 });
+        click({ x: 100, y: 0 });
+        eq(cad.selectedIds.length, 1);
+        cad.startCommand('STRETCH');
+        eq(cad.selectedIds.length, 0);
+        eq(cad.operationStage, 'SELECT');
+      });
+
+      test('degenerate results and empty selections are refused', () => {
+        const entity = line({ x: 0, y: 0 }, { x: 200, y: 0 });
+        cad.startCommand('STRETCH');
+        ok(cad.acceptDefaultAction());
+        eq(cad.operationStage, 'SELECT');
+        eq(cad.promptText, 'STRETCH \u2014 Select with a crossing window, then press Enter or right-click: No objects selected.');
+
+        drag({ x: 260, y: -40 }, { x: 150, y: 40 });
+        cad.acceptDefaultAction();
+        cad.commitPoint({ x: 200, y: 0 });
+        cad.commitPoint({ x: 0, y: 0 });
+        eq(cad.operationStage, 'DEST', 'the command stays open');
+        eq(
+          cad.promptText,
+          'STRETCH \u2014 Specify destination, distance, or relative point: '
+          + 'That stretch would collapse geometry.',
+        );
+        nearPoint(entityById(entity.id).b, { x: 200, y: 0 }, 1e-6);
+      });
+
+      test('the destination takes a relative point and undoes in one step', () => {
+        const entity = line({ x: 0, y: 0 }, { x: 200, y: 0 });
+        cad.startCommand('STRETCH');
+        drag({ x: 260, y: -40 }, { x: 150, y: 40 });
+        cad.acceptDefaultAction();
+        cad.commitPoint({ x: 200, y: 0 });
+        cad.submitCommandText('@0,50');
+        nearPoint(entityById(entity.id).b, { x: 200, y: 50 }, 1e-6);
+        cad.undo();
+        nearPoint(entityById(entity.id).b, { x: 200, y: 0 }, 1e-6);
+      });
+
+      test('locked geometry is not selectable', () => {
+        const layer = cad.createLayer('Locked');
+        cad.setCurrentLayer(layer);
+        line({ x: 0, y: 0 }, { x: 200, y: 0 });
+        cad.setCurrentLayer('0');
+        cad.toggleLayerLock(layer);
+        cad.startCommand('STRETCH');
+        drag({ x: 260, y: -40 }, { x: 150, y: 40 });
+        eq(cad.selectedIds.length, 0);
+        ok(cad.acceptDefaultAction());
+        eq(cad.operationStage, 'SELECT');
+      });
+    });
+
+    group('Tangent and nearest snaps', () => {
+      // Restoring the defaults matters more here than anywhere else: these are
+      // session settings, so a test that leaves one on changes every test after
+      // it.
+      function withSnaps(changes, body) {
+        const before = cad.snapTypes;
+        Object.entries(changes).forEach(([type, on]) => cad.setSnapType(type, on));
+        try {
+          body();
+        } finally {
+          Object.entries(before).forEach(([type, on]) => cad.setSnapType(type, on));
+        }
+      }
+
+      // The touch point is where a line from the base grazes the curve, which
+      // is on the near side, at acos(r / d) round from the direction of the
+      // base point.
+      function tangentPoint(center, radius, base, sign = 1) {
+        const toward = Math.atan2(base.y - center.y, base.x - center.x);
+        const spread = Math.acos(radius / Math.hypot(center.x - base.x, center.y - base.y));
+        const angle = toward + sign * spread;
+        return { x: center.x + radius * Math.cos(angle), y: center.y + radius * Math.sin(angle) };
+      }
+
+      test('both new snaps are off by default', () => {
+        const types = cad.snapTypes;
+        eq(types.TAN, false);
+        eq(types.NEAR, false);
+        // Everything the tool offered before stays on, so opening an existing
+        // drawing behaves as it always did.
+        for (const type of ['END', 'INT', 'MID', 'CENTER', 'QUAD', 'PERP']) {
+          eq(types[type], true, type);
+        }
+      });
+
+      test('nearest offers a point anywhere along a line once it is on', () => {
+        line({ x: 0, y: 0 }, { x: 200, y: 0 });
+        cad.startCommand('LINE');
+        hover({ x: 60, y: 0 });
+        eq(cad.snapType, null, 'nothing is acquired while it is off');
+        withSnaps({ NEAR: true }, () => {
+          hover({ x: 60, y: 0 });
+          eq(cad.snapType, 'NEAR');
+        });
+      });
+
+      test('nearest never displaces a ranked snap', () => {
+        // It can always produce a point under the cursor, so it is consulted
+        // only when nothing else is in range.
+        line({ x: 0, y: 0 }, { x: 200, y: 0 });
+        withSnaps({ NEAR: true }, () => {
+          cad.startCommand('LINE');
+          hover({ x: 0, y: 0 });
+          eq(cad.snapType, 'END');
+          hover({ x: 100, y: 0 });
+          eq(cad.snapType, 'MID');
+          hover({ x: 60, y: 0 });
+          eq(cad.snapType, 'NEAR');
+        });
+      });
+
+      test('nearest yields to an endpoint the cursor is only close to', () => {
+        // The case that separates a fallback from a peer. Sitting a little off
+        // the line but near its end, the nearest point is genuinely closer in
+        // pixels than the endpoint is, so a nearest that competed on distance
+        // would win here.
+        line({ x: 0, y: 0 }, { x: 200, y: 0 });
+        withSnaps({ NEAR: true }, () => {
+          cad.startCommand('LINE');
+          const px = 1 / cad.viewScale;
+          hover({ x: 6 * px, y: 3 * px });
+          eq(cad.snapType, 'END');
+        });
+      });
+
+      test('nearest stays within the drawn sweep of an arc', () => {
+        const at = a => ({ x: 80 * Math.cos(a), y: 80 * Math.sin(a) });
+        cad.startCommand('ARC');
+        cad.commitPoint(at(Math.PI / 2));
+        cad.commitPoint(at(Math.PI));
+        cad.commitPoint(at(Math.PI * 1.5));
+        cad.cancelCurrent();
+        withSnaps({ NEAR: true }, () => {
+          cad.startCommand('LINE');
+          // On the circle the arc was cut from, but not on the arc.
+          hover(at(0.7));
+          eq(cad.snapType, null);
+          hover(at(Math.PI * 0.8));
+          eq(cad.snapType, 'NEAR', 'inside the sweep it still answers');
+        });
+      });
+
+      test('nearest follows a curve', () => {
+        circle({ x: 0, y: 0 }, 80);
+        withSnaps({ NEAR: true }, () => {
+          cad.startCommand('LINE');
+          const off = { x: 80 * Math.cos(0.7), y: 80 * Math.sin(0.7) };
+          hover(off);
+          eq(cad.snapType, 'NEAR');
+          // A simulated click lands on a whole pixel, so the acquired point is
+          // the projection of where the cursor actually was. What matters is
+          // that it sits exactly on the curve, close to where it was asked for.
+          const p = cad.state.snap.p;
+          near(Math.hypot(p.x, p.y), 80, 1e-6, 'on the circle');
+          nearPoint(p, off, 1);
+        });
+      });
+
+      test('a tangent line meets the curve at a right angle', () => {
+        const center = { x: 260, y: 0 };
+        const base = { x: 0, y: 0 };
+        circle(center, 60);
+        withSnaps({ TAN: true }, () => {
+          const touch = tangentPoint(center, 60, base);
+          cad.startCommand('LINE');
+          cad.commitPoint(base);
+          hover(touch);
+          eq(cad.snapType, 'TAN');
+          click(touch);
+          const drawn = cad.entities.find(entity => entity.type === 'LINE');
+          // The radius to the touch point is perpendicular to the line, which
+          // is what makes it a tangent rather than just a point on the curve.
+          const radius = { x: drawn.b.x - center.x, y: drawn.b.y - center.y };
+          const along = { x: drawn.b.x - drawn.a.x, y: drawn.b.y - drawn.a.y };
+          near(radius.x * along.x + radius.y * along.y, 0, 1e-6);
+          near(Math.hypot(radius.x, radius.y), 60, 1e-6);
+        });
+      });
+
+      test('both touch points are offered', () => {
+        const center = { x: 260, y: 0 };
+        const base = { x: 0, y: 0 };
+        circle(center, 60);
+        withSnaps({ TAN: true }, () => {
+          for (const sign of [1, -1]) {
+            cad.cancelCurrent();
+            cad.startCommand('LINE');
+            cad.commitPoint(base);
+            hover(tangentPoint(center, 60, base, sign));
+            eq(cad.snapType, 'TAN', `sign ${sign}`);
+          }
+        });
+      });
+
+      test('there is no tangent from inside or on the curve', () => {
+        circle({ x: 0, y: 0 }, 80);
+        withSnaps({ TAN: true }, () => {
+          // Away from the quadrants, so only a tangent could answer here.
+          const probe = { x: 80 * Math.cos(0.7), y: 80 * Math.sin(0.7) };
+          cad.startCommand('LINE');
+          cad.commitPoint({ x: 10, y: 0 });
+          hover(probe);
+          eq(cad.snapType, null, 'from inside');
+          cad.cancelCurrent();
+          cad.startCommand('LINE');
+          // On the curve the touch point would be the base point itself.
+          cad.commitPoint({ x: 80 * Math.cos(2.3), y: 80 * Math.sin(2.3) });
+          hover(probe);
+          eq(cad.snapType, null, 'from on the curve');
+        });
+      });
+
+      test('tangent needs a base point to measure from', () => {
+        const center = { x: 260, y: 0 };
+        const base = { x: 0, y: 0 };
+        circle(center, 60);
+        withSnaps({ TAN: true }, () => {
+          const touch = tangentPoint(center, 60, base);
+          cad.startCommand('LINE');
+          hover(touch);
+          eq(cad.snapType, null);
+          cad.commitPoint(base);
+          hover(touch);
+          eq(cad.snapType, 'TAN');
+        });
+      });
+
+      test('a touch point outside an arc sweep is not offered', () => {
+        const center = { x: 260, y: 0 };
+        const base = { x: 0, y: 0 };
+        const at = a => ({ x: center.x + 60 * Math.cos(a), y: center.y + 60 * Math.sin(a) });
+        // A narrow wedge facing the base point: the full circle would touch
+        // well round from here.
+        cad.startCommand('ARC');
+        cad.commitPoint(at(Math.PI * 0.94));
+        cad.commitPoint(at(Math.PI));
+        cad.commitPoint(at(Math.PI * 1.06));
+        cad.cancelCurrent();
+        withSnaps({ TAN: true }, () => {
+          cad.startCommand('LINE');
+          cad.commitPoint(base);
+          hover(tangentPoint(center, 60, base));
+          eq(cad.snapType, null);
+        });
+      });
+
+      test('switching a type off stops it being acquired', () => {
+        line({ x: 0, y: 0 }, { x: 200, y: 0 });
+        withSnaps({ END: false }, () => {
+          cad.startCommand('LINE');
+          hover({ x: 0, y: 0 });
+          eq(cad.snapType, null);
+          hover({ x: 100, y: 0 });
+          eq(cad.snapType, 'MID', 'the others are unaffected');
+        });
+      });
+
+      test('all on, all off, and an unknown type', () => {
+        line({ x: 0, y: 0 }, { x: 200, y: 0 });
+        const before = cad.snapTypes;
+        try {
+          cad.setAllSnapTypes(true);
+          ok(Object.values(cad.snapTypes).every(Boolean));
+          cad.startCommand('LINE');
+          hover({ x: 60, y: 0 });
+          eq(cad.snapType, 'NEAR');
+
+          cad.setAllSnapTypes(false);
+          ok(Object.values(cad.snapTypes).every(on => on === false));
+          hover({ x: 0, y: 0 });
+          eq(cad.snapType, null);
+
+          notOk(cad.setSnapType('WOMBAT', true), 'an unknown type is refused');
+          eq(cad.snapTypes.WOMBAT, undefined);
+        } finally {
+          Object.entries(before).forEach(([type, on]) => cad.setSnapType(type, on));
+        }
+      });
+
+      test('the master toggle still overrides the type settings', () => {
+        line({ x: 0, y: 0 }, { x: 200, y: 0 });
+        cad.state.snapEnabled = false;
+        try {
+          cad.startCommand('LINE');
+          hover({ x: 0, y: 0 });
+          eq(cad.snapType, null);
+        } finally {
+          cad.state.snapEnabled = true;
+        }
+        hover({ x: 0, y: 0 });
+        eq(cad.snapType, 'END');
+      });
+
+      test('nearest respects the entity a grip excludes', () => {
+        line({ x: 0, y: 0 }, { x: 200, y: 0 });
+        line({ x: 0, y: 100 }, { x: 200, y: 100 });
+        withSnaps({ NEAR: true }, () => {
+          click({ x: 100, y: 0 });
+          click({ x: 200, y: 0 });
+          eq(cad.mode, 'GRIP');
+          hover({ x: 60, y: 0 });
+          eq(cad.snapType, null, 'a grip cannot snap to its own object');
+          hover({ x: 60, y: 100 });
+          eq(cad.snapType, 'NEAR', 'another object still offers one');
+        });
+      });
+
+      test('the settings dialog opens from the snap readout and closes', () => {
+        notOk(cad.snapDialogVisible);
+        cad.openSnapDialog();
+        ok(cad.snapDialogVisible);
+        cad.closeSnapDialog();
+        notOk(cad.snapDialogVisible);
+      });
+    });
+
     group('Move, copy, rotate, scale', () => {
       test('MOVE shifts the selection by the base-to-target vector', () => {
         const entity = line({ x: 0, y: 0 }, { x: 100, y: 0 });
@@ -8355,6 +9795,281 @@ kbd { font-size: 9px; opacity: .65; }
         eq(cad.selectedIds.length, 1);
         notOk(cad.selectedIds.includes(entity.id));
         nearPoint(entityById(entity.id).a, { x: 0, y: 0 }, 1e-6);
+      });
+    });
+
+    group('Join and explode', () => {
+      test('two lines meeting end to end become one polyline', () => {
+        line({ x: 0, y: 0 }, { x: 100, y: 0 });
+        line({ x: 100, y: 0 }, { x: 100, y: 60 });
+        selectAll();
+        cad.startCommand('JOIN');
+        const joined = only();
+        eq(joined.type, 'PLINE');
+        eq(joined.closed, false);
+        eq(joined.points.length, 3);
+        nearPoint(joined.points[0], { x: 0, y: 0 });
+        nearPoint(joined.points[2], { x: 100, y: 60 });
+        eq(cad.selectedIds.length, 1);
+      });
+
+      test('paths are reversed and reordered as needed', () => {
+        // Drawn away from the shared point and out of sequence: the chain has
+        // to be built by matching ends, not by taking them in order.
+        line({ x: 100, y: 0 }, { x: 100, y: 60 });
+        line({ x: 100, y: 0 }, { x: 0, y: 0 });
+        line({ x: 100, y: 60 }, { x: 40, y: 120 });
+        selectAll();
+        cad.startCommand('JOIN');
+        const joined = only();
+        eq(joined.points.length, 4);
+        nearPoint(joined.points[0], { x: 0, y: 0 });
+        nearPoint(joined.points[3], { x: 40, y: 120 });
+      });
+
+      test('a path attaches to either end of the chain, forwards or back', () => {
+        // The first object seeds the chain, so these two exercise the cases the
+        // reordering test does not: appending a path that has to be reversed,
+        // and prepending one that does not.
+        line({ x: 0, y: 0 }, { x: 100, y: 0 });
+        line({ x: 100, y: 60 }, { x: 100, y: 0 });
+        line({ x: -60, y: 0 }, { x: 0, y: 0 });
+        selectAll();
+        cad.startCommand('JOIN');
+        const joined = only();
+        eq(joined.points.length, 4);
+        nearPoint(joined.points[0], { x: -60, y: 0 });
+        nearPoint(joined.points[1], { x: 0, y: 0 });
+        nearPoint(joined.points[2], { x: 100, y: 0 });
+        nearPoint(joined.points[3], { x: 100, y: 60 });
+      });
+
+      test('a chain that returns to its start closes the polyline', () => {
+        line({ x: 0, y: 0 }, { x: 100, y: 0 });
+        line({ x: 100, y: 0 }, { x: 100, y: 100 });
+        line({ x: 100, y: 100 }, { x: 0, y: 100 });
+        line({ x: 0, y: 100 }, { x: 0, y: 0 });
+        selectAll();
+        cad.startCommand('JOIN');
+        const joined = only();
+        eq(joined.closed, true);
+        // The repeated start point is dropped rather than stored twice.
+        eq(joined.points.length, 4);
+      });
+
+      test('a line joins onto an open polyline', () => {
+        polyline([{ x: 0, y: 0 }, { x: 60, y: 0 }, { x: 60, y: 60 }]);
+        line({ x: 60, y: 60 }, { x: 0, y: 60 });
+        selectAll();
+        cad.startCommand('JOIN');
+        eq(only().points.length, 4);
+      });
+
+      test('JOIN refuses what it cannot chain', () => {
+        line({ x: 0, y: 0 }, { x: 100, y: 0 });
+        click({ x: 50, y: 0 });
+        cad.startCommand('JOIN');
+        eq(cad.entityCount, 1, 'one object is not a chain');
+        eq(cad.mode, 'JOIN', 'the command stays open on a refusal');
+        eq(
+          cad.promptText,
+          'JOIN \u2014 1 selected; press Enter or right-click to join: '
+          + 'Select at least two open lines or polylines to join.',
+        );
+        cad.cancelCurrent();
+
+        line({ x: 200, y: 200 }, { x: 300, y: 200 });
+        selectAll();
+        cad.startCommand('JOIN');
+        eq(cad.entityCount, 2, 'objects that do not touch are left alone');
+        eq(
+          cad.promptText,
+          'JOIN \u2014 2 selected; press Enter or right-click to join: '
+          + 'The selected objects do not meet end to end.',
+        );
+      });
+
+      test('JOIN refuses closed shapes and curves', () => {
+        rectangle({ x: 0, y: 0 }, { x: 60, y: 40 });
+        line({ x: 60, y: 40 }, { x: 120, y: 40 });
+        selectAll();
+        cad.startCommand('JOIN');
+        eq(cad.entityCount, 2, 'a closed polyline has no free end');
+        eq(
+          cad.promptText,
+          'JOIN \u2014 2 selected; press Enter or right-click to join: '
+          + 'Only open lines and polylines can be joined.',
+        );
+        cad.cancelCurrent();
+        reset();
+
+        line({ x: 0, y: 0 }, { x: 100, y: 0 });
+        circle({ x: 200, y: 0 }, 20);
+        selectAll();
+        cad.startCommand('JOIN');
+        eq(cad.entityCount, 2);
+        eq(
+          cad.promptText,
+          'JOIN \u2014 2 selected; press Enter or right-click to join: '
+          + 'Only open lines and polylines can be joined.',
+        );
+      });
+
+      test('the joined polyline keeps the first source layer', () => {
+        const layer = cad.createLayer('Walls');
+        cad.setCurrentLayer(layer);
+        line({ x: 0, y: 0 }, { x: 100, y: 0 });
+        cad.setCurrentLayer('0');
+        line({ x: 100, y: 0 }, { x: 100, y: 60 });
+        selectAll();
+        cad.startCommand('JOIN');
+        eq(only().layerId, layer);
+      });
+
+      test('a rectangle explodes into four lines on its own layer', () => {
+        const layer = cad.createLayer('Walls');
+        cad.setCurrentLayer(layer);
+        rectangle({ x: 0, y: 0 }, { x: 60, y: 40 });
+        cad.setCurrentLayer('0');
+        selectAll();
+        cad.startCommand('EXPLODE');
+        eq(cad.entityCount, 4);
+        ok(cad.entities.every(entity => entity.type === 'LINE'));
+        ok(cad.entities.every(entity => entity.layerId === layer));
+        eq(cad.selectedIds.length, 4);
+      });
+
+      test('an open polyline explodes into one line per segment', () => {
+        polyline([{ x: 0, y: 0 }, { x: 60, y: 0 }, { x: 60, y: 60 }]);
+        selectAll();
+        cad.startCommand('EXPLODE');
+        eq(cad.entityCount, 2);
+      });
+
+      test('EXPLODE reports what it could not do rather than dropping it', () => {
+        line({ x: 0, y: 0 }, { x: 100, y: 0 });
+        circle({ x: 200, y: 0 }, 20);
+        polyline([{ x: 0, y: 100 }, { x: 60, y: 100 }, { x: 60, y: 160 }]);
+        selectAll();
+        cad.startCommand('EXPLODE');
+        // The line and circle survive untouched; only the polyline changed.
+        eq(cad.entityCount, 4);
+        eq(
+          cad.promptText,
+          'Command: Exploded 1 of 3 objects; 2 cannot be exploded.',
+        );
+      });
+
+      test('EXPLODE refuses a selection with nothing explodable', () => {
+        line({ x: 0, y: 0 }, { x: 100, y: 0 });
+        click({ x: 50, y: 0 });
+        cad.startCommand('EXPLODE');
+        eq(cad.entityCount, 1);
+        eq(cad.mode, 'EXPLODE');
+        eq(
+          cad.promptText,
+          'EXPLODE \u2014 1 selected; press Enter or right-click to explode: '
+          + 'Select a polyline or rectangle to explode.',
+        );
+      });
+
+      test('both commands gather a selection when none was made', () => {
+        polyline([{ x: 0, y: 0 }, { x: 60, y: 0 }, { x: 60, y: 60 }]);
+        for (const name of ['JOIN', 'EXPLODE']) {
+          cad.state.selected.clear();
+          cad.startCommand(name);
+          eq(cad.operationStage, 'SELECT', name);
+          ok(cad.commandCapabilities.selectsObjects, name);
+          notOk(cad.commandCapabilities.acceptsPoint, name);
+          ok(cad.acceptDefaultAction(), name);
+          eq(cad.mode, name, `${name} stays open with nothing selected`);
+          cad.cancelCurrent();
+        }
+      });
+
+      test('picks accumulate and the count is reported', () => {
+        line({ x: 0, y: 0 }, { x: 100, y: 0 });
+        line({ x: 100, y: 0 }, { x: 100, y: 60 });
+        cad.state.selected.clear();
+        cad.startCommand('JOIN');
+        click({ x: 50, y: 0 });
+        eq(
+          cad.promptText,
+          'JOIN \u2014 1 selected; press Enter or right-click to join:',
+        );
+        click({ x: 100, y: 30 });
+        eq(
+          cad.promptText,
+          'JOIN \u2014 2 selected; press Enter or right-click to join:',
+        );
+        ok(cad.acceptDefaultAction());
+        eq(cad.entityCount, 1);
+      });
+
+      test('exploding then joining returns the original polyline', () => {
+        polyline([{ x: 0, y: 0 }, { x: 60, y: 0 }, { x: 60, y: 60 }]);
+        selectAll();
+        cad.startCommand('EXPLODE');
+        eq(cad.entityCount, 2);
+        cad.startCommand('JOIN');
+        const rejoined = only();
+        eq(rejoined.type, 'PLINE');
+        eq(rejoined.closed, false);
+        eq(rejoined.points.length, 3);
+        nearPoint(rejoined.points[1], { x: 60, y: 0 });
+      });
+
+      test('locked geometry is never an operand', () => {
+        // Locking a layer drops its objects from the selection, so reaching
+        // this needs the selection set directly — but the rule that a locked
+        // object is never modified has to hold however the set was built.
+        const layer = cad.createLayer('Locked');
+        cad.setCurrentLayer(layer);
+        line({ x: 0, y: 0 }, { x: 100, y: 0 });
+        line({ x: 100, y: 0 }, { x: 100, y: 60 });
+        const shape = polyline([{ x: 0, y: 200 }, { x: 60, y: 200 }, { x: 60, y: 260 }]);
+        cad.setCurrentLayer('0');
+        cad.toggleLayerLock(layer);
+
+        selectAll();
+        cad.startCommand('JOIN');
+        eq(cad.entityCount, 3, 'the locked lines are not joined');
+        eq(
+          cad.promptText,
+          'JOIN \u2014 3 selected; press Enter or right-click to join: '
+          + 'Select at least two open lines or polylines to join.',
+        );
+        cad.cancelCurrent();
+
+        selectAll();
+        cad.startCommand('EXPLODE');
+        eq(cad.entityCount, 3, 'the locked polyline is not exploded');
+        eq(entityById(shape.id).type, 'PLINE');
+      });
+
+      test('both operations undo in one step', () => {
+        rectangle({ x: 0, y: 0 }, { x: 60, y: 40 });
+        selectAll();
+        cad.startCommand('EXPLODE');
+        eq(cad.entityCount, 4);
+        cad.undo();
+        eq(cad.entityCount, 1);
+        eq(only().type, 'PLINE');
+        selectAll();
+        cad.startCommand('EXPLODE');
+        cad.startCommand('JOIN');
+        eq(cad.entityCount, 1);
+        cad.undo();
+        eq(cad.entityCount, 4);
+      });
+
+      test('a LIST selection reports its running count', () => {
+        // The prompt is written to show a count, so a pick has to refresh it.
+        line({ x: 0, y: 0 }, { x: 100, y: 0 });
+        cad.startCommand('LIST');
+        eq(cad.promptText, 'LIST \u2014 Select objects, then press Enter or right-click:');
+        click({ x: 50, y: 0 });
+        eq(cad.promptText, 'LIST \u2014 1 selected; Enter or right-click to report:');
       });
     });
 
