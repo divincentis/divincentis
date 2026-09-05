@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>zbCAD v0.23.0</title>
+  <title>zbCAD v0.24.2</title>
   <style>
 :root {
   font-family: Arial, Helvetica, sans-serif;
@@ -357,11 +357,12 @@ kbd { font-size: 9px; opacity: .65; }
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">zbCAD Prototype <span class="version">v0.22.0</span></div>
+    <div class="brand">zbCAD Prototype <span class="version">v0.24.2</span></div>
     <div class="tools">
       <button id="newBtn">New</button>
       <button id="openBtn">Open</button>
       <button id="saveBtn">Save</button>
+      <button id="recoverBackupBtn" title="Recover the previous validated autosave">Recover Backup</button>
       <button data-command="SELECT" class="active">Select</button>
       <button data-command="LINE">Line (L)</button>
       <button data-command="PLINE">Polyline (PL)</button>
@@ -417,6 +418,7 @@ kbd { font-size: 9px; opacity: .65; }
       <button id="assignLayerBtn" class="assign-layer" title="Move selected objects to the current layer">Assign selection to current</button>
       <div id="layerList" class="layer-list"></div>
       <div class="layer-hint">Hidden layers do not snap or edit. Locked layers stay visible and snappable.</div>
+      <div id="dimensionNotice" class="layer-hint" hidden><strong>Static dimensions:</strong> editing source geometry does not update its dimensions. Check dimensions after revisions.</div>
     </aside>
   </main>
 
@@ -511,6 +513,7 @@ kbd { font-size: 9px; opacity: .65; }
   <div id="dimStyleDialog" class="dialog" hidden>
     <div class="dialog-card" role="dialog" aria-modal="true" aria-labelledby="dimStyleTitle">
       <h2 id="dimStyleTitle">Dimension Style</h2>
+      <p class="dialog-note">Dimensions are static. They measure their own definition points and do not follow edits to source objects.</p>
 
       <label for="dimArrowType">Terminator
         <select id="dimArrowType"></select>
@@ -614,6 +617,7 @@ kbd { font-size: 9px; opacity: .65; }
   const DOCUMENT_FORMAT = 'browser-2d-draft';
   const DOCUMENT_VERSION = 4;
   const AUTOSAVE_KEY = `${DOCUMENT_FORMAT}.autosave`;
+  const AUTOSAVE_BACKUP_KEY = `${AUTOSAVE_KEY}.previous`;
   const LEGACY_AUTOSAVE_KEYS = [`${DOCUMENT_FORMAT}.autosave.v1`];
 
   // The increments a draughtsman actually works to. 90 is ORTHO expressed as a
@@ -1156,20 +1160,40 @@ kbd { font-size: 9px; opacity: .65; }
 
   const DIM_NUMERIC_STYLE_FIELDS = ['textHeight', 'arrowSize', 'extensionOffset', 'extensionBeyond', 'textGap', 'scale'];
 
-  function parseDimStyle(value) {
+  // `format` is the drawing's length format; a style's precision is an override
+  // of the drawing precision, so null means "follow the drawing" and anything
+  // else has to be a precision that format actually supports. Without this check
+  // an imported style could carry, say, precision 7 in a fractional drawing, load
+  // cleanly, and then crash the first time a dimension was drawn.
+  function parseDimStyle(value, format = null) {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return { error: 'is not an object' };
     const id = typeof value.id === 'string' && value.id.trim() ? value.id.trim() : '';
     if (!id) return { error: 'has no id' };
     if (!ARROW_TYPES[value.arrowType]) return { error: `has an unsupported arrow type ${String(value.arrowType)}` };
+    // Field order matches defaultDimStyle() on purpose. A style built here used to
+    // come back with `scale` last, so saving a drawing, reloading it, and saving
+    // again produced two files that differed byte for byte with identical content
+    // — enough to make saved drawings undiffable and any text comparison lie.
     const style = {
       id,
       name: typeof value.name === 'string' && value.name.trim() ? value.name.trim() : id,
       arrowType: value.arrowType,
+      scale: value.scale,
       precision: value.precision === null || value.precision === undefined ? null : value.precision,
     };
+    if (style.precision !== null) {
+      const allowed = format ? LENGTH_FORMATS[format]?.precisions : null;
+      if (!allowed) return { error: 'sets a precision but the drawing has no usable length format' };
+      if (!allowed.includes(style.precision)) {
+        return { error: `has an unsupported precision ${String(style.precision)} for ${LENGTH_FORMATS[format].name}` };
+      }
+    }
     for (const field of DIM_NUMERIC_STYLE_FIELDS) {
       if (!Number.isFinite(value[field]) || value[field] <= 0) return { error: `has an invalid ${field}` };
       style[field] = value[field];
+    }
+    if (DIM_NUMERIC_STYLE_FIELDS.some(field => field !== 'scale' && !Number.isFinite(style[field] * style.scale))) {
+      return { error: 'has sizes outside the supported numeric range' };
     }
     return { style };
   }
@@ -1300,8 +1324,7 @@ kbd { font-size: 9px; opacity: .65; }
   // Everything the renderer, the hit test, and the bounding box need, derived
   // from the stored definition rather than cached, so there is no second copy
   // of the truth to keep in step.
-  function dimensionGeometry(entity) {
-    const style = getDimStyle(entity.styleId);
+  function dimensionGeometry(entity, style = getDimStyle(entity.styleId)) {
     const d = dimDirection(entity);
     const n = { x: -d.y, y: d.x };
     const along = point => (point.x - entity.linePoint.x) * d.x + (point.y - entity.linePoint.y) * d.y;
@@ -1447,11 +1470,15 @@ kbd { font-size: 9px; opacity: .65; }
   // ---------------------------------------------------------------------------
 
   function polygonArea(points) {
+    if (!points.length) return 0;
+    // Work near the origin to avoid cancellation at large drawing coordinates.
+    const origin = points[0];
     let total = 0;
     for (let i = 0; i < points.length; i++) {
       const current = points[i];
       const next = points[(i + 1) % points.length];
-      total += current.x * next.y - next.x * current.y;
+      total += (current.x - origin.x) * (next.y - origin.y) -
+        (next.x - origin.x) * (current.y - origin.y);
     }
     return total / 2;
   }
@@ -1500,15 +1527,17 @@ kbd { font-size: 9px; opacity: .65; }
     return entity;
   }
 
-  function duplicateEntities(entities) {
+  function duplicateEntities(entities, firstId = null) {
+    let nextId = firstId;
     const idMap = new Map();
     const copies = entities.map(entity => {
-      const id = allocateEntityId();
+      const id = firstId === null ? allocateEntityId() : nextId++;
       idMap.set(entity.id, id);
-      return { ...JSON.parse(JSON.stringify(entity)), id };
+      // Preserve non-finite values until validation can reject them.
+      return { ...structuredClone(entity), id };
     });
     for (const copy of copies) remapEntityReferences(copy, idMap);
-    return { entities: copies, idMap };
+    return { entities: copies, idMap, nextId: firstId === null ? state.nextId : nextId };
   }
 
   function cloneDimStyles() {
@@ -1796,6 +1825,51 @@ kbd { font-size: 9px; opacity: .65; }
   }
 
   // ---------------------------------------------------------------------------
+  // ui/inquiry.js
+  // ---------------------------------------------------------------------------
+
+  function showInquiryReport(title, groups) {
+    inquiryTitle.textContent = title;
+    inquiryBody.textContent = '';
+    for (const group of groups) {
+      const section = document.createElement('div');
+      section.className = 'inquiry-group';
+      if (group.title) {
+        const heading = document.createElement('div');
+        heading.className = 'inquiry-group-title';
+        heading.textContent = group.title;
+        section.appendChild(heading);
+      }
+      const list = document.createElement('dl');
+      list.style.margin = '0';
+      for (const [label, value] of group.rows || []) {
+        const row = document.createElement('div');
+        row.className = 'inquiry-row';
+        const term = document.createElement('dt');
+        term.textContent = label;
+        const detail = document.createElement('dd');
+        detail.textContent = value;
+        row.append(term, detail);
+        list.appendChild(row);
+      }
+      section.appendChild(list);
+      if (group.note) {
+        const note = document.createElement('div');
+        note.className = 'inquiry-note';
+        note.textContent = group.note;
+        section.appendChild(note);
+      }
+      inquiryBody.appendChild(section);
+    }
+    inquiryPanel.hidden = false;
+    inquiryPanel.scrollTop = 0;
+  }
+
+  function hideInquiryReport() {
+    inquiryPanel.hidden = true;
+  }
+
+  // ---------------------------------------------------------------------------
   // model/document.js
   // ---------------------------------------------------------------------------
 
@@ -1832,12 +1906,15 @@ kbd { font-size: 9px; opacity: .65; }
       currentLayerId: state.currentLayerId,
       nextId: state.nextId,
       nextLayerId: state.nextLayerId,
-      entities: cloneEntities(),
+      entities: state.entities,
     };
   }
 
   function exportDocumentText(pretty = true) {
-    return JSON.stringify(documentSnapshot(), null, pretty ? 2 : 0);
+    const document = documentSnapshot();
+    const checked = validateDocumentData(document);
+    if (checked.error) throw new Error(checked.error);
+    return JSON.stringify(document, null, pretty ? 2 : 0);
   }
 
   function cleanPoint(value) {
@@ -1870,7 +1947,7 @@ kbd { font-size: 9px; opacity: .65; }
 
   function cleanEntity(value, layerIds) {
     if (!value || typeof value !== 'object') return { error: 'must be an object' };
-    if (!Number.isSafeInteger(value.id) || value.id <= 0) return { error: 'has an invalid ID' };
+    if (!Number.isSafeInteger(value.id) || value.id <= 0 || value.id >= Number.MAX_SAFE_INTEGER) return { error: 'has an invalid ID' };
     const type = typeof value.type === 'string' ? value.type.toUpperCase() : '';
     const layerId = value.layerId === undefined ? '0' : String(value.layerId);
     if (!layerIds.has(layerId)) return { error: `references unknown layer ${layerId}` };
@@ -1892,6 +1969,9 @@ kbd { font-size: 9px; opacity: .65; }
       }
       const closed = Boolean(value.closed);
       if (closed && points.length < 3) return { error: 'has too few points to be closed' };
+      if (closed && dist(points[0], points[points.length - 1]) <= 1e-9) {
+        return { error: 'has a collapsed closing polyline segment' };
+      }
       return { entity: { ...common, points, closed } };
     }
 
@@ -1962,6 +2042,12 @@ kbd { font-size: 9px; opacity: .65; }
     } catch {
       return { error: 'The selected file is not valid JSON.' };
     }
+    return validateDocumentData(value);
+  }
+
+  // Loading, edit commits, manual save, and recovery share this validation.
+  // Validation happens on raw numbers before JSON can turn Infinity into null.
+  function validateDocumentData(value) {
     if (!value || typeof value !== 'object' || Array.isArray(value)) {
       return { error: 'The selected file is not a drawing document.' };
     }
@@ -2017,7 +2103,7 @@ kbd { font-size: 9px; opacity: .65; }
       dimStyles = [];
       const styleIds = new Set();
       for (let index = 0; index < value.dimStyles.length; index++) {
-        const parsed = parseDimStyle(value.dimStyles[index]);
+        const parsed = parseDimStyle(value.dimStyles[index], parsedUnits.settings.format);
         if (parsed.error) return { error: `Dimension style ${index + 1} ${parsed.error}.` };
         if (styleIds.has(parsed.style.id)) return { error: `Dimension style ${parsed.style.id} is duplicated.` };
         styleIds.add(parsed.style.id);
@@ -2039,6 +2125,8 @@ kbd { font-size: 9px; opacity: .65; }
       if (cleaned.entity.type === 'DIM' && !styleIdSet.has(cleaned.entity.styleId)) {
         return { error: `Entity ${index + 1} references unknown dimension style ${cleaned.entity.styleId}.` };
       }
+      const geometryError = entityGeometryError(cleaned.entity, dimStyles);
+      if (geometryError) return { error: `Entity ${index + 1} ${geometryError}.` };
       entityIds.add(cleaned.entity.id);
       entities.push(cleaned.entity);
     }
@@ -2065,6 +2153,54 @@ kbd { font-size: 9px; opacity: .65; }
     };
   }
 
+  function entityGeometryError(entity, styles = state.dimStyles) {
+    if (entity.type === 'DIM') {
+      const style = styles.find(value => value.id === entity.styleId);
+      if (!style) return 'references an unknown dimension style';
+      const geometry = dimensionGeometry(entity, style);
+      const points = [entity.p1, entity.p2, entity.linePoint, geometry.q1, geometry.q2,
+        geometry.textAnchor, ...(geometry.extension1 || []), ...(geometry.extension2 || [])];
+      if (!Number.isFinite(geometry.measure) || geometry.measure <= 1e-9 ||
+          points.some(point => !cleanPoint(point))) return 'has invalid dimension geometry';
+      return null;
+    }
+    const box = entityBBox(entity);
+    const length = entityLength(entity);
+    const area = entityArea(entity);
+    if (!box || Object.values(box).some(value => !Number.isFinite(value)) ||
+        !Number.isFinite(length) || !Number.isFinite(length * length) ||
+        (area !== null && !Number.isFinite(area))) {
+      return 'exceeds the supported numeric range';
+    }
+    return null;
+  }
+
+  // Build a complete candidate without mutating entities, IDs, history, or the
+  // command stage. Only a validated candidate may enter the undoable document.
+  function commitGeometry(entities, options = {}) {
+    const candidate = {
+      ...documentSnapshot(), entities,
+      nextId: options.nextId ?? state.nextId,
+      units: options.unitSettings ?? state.unitSettings,
+      dimStyles: options.dimStyles ?? state.dimStyles,
+    };
+    if (!Number.isSafeInteger(candidate.nextId) || candidate.nextId <= 0) {
+      updatePrompt('Edit rejected: no valid entity IDs remain.');
+      return false;
+    }
+    const checked = validateDocumentData(candidate);
+    if (checked.error) {
+      updatePrompt(`Edit rejected: ${checked.error}`);
+      return false;
+    }
+    pushHistory();
+    state.entities = checked.document.entities;
+    state.nextId = checked.document.nextId;
+    state.unitSettings = checked.document.unitSettings;
+    state.dimStyles = checked.document.dimStyles;
+    return true;
+  }
+
   // Report shape: [{ title, rows: [[label, value], ...], note }]
 
   // ---------------------------------------------------------------------------
@@ -2072,19 +2208,32 @@ kbd { font-size: 9px; opacity: .65; }
   // ---------------------------------------------------------------------------
 
   let autosaveTimer = null;
+  function writeAutosave() {
+    // Validate first: an invalid live document must not touch either saved copy.
+    const text = exportDocumentText(false);
+    const previous = window.localStorage.getItem(AUTOSAVE_KEY);
+    if (previous && previous !== text && !parseDocumentText(previous).error) {
+      // Write the backup before replacing the primary. If storage is full or
+      // unavailable, leave the existing primary intact and report the failure.
+      window.localStorage.setItem(AUTOSAVE_BACKUP_KEY, previous);
+    }
+    window.localStorage.setItem(AUTOSAVE_KEY, text);
+    return true;
+  }
+
   function scheduleAutosave() {
     if (!state.documentDirty) return;
     if (autosaveTimer !== null) clearTimeout(autosaveTimer);
     autosaveTimer = setTimeout(() => {
       autosaveTimer = null;
       try {
-        window.localStorage.setItem(AUTOSAVE_KEY, exportDocumentText(false));
+        writeAutosave();
         // Only clear the dirty flag once the write actually succeeded, so a failed
         // autosave does not also suppress the beforeunload save.
         state.documentDirty = false;
         setFileStatus(`${state.drawingName} · Autosaved`);
-      } catch {
-        setFileStatus('Autosave unavailable — use Save', true);
+      } catch (error) {
+        setFileStatus(`Autosave failed — saved recovery copies retained. ${error.message || 'Use Save.'}`, true);
       }
     }, 250);
   }
@@ -2149,6 +2298,295 @@ kbd { font-size: 9px; opacity: .65; }
     documentChanged();
     draw();
   }
+
+  // ---------------------------------------------------------------------------
+  // commands/registry.js
+  // ---------------------------------------------------------------------------
+
+  // ---------------------------------------------------------------------------
+  // Command registry
+  //
+  // A command's behaviour used to be spread across nine functions, each with its
+  // own branch on state.mode: entry, point handling, prompt text, preview, base
+  // point, ORTHO, distance entry, the Close/Undo keys, and Enter. Adding one
+  // meant editing all nine and hoping none was missed.
+  //
+  // A registered command puts that behaviour in a single object instead. The
+  // dispatchers below consulted the registry first and fell through to the
+  // original branches while the migration was under way; every command has now
+  // moved across, so the fall-through is gone and the dispatchers do nothing
+  // but ask the active command. Adding a command means adding one object here.
+  //
+  // A command may define:
+  //   stateMode        optional shared runtime mode used while this command runs
+  //   creates          clears the selection and requires an editable layer
+  //   canBegin()       validates activation; returning false refuses the command
+  //   usesOrtho        boolean or predicate controlling ORTHO for this stage
+  //   takesDistance    boolean or predicate: a typed number is a direct distance
+  //   additiveSelection  clicks during a selection stage add rather than replace
+  //   selectsObjects() whether this stage is gathering a selection
+  //   noteSelection()  how each object entered the selection: the window that
+  //                    caught it, or the fact that it was picked outright
+  //   commitsOnPick    a single pick completes the selection stage outright
+  //   usesSnap         boolean or predicate: false takes the raw cursor and
+  //                    reports no snap, for picks that name a place on the
+  //                    screen rather than a point in the drawing
+  //   snapExcludes()   an entity id that OSNAP must ignore
+  //   begin()          initialises command-specific transient state; may return
+  //                    COMMAND_COMPLETE when the command finishes on activation
+  //   prompt()         the command line text for the current stage
+  //   acceptsPoint()   whether typed point input is valid in the current stage
+  //   point(p)         a committed point
+  //   distance(value)  consumes a typed distance with command-specific meaning
+  //   keyword(text)    consumes a command-local keyword, ahead of alias lookup
+  //   value(text)      consumes typed input that is neither a point nor a
+  //                    distance: an angle in degrees, a scale factor
+  //   basePoint()      the anchor for ORTHO, relative entry, and direct
+  //                    distance, for commands that do not track currentPoints
+  //   previewReady()   whether preview() has enough state to draw; defaults to
+  //                    "at least one point has been picked"
+  //   preview(p)       the rubber band, drawn only once a point exists
+  //   snapSegments()   in-progress geometry that OSNAP should see
+  //   close()          the C keyword
+  //   undoPoint()      the U keyword
+  //   finish()         Enter, Space, or right-click
+  // ---------------------------------------------------------------------------
+
+  const COMMANDS = new Map();
+  const COMMAND_COMPLETE = Symbol('command-complete');
+
+  function defineCommand(name, spec) {
+    COMMANDS.set(name, spec);
+  }
+
+  function activeCommand() {
+    return COMMANDS.get(state.activeCommandName || state.mode) || null;
+  }
+
+  // Several hooks are either a fixed value or a predicate evaluated against the
+  // current stage. These readers are the only interpretation of that contract;
+  // every dispatcher and the test diagnostic go through them, so a hook cannot
+  // mean one thing to the program and another to a check.
+  function staged(value, command) {
+    return typeof value === 'function' ? Boolean(value.call(command)) : Boolean(value);
+  }
+
+  function commandUsesOrtho(command = activeCommand()) {
+    return command ? staged(command.usesOrtho, command) : false;
+  }
+
+  // Snapping is the default; a command opts out for the stages where the cursor
+  // position is the answer rather than an approximation of one.
+  function commandUsesSnap(command = activeCommand()) {
+    if (!command || command.usesSnap === undefined) return true;
+    return staged(command.usesSnap, command);
+  }
+
+  function commandTakesDistance(command = activeCommand()) {
+    return command ? staged(command.takesDistance, command) : false;
+  }
+
+  function commandAcceptsPoint(command = activeCommand()) {
+    if (!command?.point) return false;
+    return !command.acceptsPoint || Boolean(command.acceptsPoint());
+  }
+
+  function commandPreviewReady(command = activeCommand()) {
+    if (!command?.preview) return false;
+    // Most commands are ready to preview once a point exists; those that track
+    // their progress elsewhere say so themselves.
+    return command.previewReady
+      ? Boolean(command.previewReady())
+      : state.currentPoints.length > 0;
+  }
+
+  function commandSelectsObjects(command = activeCommand()) {
+    return Boolean(command?.selectsObjects?.());
+  }
+
+
+  // Anything that would rewrite the document out from under a running command
+  // has to ask this first. A unit rescale during MOVE moves the entities but not
+  // the base point already staged in state.transform; creating a layer during
+  // LINE pushes an undo step, so the next local U undoes the layer instead of the
+  // last segment. Both are the same fault: two things editing at once.
+  function commandInProgress() {
+    return state.mode !== 'SELECT' ||
+      state.currentPoints.length > 0 ||
+      Boolean(state.transform || state.offset || state.edit || state.grip || state.dimension);
+  }
+
+  // Refuse an out-of-band document change and say why. Returns true when the
+  // caller is clear to proceed.
+  function requireIdle(what) {
+    if (!commandInProgress()) return true;
+    updatePrompt(`Finish or cancel ${state.activeCommandName || state.mode} with Esc before ${what}.`);
+    return false;
+  }
+
+  function activateCommandMode(commandName) {
+    const command = COMMANDS.get(commandName);
+    if (command?.canBegin && !command.canBegin()) return false;
+    if (command?.creates) {
+      if (!currentLayerIsEditable()) return false;
+      // Existing selection is unrelated to creation and would otherwise remain
+      // highlighted throughout the command. New geometry also stays unselected.
+      state.selected.clear();
+    }
+    setMode(command?.stateMode || commandName, commandName);
+    return true;
+  }
+
+  function setMode(mode, commandName = mode) {
+    state.mode = mode;
+    state.activeCommandName = COMMANDS.has(commandName) ? commandName : null;
+    state.currentPoints = [];
+    state.transform = null;
+    state.offset = null;
+    state.inquiry = null;
+    state.dimension = null;
+    state.edit = null;
+    state.grip = null;
+    state.gripPress = false;
+    state.circle = null;
+    state.snap = null;
+    const command = activeCommand();
+    const beginResult = command?.begin?.();
+    // Some commands are complete as soon as they inspect the activation state.
+    // LIST, for example, reports a preselection without entering a live mode.
+    if (beginResult === COMMAND_COMPLETE) {
+      state.mode = 'SELECT';
+      state.activeCommandName = null;
+      state.currentPoints = [];
+      state.inquiry = null;
+      state.edit = null;
+      state.transform = null;
+      state.offset = null;
+      state.dimension = null;
+      state.circle = null;
+      state.grip = null;
+    }
+    // Match the command, falling back to the mode. DIMLINEAR and DIMALIGNED both
+    // run as mode DIM, so comparing against the mode left neither button lit.
+    document.querySelectorAll('[data-command]').forEach(b => {
+      b.classList.toggle('active', b.dataset.command === (state.activeCommandName || state.mode));
+    });
+    updatePrompt();
+    draw();
+  }
+
+  function commitPoint(p) {
+    if (!cleanPoint(p)) {
+      updatePrompt('Invalid point: coordinates must be finite numbers.');
+      return false;
+    }
+    activeCommand()?.point?.(p);
+    draw();
+  }
+
+  function finishCurrent() {
+    const command = activeCommand();
+    // The return value reports whether the command consumed the default action;
+    // an explicit false means the key still belongs to whoever asked.
+    if (command?.finish) return command.finish();
+    state.currentPoints = [];
+    updatePrompt();
+    draw();
+    return undefined;
+  }
+
+  // C — close the run back to its start point, then end the command.
+  function closeCurrentPath() {
+    const command = activeCommand();
+    if (command?.close) {
+      command.close();
+      return true;
+    }
+    return false;
+  }
+
+  // U — step back one point without leaving the command.
+  function undoLastPoint() {
+    const command = activeCommand();
+    if (command?.undoPoint) {
+      command.undoPoint();
+      return true;
+    }
+    return false;
+  }
+
+  // Accepts a decimal, a bare fraction, or a mixed number: 3.5 / 1/2 / 3 1/2 / 3-1/2
+  // Central cancellation policy. Keep this separate from the DOM key handler
+  // so the command contract can be exercised without synthesizing a browser
+  // event, and so future command modules have one cancellation boundary.
+  function cancelCurrent() {
+    if (state.mode !== 'SELECT' || state.currentPoints.length) {
+      state.currentPoints = [];
+      setMode('SELECT');
+    } else if (!inquiryPanel.hidden) {
+      hideInquiryReport();
+    } else {
+      state.selected.clear();
+      draw();
+    }
+    commandInput.value = '';
+  }
+
+  // Global history must never restore the document underneath a live command
+  // while leaving that command's points or stage intact. The first Undo/Redo
+  // request cancels the command only; a repeated request at Command: navigates
+  // document history. Keyboard shortcuts and toolbar buttons share this path.
+  function navigateHistory(direction) {
+    const action = String(direction).toUpperCase();
+    if (action !== 'UNDO' && action !== 'REDO') return false;
+
+    if (state.mode !== 'SELECT') {
+      const cancelledMode = state.mode;
+      cancelCurrent();
+      const label = action === 'UNDO' ? 'Undo' : 'Redo';
+      updatePrompt(`${cancelledMode} canceled. ${label} again to change drawing history.`);
+      return false;
+    }
+
+    if (action === 'UNDO') undo();
+    else redo();
+    return true;
+  }
+
+  // A few command names never start a mode: they open a dialog or move the view
+  // and are finished the moment they are typed. Their implementations live in the
+  // view and UI layers, which sit above the registry, so those layers register the
+  // action here rather than the registry reaching up to call them.
+  const DIRECT_ACTIONS = new Map();
+
+  function registerDirectAction(name, action) {
+    DIRECT_ACTIONS.set(name, action);
+  }
+
+  function startCommand(name) {
+    const direct = DIRECT_ACTIONS.get(name);
+    if (direct) { direct(); return true; }
+    // Shared by typed commands and toolbar buttons. Direct view actions remain
+    // available; document dialogs have their own idle gate.
+    if (commandInProgress()) {
+      const running = state.activeCommandName || state.mode;
+      updatePrompt(name === running
+        ? `${running} is already running. Finish it or cancel with Esc.`
+        : `Finish ${running} or cancel with Esc before starting ${name}.`);
+      return false;
+    }
+    const started = activateCommandMode(name);
+    // SELECT is a resting state, not a command worth repeating.
+    if (started && name !== 'SELECT') state.lastCommand = name;
+    return started;
+  }
+
+  // SELECT is the resting state and has no command of its own, so the bare prompt
+  // is what remains when nothing is registered for the active mode.
+  setPromptProvider(() => {
+    const command = activeCommand();
+    return command?.prompt ? command.prompt() : 'Command:';
+  });
 
   // ---------------------------------------------------------------------------
   // geometry/transform.js
@@ -2369,6 +2807,9 @@ kbd { font-size: 9px; opacity: .65; }
   }
 
   function openUnitsDialog() {
+    // Rescaling mid-command moves the entities but not the points already staged
+    // in state.transform, leaving a MOVE anchored to the old coordinates.
+    if (!requireIdle('changing units')) return;
     pendingUnits = { ...state.unitSettings };
     unitRescaleCheck.checked = false;
     unitsDialog.hidden = false;
@@ -2394,19 +2835,24 @@ kbd { font-size: 9px; opacity: .65; }
       next.precision === state.unitSettings.precision;
     if (unchanged) { closeUnitsDialog(); return; }
 
-    pushHistory();
+    let entities = state.entities;
     if (rescale) {
       // Convert geometry about the origin so a 120" line stays 10 feet long when
       // the drawing unit becomes millimetres.
       const factor = unitConversion(previousUnit, next.drawingUnit);
       const origin = { x: 0, y: 0 };
-      state.entities = state.entities.map(entity => scaleEntity(entity, origin, factor));
+      entities = entities.map(entity => scaleEntity(entity, origin, factor));
     }
+    let dimStyles = state.dimStyles;
     if (next.drawingUnit !== previousUnit) {
-      state.dimStyles = state.dimStyles.map(style =>
+      dimStyles = dimStyles.map(style =>
         rebaseDimStyleUnit(style, previousUnit, next.drawingUnit));
     }
-    state.unitSettings = next;
+    // A precision meaningful for decimals may not exist for fractions.
+    dimStyles = dimStyles.map(style => style.precision !== null &&
+      !LENGTH_FORMATS[next.format].precisions.includes(style.precision)
+      ? { ...style, precision: null } : style);
+    if (!commitGeometry(entities, { unitSettings: next, dimStyles })) return;
     renderUnitStatus();
     updatePrompt();
     setFileStatus(`${state.drawingName} · Units set to ${unitSummary()}`);
@@ -2473,6 +2919,7 @@ kbd { font-size: 9px; opacity: .65; }
   }
 
   function openDimStyleDialog() {
+    if (!requireIdle('changing the dimension style')) return;
     pendingDimStyle = { ...getDimStyle(DEFAULT_DIM_STYLE_ID) };
     dimStyleDialog.hidden = false;
     refreshDimStyleDialog();
@@ -2488,7 +2935,7 @@ kbd { font-size: 9px; opacity: .65; }
   function applyDimStyleDialog() {
     if (!pendingDimStyle) return;
     const candidate = { ...getDimStyle(DEFAULT_DIM_STYLE_ID), ...pendingDimStyle };
-    const parsed = parseDimStyle(candidate);
+    const parsed = parseDimStyle(candidate, state.unitSettings.format);
     if (parsed.error) {
       updatePrompt(`The dimension style ${parsed.error}.`);
       return;
@@ -2497,9 +2944,9 @@ kbd { font-size: 9px; opacity: .65; }
     const unchanged = DIM_NUMERIC_STYLE_FIELDS.every(field => current[field] === parsed.style[field]) &&
       current.arrowType === parsed.style.arrowType && current.precision === parsed.style.precision;
     if (unchanged) { closeDimStyleDialog(); return; }
-    pushHistory();
-    state.dimStyles = state.dimStyles.map(style =>
+    const dimStyles = state.dimStyles.map(style =>
       style.id === parsed.style.id ? parsed.style : style);
+    if (!commitGeometry(state.entities, { dimStyles })) return;
     setFileStatus(`${state.drawingName} · Dimension style updated`);
     closeDimStyleDialog();
     draw();
@@ -2615,300 +3062,6 @@ kbd { font-size: 9px; opacity: .65; }
     snapDialog.hidden = true;
     canvas.focus();
   }
-
-  // ---------------------------------------------------------------------------
-  // ui/inquiry.js
-  // ---------------------------------------------------------------------------
-
-  function showInquiryReport(title, groups) {
-    inquiryTitle.textContent = title;
-    inquiryBody.textContent = '';
-    for (const group of groups) {
-      const section = document.createElement('div');
-      section.className = 'inquiry-group';
-      if (group.title) {
-        const heading = document.createElement('div');
-        heading.className = 'inquiry-group-title';
-        heading.textContent = group.title;
-        section.appendChild(heading);
-      }
-      const list = document.createElement('dl');
-      list.style.margin = '0';
-      for (const [label, value] of group.rows || []) {
-        const row = document.createElement('div');
-        row.className = 'inquiry-row';
-        const term = document.createElement('dt');
-        term.textContent = label;
-        const detail = document.createElement('dd');
-        detail.textContent = value;
-        row.append(term, detail);
-        list.appendChild(row);
-      }
-      section.appendChild(list);
-      if (group.note) {
-        const note = document.createElement('div');
-        note.className = 'inquiry-note';
-        note.textContent = group.note;
-        section.appendChild(note);
-      }
-      inquiryBody.appendChild(section);
-    }
-    inquiryPanel.hidden = false;
-    inquiryPanel.scrollTop = 0;
-  }
-
-  function hideInquiryReport() {
-    inquiryPanel.hidden = true;
-  }
-
-  // ---------------------------------------------------------------------------
-  // commands/registry.js
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Command registry
-  //
-  // A command's behaviour used to be spread across nine functions, each with its
-  // own branch on state.mode: entry, point handling, prompt text, preview, base
-  // point, ORTHO, distance entry, the Close/Undo keys, and Enter. Adding one
-  // meant editing all nine and hoping none was missed.
-  //
-  // A registered command puts that behaviour in a single object instead. The
-  // dispatchers below consulted the registry first and fell through to the
-  // original branches while the migration was under way; every command has now
-  // moved across, so the fall-through is gone and the dispatchers do nothing
-  // but ask the active command. Adding a command means adding one object here.
-  //
-  // A command may define:
-  //   stateMode        optional shared runtime mode used while this command runs
-  //   creates          clears the selection and requires an editable layer
-  //   canBegin()       validates activation; returning false refuses the command
-  //   usesOrtho        boolean or predicate controlling ORTHO for this stage
-  //   takesDistance    boolean or predicate: a typed number is a direct distance
-  //   additiveSelection  clicks during a selection stage add rather than replace
-  //   selectsObjects() whether this stage is gathering a selection
-  //   noteSelection()  how each object entered the selection: the window that
-  //                    caught it, or the fact that it was picked outright
-  //   commitsOnPick    a single pick completes the selection stage outright
-  //   usesSnap         boolean or predicate: false takes the raw cursor and
-  //                    reports no snap, for picks that name a place on the
-  //                    screen rather than a point in the drawing
-  //   snapExcludes()   an entity id that OSNAP must ignore
-  //   begin()          initialises command-specific transient state; may return
-  //                    COMMAND_COMPLETE when the command finishes on activation
-  //   prompt()         the command line text for the current stage
-  //   acceptsPoint()   whether typed point input is valid in the current stage
-  //   point(p)         a committed point
-  //   distance(value)  consumes a typed distance with command-specific meaning
-  //   keyword(text)    consumes a command-local keyword, ahead of alias lookup
-  //   value(text)      consumes typed input that is neither a point nor a
-  //                    distance: an angle in degrees, a scale factor
-  //   basePoint()      the anchor for ORTHO, relative entry, and direct
-  //                    distance, for commands that do not track currentPoints
-  //   previewReady()   whether preview() has enough state to draw; defaults to
-  //                    "at least one point has been picked"
-  //   preview(p)       the rubber band, drawn only once a point exists
-  //   snapSegments()   in-progress geometry that OSNAP should see
-  //   close()          the C keyword
-  //   undoPoint()      the U keyword
-  //   finish()         Enter, Space, or right-click
-  // ---------------------------------------------------------------------------
-
-  const COMMANDS = new Map();
-  const COMMAND_COMPLETE = Symbol('command-complete');
-
-  function defineCommand(name, spec) {
-    COMMANDS.set(name, spec);
-  }
-
-  function activeCommand() {
-    return COMMANDS.get(state.activeCommandName || state.mode) || null;
-  }
-
-  // Several hooks are either a fixed value or a predicate evaluated against the
-  // current stage. These readers are the only interpretation of that contract;
-  // every dispatcher and the test diagnostic go through them, so a hook cannot
-  // mean one thing to the program and another to a check.
-  function staged(value, command) {
-    return typeof value === 'function' ? Boolean(value.call(command)) : Boolean(value);
-  }
-
-  function commandUsesOrtho(command = activeCommand()) {
-    return command ? staged(command.usesOrtho, command) : false;
-  }
-
-  // Snapping is the default; a command opts out for the stages where the cursor
-  // position is the answer rather than an approximation of one.
-  function commandUsesSnap(command = activeCommand()) {
-    if (!command || command.usesSnap === undefined) return true;
-    return staged(command.usesSnap, command);
-  }
-
-  function commandTakesDistance(command = activeCommand()) {
-    return command ? staged(command.takesDistance, command) : false;
-  }
-
-  function commandAcceptsPoint(command = activeCommand()) {
-    if (!command?.point) return false;
-    return !command.acceptsPoint || Boolean(command.acceptsPoint());
-  }
-
-  function commandPreviewReady(command = activeCommand()) {
-    if (!command?.preview) return false;
-    // Most commands are ready to preview once a point exists; those that track
-    // their progress elsewhere say so themselves.
-    return command.previewReady
-      ? Boolean(command.previewReady())
-      : state.currentPoints.length > 0;
-  }
-
-  function commandSelectsObjects(command = activeCommand()) {
-    return Boolean(command?.selectsObjects?.());
-  }
-
-
-  function activateCommandMode(commandName) {
-    const command = COMMANDS.get(commandName);
-    if (command?.canBegin && !command.canBegin()) return false;
-    if (command?.creates) {
-      if (!currentLayerIsEditable()) return false;
-      // Existing selection is unrelated to creation and would otherwise remain
-      // highlighted throughout the command. New geometry also stays unselected.
-      state.selected.clear();
-    }
-    setMode(command?.stateMode || commandName, commandName);
-    return true;
-  }
-
-  function setMode(mode, commandName = mode) {
-    state.mode = mode;
-    state.activeCommandName = COMMANDS.has(commandName) ? commandName : null;
-    state.currentPoints = [];
-    state.transform = null;
-    state.offset = null;
-    state.inquiry = null;
-    state.dimension = null;
-    state.edit = null;
-    state.grip = null;
-    state.gripPress = false;
-    state.circle = null;
-    state.snap = null;
-    const command = activeCommand();
-    const beginResult = command?.begin?.();
-    // Some commands are complete as soon as they inspect the activation state.
-    // LIST, for example, reports a preselection without entering a live mode.
-    if (beginResult === COMMAND_COMPLETE) {
-      state.mode = 'SELECT';
-      state.activeCommandName = null;
-      state.currentPoints = [];
-      state.inquiry = null;
-    }
-    document.querySelectorAll('[data-command]').forEach(b => {
-      b.classList.toggle('active', b.dataset.command === state.mode);
-    });
-    updatePrompt();
-    draw();
-  }
-
-  function commitPoint(p) {
-    activeCommand()?.point?.(p);
-    draw();
-  }
-
-  function finishCurrent() {
-    const command = activeCommand();
-    // The return value reports whether the command consumed the default action;
-    // an explicit false means the key still belongs to whoever asked.
-    if (command?.finish) return command.finish();
-    state.currentPoints = [];
-    updatePrompt();
-    draw();
-    return undefined;
-  }
-
-  // C — close the run back to its start point, then end the command.
-  function closeCurrentPath() {
-    const command = activeCommand();
-    if (command?.close) {
-      command.close();
-      return true;
-    }
-    return false;
-  }
-
-  // U — step back one point without leaving the command.
-  function undoLastPoint() {
-    const command = activeCommand();
-    if (command?.undoPoint) {
-      command.undoPoint();
-      return true;
-    }
-    return false;
-  }
-
-  // Accepts a decimal, a bare fraction, or a mixed number: 3.5 / 1/2 / 3 1/2 / 3-1/2
-  // Central cancellation policy. Keep this separate from the DOM key handler
-  // so the command contract can be exercised without synthesizing a browser
-  // event, and so future command modules have one cancellation boundary.
-  function cancelCurrent() {
-    if (state.mode !== 'SELECT' || state.currentPoints.length) {
-      state.currentPoints = [];
-      setMode('SELECT');
-    } else if (!inquiryPanel.hidden) {
-      hideInquiryReport();
-    } else {
-      state.selected.clear();
-      draw();
-    }
-    commandInput.value = '';
-  }
-
-  // Global history must never restore the document underneath a live command
-  // while leaving that command's points or stage intact. The first Undo/Redo
-  // request cancels the command only; a repeated request at Command: navigates
-  // document history. Keyboard shortcuts and toolbar buttons share this path.
-  function navigateHistory(direction) {
-    const action = String(direction).toUpperCase();
-    if (action !== 'UNDO' && action !== 'REDO') return false;
-
-    if (state.mode !== 'SELECT') {
-      const cancelledMode = state.mode;
-      cancelCurrent();
-      const label = action === 'UNDO' ? 'Undo' : 'Redo';
-      updatePrompt(`${cancelledMode} canceled. ${label} again to change drawing history.`);
-      return false;
-    }
-
-    if (action === 'UNDO') undo();
-    else redo();
-    return true;
-  }
-
-  // A few command names never start a mode: they open a dialog or move the view
-  // and are finished the moment they are typed. Their implementations live in the
-  // view and UI layers, which sit above the registry, so those layers register the
-  // action here rather than the registry reaching up to call them.
-  const DIRECT_ACTIONS = new Map();
-
-  function registerDirectAction(name, action) {
-    DIRECT_ACTIONS.set(name, action);
-  }
-
-  function startCommand(name) {
-    const direct = DIRECT_ACTIONS.get(name);
-    if (direct) { direct(); return true; }
-    const started = activateCommandMode(name);
-    // SELECT is a resting state, not a command worth repeating.
-    if (started && name !== 'SELECT') state.lastCommand = name;
-    return started;
-  }
-
-  // SELECT is the resting state and has no command of its own, so the bare prompt
-  // is what remains when nothing is registered for the active mode.
-  setPromptProvider(() => {
-    const command = activeCommand();
-    return command?.prompt ? command.prompt() : 'Command:';
-  });
 
   // ---------------------------------------------------------------------------
   // interaction/snap.js
@@ -3067,11 +3220,16 @@ kbd { font-size: 9px; opacity: .65; }
         const s = worldToScreen(c.p);
         const px = Math.hypot(s.x - state.mouseScreen.x, s.y - state.mouseScreen.y);
         if (px > maxPx) continue;
-        if (!best) { best = { ...c, px }; continue; }
+        if (!best) { best = { ...c, px, screen: s }; continue; }
         const nearer = px < best.px - SNAP_COINCIDENT_PX;
-        const sameSpot = Math.abs(px - best.px) <= SNAP_COINCIDENT_PX;
+        // Rank only decides between candidates at the SAME PLACE. Comparing each
+        // candidate's distance from the cursor instead let two points on opposite
+        // sides of the cursor count as coincident, so a higher-ranked endpoint
+        // could beat a midpoint a dozen pixels nearer.
+        const apart = Math.hypot(s.x - best.screen.x, s.y - best.screen.y);
+        const sameSpot = apart <= SNAP_COINCIDENT_PX;
         const outranks = sameSpot && (SNAP_RANK[c.type] ?? 99) < (SNAP_RANK[best.type] ?? 99);
-        if (nearer || outranks) best = { ...c, px };
+        if (nearer || outranks) best = { ...c, px, screen: s };
       }
       return best;
     }
@@ -3085,33 +3243,38 @@ kbd { font-size: 9px; opacity: .65; }
 
   function addLine(a, b) {
     if (dist(a, b) < 1e-9 || !currentLayerIsEditable()) return false;
-    pushHistory();
-    state.entities.push({
-      id: state.nextId++,
+    return commitGeometry([...state.entities, {
+      id: state.nextId,
       type: 'LINE',
       layerId: state.currentLayerId,
       a: { ...a },
       b: { ...b },
-    });
-    return true;
+    }], { nextId: state.nextId + 1 });
   }
 
   function addPolyline(points, forceClosed = false) {
     if (points.length < 2 || !currentLayerIsEditable()) return false;
-    const storedPoints = points.map(point => ({ ...point }));
+    // Never write what the loader will not read back. Every caller funnels
+    // through here, so this is the one place duplicate consecutive points can be
+    // ruled out for good rather than guarded at each entry point.
+    const storedPoints = [];
+    for (const point of points) {
+      const last = storedPoints[storedPoints.length - 1];
+      if (last && dist(last, point) <= 1e-9) continue;
+      storedPoints.push({ ...point });
+    }
+    if (storedPoints.length < 2) return false;
     const closesAtStart = storedPoints.length >= 4 && dist(storedPoints[0], storedPoints[storedPoints.length - 1]) < 1e-7;
     if (closesAtStart) storedPoints.pop();
     const closed = forceClosed || closesAtStart;
     if (closed && storedPoints.length < 3) return false;
-    pushHistory();
-    state.entities.push({
-      id: state.nextId++,
+    return commitGeometry([...state.entities, {
+      id: state.nextId,
       type: 'PLINE',
       layerId: state.currentLayerId,
       points: storedPoints,
       closed,
-    });
-    return true;
+    }], { nextId: state.nextId + 1 });
   }
 
   function addRectangle(first, opposite) {
@@ -3127,15 +3290,13 @@ kbd { font-size: 9px; opacity: .65; }
 
   function addCircle(center, radius) {
     if (!Number.isFinite(radius) || radius <= 1e-9 || !currentLayerIsEditable()) return false;
-    pushHistory();
-    state.entities.push({
-      id: state.nextId++,
+    return commitGeometry([...state.entities, {
+      id: state.nextId,
       type: 'CIRCLE',
       layerId: state.currentLayerId,
       center: { ...center },
       radius,
-    });
-    return true;
+    }], { nextId: state.nextId + 1 });
   }
 
   function circumcircleFromThreePoints(first, second, third) {
@@ -3207,10 +3368,7 @@ kbd { font-size: 9px; opacity: .65; }
     if (!currentLayerIsEditable()) return false;
     const arc = threePointArc(start, through, end, state.nextId);
     if (!arc) return false;
-    pushHistory();
-    state.nextId++;
-    state.entities.push(arc);
-    return true;
+    return commitGeometry([...state.entities, arc], { nextId: state.nextId + 1 });
   }
 
   // ---------------------------------------------------------------------------
@@ -3557,12 +3715,14 @@ kbd { font-size: 9px; opacity: .65; }
   function replaceEditedEntity(entity, replacements) {
     const entityIndex = state.entities.findIndex(candidate => candidate.id === entity.id);
     if (entityIndex < 0) return;
-    pushHistory();
+    let nextId = state.nextId;
     const assigned = replacements.map((replacement, index) => ({
       ...replacement,
-      id: index === 0 ? entity.id : state.nextId++,
+      id: index === 0 ? entity.id : nextId++,
     }));
-    state.entities.splice(entityIndex, 1, ...assigned);
+    const entities = state.entities.slice();
+    entities.splice(entityIndex, 1, ...assigned);
+    if (!commitGeometry(entities, { nextId })) return false;
     state.selected.clear();
     updatePrompt();
     draw();
@@ -3651,8 +3811,7 @@ kbd { font-size: 9px; opacity: .65; }
       .filter(entity => state.selected.has(entity.id) && isEntityEditable(entity))
       .map(entity => entity.id));
     if (!deletable.size) return;
-    pushHistory();
-    state.entities = state.entities.filter(e => !deletable.has(e.id));
+    if (!commitGeometry(state.entities.filter(e => !deletable.has(e.id)))) return;
     state.selected.clear();
     draw();
   }
@@ -4023,8 +4182,7 @@ kbd { font-size: 9px; opacity: .65; }
       draw();
       return false;
     }
-    pushHistory();
-    state.entities = state.entities.map(value => value.id === entity.id ? result.entity : value);
+    if (!commitGeometry(state.entities.map(value => value.id === entity.id ? result.entity : value))) return false;
     setMode('SELECT');
     return true;
   }
@@ -4330,7 +4488,10 @@ kbd { font-size: 9px; opacity: .65; }
 
   function drawPreview() {
     const command = activeCommand();
-    if (command?.preview && commandPreviewReady(command)) command.preview(getActivePoint());
+    // render() has already resolved the active point for this frame. Calling
+    // getActivePoint() again here ran the whole snap search a second time, so
+    // every frame paid for snapping twice.
+    if (command?.preview && commandPreviewReady(command)) command.preview(state.activePoint);
   }
 
   function drawPolarTracking() {
@@ -4421,6 +4582,8 @@ kbd { font-size: 9px; opacity: .65; }
   }
 
   function render() {
+    document.getElementById('dimensionNotice').hidden = state.mode !== 'DIM' &&
+      !state.entities.some(entity => entity.type === 'DIM');
     resetFrameLabels();
     state.activePoint = getActivePoint();
     coordXEl.textContent = formatLength(state.activePoint.x);
@@ -4527,6 +4690,14 @@ kbd { font-size: 9px; opacity: .65; }
     },
 
     point(p) {
+      // The loader rejects duplicate consecutive points, so accepting one here
+      // would produce a drawing that saves and then refuses to reopen. A
+      // double-click is enough to send the same point twice.
+      const last = state.currentPoints[state.currentPoints.length - 1];
+      if (last && dist(last, p) <= 1e-9) {
+        updatePrompt('PLINE — That is the same point. Specify a different next point:');
+        return;
+      }
       state.currentPoints.push({ ...p });
       updatePrompt();
     },
@@ -4569,7 +4740,7 @@ kbd { font-size: 9px; opacity: .65; }
     },
 
     finish() {
-      if (state.currentPoints.length >= 2) addPolyline(state.currentPoints);
+      if (state.currentPoints.length >= 2 && !addPolyline(state.currentPoints)) return false;
       state.currentPoints = [];
       setMode('SELECT');
     },
@@ -5188,6 +5359,11 @@ kbd { font-size: 9px; opacity: .65; }
       // sacrificing their canonical identity for prompts and command repeat.
       stateMode: 'DIM',
 
+      // A dimension is new geometry, so it behaves like the other creation
+      // commands: an existing selection is unrelated and is cleared on entry
+      // rather than left highlighted through the command.
+      creates: true,
+
       canBegin() {
         if (currentLayerIsEditable()) return true;
         updatePrompt('The current layer is locked or hidden.');
@@ -5258,10 +5434,8 @@ kbd { font-size: 9px; opacity: .65; }
       updatePrompt('That dimension line direction measures nothing. Try the other side.');
       return false;
     }
-    pushHistory();
-    entity.id = allocateEntityId();
-    state.entities.push(entity);
-    return true;
+    entity.id = state.nextId;
+    return commitGeometry([...state.entities, entity], { nextId: state.nextId + 1 });
   }
 
   // ---------------------------------------------------------------------------
@@ -5284,7 +5458,9 @@ kbd { font-size: 9px; opacity: .65; }
       return denominator > 0 ? Number(fraction[1]) / denominator : null;
     }
 
-    return /^\d+(?:\.\d+)?$/.test(s) ? Number(s) : null;
+    // A leading or trailing point is ordinary CAD entry: .5 and 5. both mean
+    // what they look like, and rejecting them made the command line feel broken.
+    return /^(?:\d+(?:\.\d*)?|\.\d+)$/.test(s) ? Number(s) : null;
   }
 
   // Ordered longest-first so mm beats m and cm beats m.
@@ -5306,6 +5482,7 @@ kbd { font-size: 9px; opacity: .65; }
     if (!s) return null;
 
     const toDrawing = unit => unitConversion(unit, settings.drawingUnit);
+    const finite = value => Number.isFinite(value) ? value : null;
 
     // Feet, optionally with inches: 5'   5'6"   5'6-1/2"   5 ft 6 in
     const ftIn = s.match(/^([\d./ -]*\d)\s*(?:'|ft|feet)\s*(?:[-\s]*(.+?)\s*(?:"|in|inch|inches)?)?$/);
@@ -5313,7 +5490,7 @@ kbd { font-size: 9px; opacity: .65; }
       const feet = parseMagnitude(ftIn[1]);
       const inchPart = ftIn[2] === undefined ? 0 : parseMagnitude(ftIn[2]);
       if (feet !== null && inchPart !== null) {
-        return sign * (feet * 12 + inchPart) * toDrawing('inches');
+        return finite(sign * (feet * 12 + inchPart) * toDrawing('inches'));
       }
     }
 
@@ -5322,12 +5499,12 @@ kbd { font-size: 9px; opacity: .65; }
       const match = s.match(pattern);
       if (!match) continue;
       const value = parseMagnitude(match[1]);
-      if (value !== null) return sign * value * toDrawing(unit);
+      if (value !== null) return finite(sign * value * toDrawing(unit));
     }
 
     // A bare number or fraction is already in drawing units.
     const bare = parseMagnitude(s);
-    return bare === null ? null : sign * bare;
+    return bare === null ? null : finite(sign * bare);
   }
 
   function parsePoint(text, basePoint) {
@@ -5343,13 +5520,15 @@ kbd { font-size: 9px; opacity: .65; }
     const polarSeparator = body.lastIndexOf('<');
     if (polarSeparator > 0) {
       const distance = parseDistance(body.slice(0, polarSeparator));
-      const angle = Number(body.slice(polarSeparator + 1).trim());
+      const angleText = body.slice(polarSeparator + 1).trim();
+      if (!angleText) return null;
+      const angle = Number(angleText);
       if (distance === null || !Number.isFinite(angle)) return null;
-      const radians = angle * Math.PI / 180;
-      return {
+      const radians = (angle % 360) * Math.PI / 180;
+      return cleanPoint({
         x: origin.x + distance * Math.cos(radians),
         y: origin.y + distance * Math.sin(radians),
-      };
+      });
     }
 
     const parts = body.split(',');
@@ -5357,7 +5536,7 @@ kbd { font-size: 9px; opacity: .65; }
     const x = parseDistance(parts[0]);
     const y = parseDistance(parts[1]);
     if (x === null || y === null) return null;
-    return { x: origin.x + x, y: origin.y + y };
+    return cleanPoint({ x: origin.x + x, y: origin.y + y });
   }
 
   function commitPointInput(text) {
@@ -5885,18 +6064,18 @@ kbd { font-size: 9px; opacity: .65; }
       updatePrompt('The selected objects are no longer editable.');
       return;
     }
-    pushHistory();
     if (operation.type === 'MOVE') {
-      state.entities = state.entities.map(entity =>
+      const entities = state.entities.map(entity =>
         idSet.has(entity.id) ? translateEntity(entity, dx, dy) : entity,
       );
+      if (!commitGeometry(entities)) return;
       state.selected = new Set(idSet);
     } else {
       const moved = state.entities
         .filter(entity => idSet.has(entity.id))
         .map(entity => translateEntity(entity, dx, dy));
-      const { entities: copies } = duplicateEntities(moved);
-      state.entities.push(...copies);
+      const { entities: copies, nextId } = duplicateEntities(moved, state.nextId);
+      if (!commitGeometry([...state.entities, ...copies], { nextId })) return;
       state.selected = new Set(copies.map(entity => entity.id));
     }
     setMode('SELECT');
@@ -5905,6 +6084,10 @@ kbd { font-size: 9px; opacity: .65; }
   function applyRotation(angle) {
     const operation = state.transform;
     if (!operation?.base || !['ANGLE', 'ROTATE_TARGET'].includes(operation.stage) || operation.type !== 'ROTATE') return;
+    if (!Number.isFinite(angle)) {
+      updatePrompt('Rotation angle must be a finite number.');
+      return;
+    }
     const reducedAngle = Math.atan2(Math.sin(angle), Math.cos(angle));
     if (Math.abs(reducedAngle) < 1e-10) {
       updatePrompt('Rotation angle must differ from zero.');
@@ -5918,10 +6101,10 @@ kbd { font-size: 9px; opacity: .65; }
       updatePrompt('The selected objects are no longer editable.');
       return;
     }
-    pushHistory();
-    state.entities = state.entities.map(entity =>
+    const entities = state.entities.map(entity =>
       idSet.has(entity.id) ? rotateEntity(entity, operation.base, reducedAngle) : entity,
     );
+    if (!commitGeometry(entities)) return;
     state.selected = new Set(idSet);
     setMode('SELECT');
   }
@@ -5958,8 +6141,7 @@ kbd { font-size: 9px; opacity: .65; }
       scaled.set(entity.id, result);
     }
 
-    pushHistory();
-    state.entities = state.entities.map(entity => scaled.get(entity.id) || entity);
+    if (!commitGeometry(state.entities.map(entity => scaled.get(entity.id) || entity))) return;
     state.selected = new Set(idSet);
     setMode('SELECT');
   }
@@ -6001,9 +6183,12 @@ kbd { font-size: 9px; opacity: .65; }
     return true;
   }
 
-  function restoreAutosave(skipConfirmation = false) {
+  function restoreAutosave(skipConfirmation = false, backupOnly = false) {
+    if (backupOnly && !requireIdle('recovering a backup')) return false;
     try {
-      for (const key of [AUTOSAVE_KEY, ...LEGACY_AUTOSAVE_KEYS]) {
+      const keys = backupOnly ? [AUTOSAVE_BACKUP_KEY] :
+        [AUTOSAVE_KEY, AUTOSAVE_BACKUP_KEY, ...LEGACY_AUTOSAVE_KEYS];
+      for (const key of keys) {
         const text = window.localStorage.getItem(key);
         if (!text) continue;
         const parsed = parseDocumentText(text);
@@ -6012,17 +6197,24 @@ kbd { font-size: 9px; opacity: .65; }
         // with the previous drawing, and the single autosave slot meant the
         // discarded one was then overwritten.
         const count = parsed.document.entities.length;
+        const fromBackup = key === AUTOSAVE_BACKUP_KEY;
         if (!skipConfirmation && !window.confirm(
-          `Recover the unsaved drawing "${parsed.document.name}" (${count} ${count === 1 ? 'object' : 'objects'})?\n\n` +
-          'Choose Cancel to start a blank drawing. The recovered copy stays available until the next change is autosaved.',
+          `Recover ${fromBackup ? 'the previous backup of' : 'the unsaved drawing'} "${parsed.document.name}" (${count} ${count === 1 ? 'object' : 'objects'})?\n\n` +
+          (backupOnly ? 'This replaces the current drawing. Use Save first if you need a separate copy. Cancel keeps the current drawing.' :
+            'Choose Cancel to start a blank drawing. Recovery copies remain available until later changes are autosaved.'),
         )) return false;
+        if (autosaveTimer !== null) { clearTimeout(autosaveTimer); autosaveTimer = null; }
         applyDocument(parsed.document, false);
         if (key !== AUTOSAVE_KEY) {
-          window.localStorage.setItem(AUTOSAVE_KEY, exportDocumentText(false));
+          try { writeAutosave(); } catch {
+            setFileStatus('Drawing recovered; could not refresh autosave. Use Save.', true);
+            return true;
+          }
         }
-        setFileStatus(`${state.drawingName} · Recovered`);
+        setFileStatus(`${state.drawingName} · Recovered${fromBackup ? ' previous backup' : ''}`);
         return true;
       }
+      if (backupOnly) setFileStatus('No valid previous backup is available.', true);
       return false;
     } catch {
       setFileStatus('Autosave unavailable — use Save', true);
@@ -6075,8 +6267,8 @@ kbd { font-size: 9px; opacity: .65; }
       setTimeout(() => URL.revokeObjectURL(url), 0);
       setFileStatus(`${state.drawingName} · Saved file`);
       return true;
-    } catch {
-      setFileStatus('Could not create the drawing file', true);
+    } catch (error) {
+      setFileStatus(`Could not save: ${error.message || 'Could not create the drawing file'}`, true);
       return false;
     }
   }
@@ -6134,6 +6326,88 @@ kbd { font-size: 9px; opacity: .65; }
     };
   }
 
+  // OFFSET currently produces one mitered path. If the correct result needs
+  // splitting or removing loops, refuse it instead of drawing a plausible but
+  // incorrect path. These checks also run for the preview.
+  function pathSegments(points, closed) {
+    return points.slice(0, closed ? points.length : -1)
+      .map((point, index) => [point, points[(index + 1) % points.length]]);
+  }
+
+  function segmentBoundsNear(a, b, c, d, tolerance) {
+    return Math.min(a.x, b.x) <= Math.max(c.x, d.x) + tolerance &&
+      Math.max(a.x, b.x) + tolerance >= Math.min(c.x, d.x) &&
+      Math.min(a.y, b.y) <= Math.max(c.y, d.y) + tolerance &&
+      Math.max(a.y, b.y) + tolerance >= Math.min(c.y, d.y);
+  }
+
+  function segmentsMeet(a, b, c, d, tolerance) {
+    if (!segmentBoundsNear(a, b, c, d, tolerance)) return false;
+    if (dist(a, pointOnSegmentClosest(a, c, d)) <= tolerance ||
+        dist(b, pointOnSegmentClosest(b, c, d)) <= tolerance ||
+        dist(c, pointOnSegmentClosest(c, a, b)) <= tolerance ||
+        dist(d, pointOnSegmentClosest(d, a, b)) <= tolerance) return true;
+    const side = (p, q, r) => {
+      const length = dist(p, q);
+      return ((q.x - p.x) / length) * (r.y - p.y) -
+        ((q.y - p.y) / length) * (r.x - p.x);
+    };
+    const opposite = (first, second) =>
+      (first > tolerance && second < -tolerance) ||
+      (first < -tolerance && second > tolerance);
+    return opposite(side(a, b, c), side(a, b, d)) &&
+      opposite(side(c, d, a), side(c, d, b));
+  }
+
+  function pathHasCrossings(segments, closed, tolerance) {
+    for (let i = 0; i < segments.length; i++) {
+      const [a, b] = segments[i];
+      if (dist(a, b) <= tolerance) return true;
+      for (let j = i + 1; j < segments.length; j++) {
+        const [c, d] = segments[j];
+        const adjacent = j === i + 1 || (closed && i === 0 && j === segments.length - 1);
+        if (adjacent) {
+          // Adjacent edges may share their vertex, but cannot double back.
+          const incoming = j === i + 1 ? a : b;
+          const joint = j === i + 1 ? b : a;
+          const outgoing = j === i + 1 ? d : c;
+          if (dist(incoming, pointOnSegmentClosest(incoming, joint, outgoing)) <= tolerance ||
+              dist(outgoing, pointOnSegmentClosest(outgoing, incoming, joint)) <= tolerance) return true;
+        } else if (segmentsMeet(a, b, c, d, tolerance)) return true;
+      }
+    }
+    return false;
+  }
+
+  function offsetPathIsValid(source, result, closed, distance) {
+    if (result.some(point => !cleanPoint(point))) return false;
+    const magnitude = source.concat(result).reduce((maximum, point) =>
+      Math.max(maximum, Math.abs(point.x), Math.abs(point.y)), 1);
+    const tolerance = Math.max(1e-9, distance * 1e-8, magnitude * Number.EPSILON * 32);
+    const before = pathSegments(source, closed);
+    const after = pathSegments(result, closed);
+    if (pathHasCrossings(before, closed, tolerance) || pathHasCrossings(after, closed, tolerance)) return false;
+    for (let i = 0; i < before.length; i++) {
+      const [a, b] = before[i];
+      const [c, d] = after[i];
+      // A surviving edge must retain its direction. This rejects polygons that
+      // have passed through collapse and reappeared on the other side.
+      const length = dist(a, b);
+      if (((b.x - a.x) / length) * (d.x - c.x) +
+          ((b.y - a.y) / length) * (d.y - c.y) <= tolerance) return false;
+      for (const [p, q] of before) {
+        if (!segmentBoundsNear(c, d, p, q, distance + tolerance)) continue;
+        if (segmentsMeet(c, d, p, q, tolerance)) return false;
+        const gap = Math.min(
+          dist(c, pointOnSegmentClosest(c, p, q)), dist(d, pointOnSegmentClosest(d, p, q)),
+          dist(p, pointOnSegmentClosest(p, c, d)), dist(q, pointOnSegmentClosest(q, c, d)),
+        );
+        if (!Number.isFinite(gap) || gap < distance - tolerance) return false;
+      }
+    }
+    return true;
+  }
+
   function offsetEntity(entity, distance, sidePoint, id = entity.id) {
     if (!['LINE', 'PLINE', 'CIRCLE', 'ARC'].includes(entity.type) || distance <= 0) return null;
 
@@ -6175,6 +6449,7 @@ kbd { font-size: 9px; opacity: .65; }
       offsetPoints.push(shifted[shifted.length - 1][1]);
     }
 
+    if (!offsetPathIsValid(points, offsetPoints, Boolean(entity.closed), distance)) return null;
     return { ...entity, id, points: offsetPoints, closed: Boolean(entity.closed) };
   }
 
@@ -6214,12 +6489,10 @@ kbd { font-size: 9px; opacity: .65; }
     const source = state.entities.find(entity => entity.id === state.offset.sourceId && isEntityEditable(entity));
     const result = source && offsetEntity(source, state.offset.distance, sidePoint, state.nextId);
     if (!result) {
-      updatePrompt('Choose a point clearly to one side of valid geometry.');
+      updatePrompt('Offset rejected: the result collapses, crosses itself, or has no valid side. Try a smaller distance or another side.');
       return;
     }
-    pushHistory();
-    state.nextId += 1;
-    state.entities.push(result);
+    if (!commitGeometry([...state.entities, result], { nextId: state.nextId + 1 })) return;
     state.selected = new Set([result.id]);
     setMode('SELECT');
   }
@@ -6300,10 +6573,9 @@ kbd { font-size: 9px; opacity: .65; }
     const closed = chain.length >= 4 && dist(chain[0], chain[chain.length - 1]) < JOIN_TOLERANCE;
     if (closed) chain.pop();
 
-    pushHistory();
     const sourceIds = new Set(selected.map(entity => entity.id));
     const joined = {
-      id: state.nextId++,
+      id: state.nextId,
       type: 'PLINE',
       // The result belongs where the first source object lived, which is the
       // only choice that does not depend on the order they were picked in.
@@ -6311,8 +6583,8 @@ kbd { font-size: 9px; opacity: .65; }
       points: chain,
       closed,
     };
-    state.entities = state.entities.filter(entity => !sourceIds.has(entity.id));
-    state.entities.push(joined);
+    const entities = [...state.entities.filter(entity => !sourceIds.has(entity.id)), joined];
+    if (!commitGeometry(entities, { nextId: state.nextId + 1 })) return { error: 'Joining would create invalid geometry.' };
     state.selected = new Set([joined.id]);
     return { joined: selected.length };
   }
@@ -6343,19 +6615,20 @@ kbd { font-size: 9px; opacity: .65; }
     }
     if (!pieces.size) return { error: 'Select a polyline or rectangle to explode.' };
 
-    pushHistory();
+    let nextId = state.nextId;
     const created = [];
     // Replacing in place rather than appending keeps the new segments in the
     // draw order the polyline occupied.
-    state.entities = state.entities.flatMap(entity => {
+    const entities = state.entities.flatMap(entity => {
       const exploded = pieces.get(entity.id);
       if (!exploded) return [entity];
       return exploded.map(piece => {
-        const line = { id: state.nextId++, ...piece };
+        const line = { id: nextId++, ...piece };
         created.push(line.id);
         return line;
       });
     });
+    if (!commitGeometry(entities, { nextId })) return { error: 'Exploding would create invalid geometry.' };
     state.selected = new Set(created);
     return { exploded: pieces.size, skipped: selected.length - pieces.size, created: created.length };
   }
@@ -6462,8 +6735,7 @@ kbd { font-size: 9px; opacity: .65; }
       stretched.set(entity.id, result);
     }
 
-    pushHistory();
-    state.entities = state.entities.map(entity => stretched.get(entity.id) || entity);
+    if (!commitGeometry(state.entities.map(entity => stretched.get(entity.id) || entity))) return;
     state.selected = new Set(editable);
     setMode('SELECT');
   }
@@ -7075,15 +7347,6 @@ kbd { font-size: 9px; opacity: .65; }
 
     const resolved = resolveCommandName(raw);
 
-    // Do not let a command alias silently discard geometry that is mid-creation.
-    // Previously, typing C during a polyline resolved to CIRCLE and setMode()
-    // wiped currentPoints with no warning.
-    if (resolved && resolved !== state.mode && state.currentPoints.length) {
-      updatePrompt(`Finish ${state.mode} with Enter/Space or cancel with Esc before starting ${resolved}.`);
-      canvas.focus();
-      return;
-    }
-
     if (!resolved) updatePrompt(`Unknown command: ${raw}`);
     else startCommand(resolved);
     canvas.focus();
@@ -7101,6 +7364,7 @@ kbd { font-size: 9px; opacity: .65; }
   }
 
   function createLayer(name = '', color = '#56d6ff') {
+    if (!requireIdle('creating a layer')) return null;
     let number = Math.max(1, state.nextLayerId);
     while (state.layers.some(layer => layer.id === `layer-${number}`)) number += 1;
     const layerName = (String(name || '').trim() || nextDefaultLayerName(number)).slice(0, 80);
@@ -7125,6 +7389,7 @@ kbd { font-size: 9px; opacity: .65; }
   }
 
   function renameLayer(id, name) {
+    if (!requireIdle('renaming a layer')) return false;
     const layer = getLayer(id);
     const nextName = String(name || '').trim().slice(0, 80);
     if (!layer) return false;
@@ -7153,6 +7418,7 @@ kbd { font-size: 9px; opacity: .65; }
   }
 
   function setLayerColor(id, color) {
+    if (!requireIdle('changing a layer colour')) return false;
     const layer = getLayer(id);
     if (!layer || !/^#[0-9a-f]{6}$/i.test(String(color))) return false;
     const nextColor = String(color).toLowerCase();
@@ -7165,6 +7431,7 @@ kbd { font-size: 9px; opacity: .65; }
   }
 
   function setCurrentLayer(id) {
+    if (!requireIdle('changing the current layer')) return false;
     const layer = getLayer(id);
     if (!layer) return false;
     if (!layer.visible || layer.locked) {
@@ -7182,6 +7449,7 @@ kbd { font-size: 9px; opacity: .65; }
   }
 
   function toggleLayerVisibility(id) {
+    if (!requireIdle('changing layer visibility')) return false;
     const layer = getLayer(id);
     if (!layer) return false;
     if (layer.id === state.currentLayerId) {
@@ -7201,6 +7469,7 @@ kbd { font-size: 9px; opacity: .65; }
   }
 
   function toggleLayerLock(id) {
+    if (!requireIdle('changing layer locking')) return false;
     const layer = getLayer(id);
     if (!layer) return false;
     if (layer.id === state.currentLayerId) {
@@ -7220,6 +7489,7 @@ kbd { font-size: 9px; opacity: .65; }
   }
 
   function deleteLayer(id, skipConfirmation = false) {
+    if (!requireIdle('deleting a layer')) return false;
     const layer = getLayer(id);
     if (!layer) return false;
     if (layer.id === '0') {
@@ -7256,6 +7526,7 @@ kbd { font-size: 9px; opacity: .65; }
   }
 
   function assignSelectionToLayer(id = state.currentLayerId) {
+    if (!requireIdle('reassigning layers')) return false;
     const layer = getLayer(id);
     if (!layer || !layer.visible || layer.locked) {
       updatePrompt('The destination layer must be visible and unlocked.');
@@ -7370,6 +7641,7 @@ kbd { font-size: 9px; opacity: .65; }
   document.getElementById('newBtn').addEventListener('click', () => newDrawing());
   document.getElementById('openBtn').addEventListener('click', chooseOpenFile);
   document.getElementById('saveBtn').addEventListener('click', saveDrawing);
+  document.getElementById('recoverBackupBtn').addEventListener('click', () => restoreAutosave(false, true));
   addLayerBtn.addEventListener('click', () => {
     createLayer();
     canvas.focus();
@@ -7424,7 +7696,7 @@ kbd { font-size: 9px; opacity: .65; }
   window.addEventListener('beforeunload', () => {
     if (!state.documentDirty) return;
     try {
-      window.localStorage.setItem(AUTOSAVE_KEY, exportDocumentText(false));
+      writeAutosave();
     } catch {
       // Manual Save remains available when browser storage is unavailable.
     }
@@ -7516,10 +7788,12 @@ kbd { font-size: 9px; opacity: .65; }
     get nextLayerId() { return state.nextLayerId; },
     get drawingName() { return state.drawingName; },
     get autosaveKey() { return AUTOSAVE_KEY; },
+    get autosaveBackupKey() { return AUTOSAVE_BACKUP_KEY; },
     exportDocumentText,
     importDocumentText: loadDocumentText,
     newDrawing: () => newDrawing(true),
     restoreAutosave: () => restoreAutosave(true),
+    restoreBackup: () => restoreAutosave(true, true),
     get unitSettings() { return { ...state.unitSettings }; },
     formatLength,
     formatLengthLabel,
@@ -7584,6 +7858,9 @@ kbd { font-size: 9px; opacity: .65; }
     closeCurrentPath,
     undoLastPoint,
     startCommand,
+    commandInProgress,
+    addPolyline,
+    getSnap,
     drawNow,
     parseDistance,
     get lastCommand() { return state.lastCommand; },
