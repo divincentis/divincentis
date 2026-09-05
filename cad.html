@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>zbCAD v0.24.2</title>
+  <title>zbCAD v0.24.3</title>
   <style>
 :root {
   font-family: Arial, Helvetica, sans-serif;
@@ -162,10 +162,11 @@ kbd { font-size: 9px; opacity: .65; }
   text-align: center;
   background: none;
   border: 0;
-  padding: 0;
+  border-bottom: 1px dotted #56d6ff;
+  padding: 0 0 1px;
   cursor: pointer;
 }
-.snap-status:hover { color: #8fe6ff; }
+.snap-status:hover { color: #8fe6ff; border-bottom-color: #8fe6ff; border-bottom-style: solid; }
 .snap-row { display: flex !important; gap: 7px; align-items: center; margin-bottom: 7px; }
 .snap-row input { margin: 0; }
 .snap-row code {
@@ -357,7 +358,7 @@ kbd { font-size: 9px; opacity: .65; }
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">zbCAD Prototype <span class="version">v0.24.2</span></div>
+    <div class="brand">zbCAD Prototype <span class="version">v0.24.3</span></div>
     <div class="tools">
       <button id="newBtn">New</button>
       <button id="openBtn">Open</button>
@@ -418,7 +419,7 @@ kbd { font-size: 9px; opacity: .65; }
       <button id="assignLayerBtn" class="assign-layer" title="Move selected objects to the current layer">Assign selection to current</button>
       <div id="layerList" class="layer-list"></div>
       <div class="layer-hint">Hidden layers do not snap or edit. Locked layers stay visible and snappable.</div>
-      <div id="dimensionNotice" class="layer-hint" hidden><strong>Static dimensions:</strong> editing source geometry does not update its dimensions. Check dimensions after revisions.</div>
+      <div id="dimensionNotice" class="layer-hint" hidden><strong>Associative dimensions:</strong> a dimension follows the geometry it was placed on. A reference that stops resolving (its geometry was deleted or restructured) freezes at its last value.</div>
     </aside>
   </main>
 
@@ -631,7 +632,14 @@ kbd { font-size: 9px; opacity: .65; }
   const POLAR_APERTURE_PX = 12;
 
   const DIM_TYPES = ['ALIGNED', 'LINEAR'];
-  const DIM_REF_PARTS = ['START', 'END', 'CENTER', 'MID', 'QUAD', 'VERTEX', 'POINT'];
+  const DIM_REF_PARTS = ['START', 'END', 'CENTER', 'MID', 'QUAD', 'VERTEX', 'POINT', 'SEGMENT'];
+
+  // No real glyph metrics exist outside a canvas context, so a text entity's
+  // footprint (for bounding box, hit-testing, and zoom-extents) is approximated
+  // from its character count and height rather than measured. Rendering uses a
+  // monospace font specifically so this approximation stays close to what is
+  // actually drawn.
+  const TEXT_WIDTH_FACTOR = 0.6;
 
   // ---------------------------------------------------------------------------
   // core/defaults.js
@@ -678,10 +686,9 @@ kbd { font-size: 9px; opacity: .65; }
   }
 
   // Object snaps in priority order, which is also the order they are listed in
-  // the settings dialog. The first six are the set the tool has always offered
-  // and stay on by default. Tangent and nearest are off: a running NEAREST can
-  // offer a point anywhere along any curve under the aperture, so it would
-  // quietly capture points that were meant to be free.
+  // the settings dialog. All default on: nearest ranks last of all candidates
+  // (see closestCandidate in snap.js), so a running NEAREST only ever fills in
+  // when nothing more specific is under the aperture, rather than pre-empting it.
   const SNAP_TYPES = Object.freeze([
     { type: 'END', label: 'Endpoint', on: true },
     { type: 'INT', label: 'Intersection', on: true },
@@ -689,8 +696,8 @@ kbd { font-size: 9px; opacity: .65; }
     { type: 'CENTER', label: 'Center', on: true },
     { type: 'QUAD', label: 'Quadrant', on: true },
     { type: 'PERP', label: 'Perpendicular', on: true },
-    { type: 'TAN', label: 'Tangent', on: false },
-    { type: 'NEAR', label: 'Nearest', on: false },
+    { type: 'TAN', label: 'Tangent', on: true },
+    { type: 'NEAR', label: 'Nearest', on: true },
   ]);
 
   const SNAP_RANK = Object.fromEntries(SNAP_TYPES.map((entry, index) => [entry.type, index]));
@@ -730,6 +737,7 @@ kbd { font-size: 9px; opacity: .65; }
     edit: null,
     grip: null,
     circle: null,
+    text: null,
     mouseScreen: { x: 0, y: 0 },
     mouseWorld: { x: 0, y: 0 },
     activePoint: { x: 0, y: 0 },
@@ -1304,9 +1312,14 @@ kbd { font-size: 9px; opacity: .65; }
   // horizontal or vertical component instead of the true distance.
   //
   // `refs` holds a reference to whatever each measured point was snapped to.
-  // It is captured at creation and carried through the file, but nothing reads
-  // it yet: these dimensions are not associative. It exists so that turning
-  // association on later is purely additive.
+  // It is captured at creation and carried through the file.
+  // `updateAssociativeDimensions` (below) is what makes that reference live: it
+  // runs once per commit and re-derives p1/p2 from the referenced entity's
+  // current geometry, so moving, rotating, scaling, or stretching that entity
+  // carries the dimension along.
+  // A reference that no longer resolves (the entity was deleted, trimmed away,
+  // or a polyline vertex it named is gone) simply stops updating that point
+  // rather than erroring — the dimension freezes at its last measured value.
   // ---------------------------------------------------------------------------
 
 
@@ -1398,6 +1411,32 @@ kbd { font-size: 9px; opacity: .65; }
   // associative build would inherit references nobody asked for.
   const REFERENCE_TOLERANCE = 1e-7;
 
+  // Duplicates entitySegments() in model/entity.js rather than importing it:
+  // entity.js already imports dimensionGeometry/dimensionSegments from this
+  // file, so importing back would be a cycle. The logic is small enough that
+  // keeping two copies is cheaper than restructuring the module graph for it.
+  function segmentPairs(entity) {
+    const segments = [];
+    for (let i = 0; i < entity.points.length - 1; i++) segments.push([entity.points[i], entity.points[i + 1]]);
+    if (entity.closed && entity.points.length >= 3) {
+      segments.push([entity.points[entity.points.length - 1], entity.points[0]]);
+    }
+    return segments;
+  }
+
+  // The parametric position of `point` along [a, b] (0 at a, 1 at b) if it
+  // genuinely lies on the segment within REFERENCE_TOLERANCE, else null. Used
+  // both to capture a SEGMENT reference and to recompute one later.
+  function segmentParam(a, b, point) {
+    const vx = b.x - a.x;
+    const vy = b.y - a.y;
+    const length2 = vx * vx + vy * vy;
+    if (length2 <= 1e-18) return null;
+    const t = Math.max(0, Math.min(1, ((point.x - a.x) * vx + (point.y - a.y) * vy) / length2));
+    const projected = { x: a.x + t * vx, y: a.y + t * vy };
+    return dist(point, projected) <= REFERENCE_TOLERANCE ? t : null;
+  }
+
   function entityReferenceCandidates(entity) {
     if (entity.type === 'LINE') {
       return [
@@ -1413,7 +1452,7 @@ kbd { font-size: 9px; opacity: .65; }
       return [
         { part: 'CENTER', point: entity.center },
         ...[0, Math.PI / 2, Math.PI, Math.PI * 1.5].map(angle => ({
-          part: 'QUAD', point: circularPoint(entity.center, entity.radius, angle),
+          part: 'QUAD', angle, point: circularPoint(entity.center, entity.radius, angle),
         })),
       ];
     }
@@ -1434,7 +1473,38 @@ kbd { font-size: 9px; opacity: .65; }
         if (dist(point, candidate.point) > REFERENCE_TOLERANCE) continue;
         const ref = { entityId: entity.id, part: candidate.part };
         if (candidate.part === 'VERTEX') ref.index = candidate.index;
+        // A circle has four quadrant candidates with the same part name; without
+        // the angle, resolving the reference later could not tell them apart.
+        if (candidate.part === 'QUAD') ref.angle = candidate.angle;
         return ref;
+      }
+      // Most points picked on a circle or arc are not one of the few named
+      // candidates above — a NEAREST snap or a typed coordinate that happens to
+      // land on the curve is by far the common case when dimensioning a circle,
+      // since there is no dedicated radius/diameter dimension command. Any such
+      // point is still a real, trackable spot: its angle from the entity's
+      // centre. Checked last so an exact quadrant or arc endpoint still gets
+      // its more specific part instead of falling through to this.
+      if (entity.type === 'CIRCLE' || entity.type === 'ARC') {
+        if (Math.abs(dist(point, entity.center) - entity.radius) > REFERENCE_TOLERANCE) continue;
+        const angle = angleFromCenter(entity.center, point);
+        if (angleOnArc(angle, entity)) return { entityId: entity.id, part: 'POINT', angle };
+      }
+      // Same idea for a straight edge: a NEAREST snap onto a line, or onto a
+      // polyline between its vertices, is by far the most common way a point
+      // there gets picked, and none of it is START/END/MID/VERTEX. Track it by
+      // its parametric position along the segment instead.
+      if (entity.type === 'LINE') {
+        const t = segmentParam(entity.a, entity.b, point);
+        if (t !== null) return { entityId: entity.id, part: 'SEGMENT', t };
+      }
+      if (entity.type === 'PLINE') {
+        const segments = segmentPairs(entity);
+        for (let index = 0; index < segments.length; index++) {
+          const [a, b] = segments[index];
+          const t = segmentParam(a, b, point);
+          if (t !== null) return { entityId: entity.id, part: 'SEGMENT', segmentIndex: index, t };
+        }
       }
     }
     return null;
@@ -1446,6 +1516,99 @@ kbd { font-size: 9px; opacity: .65; }
     const midX = (p1.x + p2.x) / 2;
     const midY = (p1.y + p2.y) / 2;
     return Math.abs(linePoint.y - midY) >= Math.abs(linePoint.x - midX) ? 0 : Math.PI / 2;
+  }
+
+  // The other half of entityReferenceCandidates: given the entity a reference
+  // now points at, recompute the world point that reference names. Returns
+  // null wherever the reference no longer makes sense against that entity (a
+  // mismatched type, a vertex index past the current point count, and so on),
+  // which the caller treats as "leave this measured point where it was."
+  function pointForReference(entity, ref) {
+    if (!entity || entity.type === 'DIM') return null;
+    if (ref.part === 'CENTER') {
+      return entity.type === 'CIRCLE' || entity.type === 'ARC' ? entity.center : null;
+    }
+    if (ref.part === 'QUAD') {
+      return entity.type === 'CIRCLE' && Number.isFinite(ref.angle)
+        ? circularPoint(entity.center, entity.radius, ref.angle) : null;
+    }
+    // An arbitrary point on a circle or arc's own curve, named by its angle
+    // from the centre rather than one of the fixed candidates above. On an arc
+    // whose sweep has since moved past that angle, this freezes rather than
+    // producing a point that is no longer actually on the arc.
+    if (ref.part === 'POINT') {
+      if (entity.type !== 'CIRCLE' && entity.type !== 'ARC') return null;
+      if (!Number.isFinite(ref.angle) || !angleOnArc(ref.angle, entity)) return null;
+      return circularPoint(entity.center, entity.radius, ref.angle);
+    }
+    if (ref.part === 'START') {
+      if (entity.type === 'LINE') return entity.a;
+      if (entity.type === 'ARC') return circularPoint(entity.center, entity.radius, entity.startAngle);
+      return null;
+    }
+    if (ref.part === 'END') {
+      if (entity.type === 'LINE') return entity.b;
+      if (entity.type === 'ARC') return circularPoint(entity.center, entity.radius, entity.endAngle);
+      return null;
+    }
+    if (ref.part === 'MID') {
+      return entity.type === 'LINE'
+        ? { x: (entity.a.x + entity.b.x) / 2, y: (entity.a.y + entity.b.y) / 2 } : null;
+    }
+    if (ref.part === 'VERTEX') {
+      if (entity.type !== 'PLINE' || !Number.isInteger(ref.index) ||
+          ref.index < 0 || ref.index >= entity.points.length) return null;
+      return entity.points[ref.index];
+    }
+    // An arbitrary point along a line, or along one segment of a polyline,
+    // named by its parametric position rather than one of the fixed candidates
+    // above. A polyline segment that no longer exists (a vertex was removed or
+    // the shape was otherwise reshaped down to fewer segments) freezes this
+    // point instead of guessing which segment it meant.
+    if (ref.part === 'SEGMENT') {
+      if (!Number.isFinite(ref.t)) return null;
+      if (entity.type === 'LINE') {
+        return { x: entity.a.x + ref.t * (entity.b.x - entity.a.x), y: entity.a.y + ref.t * (entity.b.y - entity.a.y) };
+      }
+      if (entity.type === 'PLINE') {
+        const segments = segmentPairs(entity);
+        if (!Number.isInteger(ref.segmentIndex) || ref.segmentIndex < 0 || ref.segmentIndex >= segments.length) return null;
+        const [a, b] = segments[ref.segmentIndex];
+        return { x: a.x + ref.t * (b.x - a.x), y: a.y + ref.t * (b.y - a.y) };
+      }
+      return null;
+    }
+    return null;
+  }
+
+  // Runs once per commit (see commitGeometry) over the full candidate entity
+  // list, so it sees every edit uniformly instead of every command having to
+  // know it should re-derive dimensions. Idempotent: an entity whose reference
+  // already resolves to its current point is returned unchanged, so calling
+  // this on every commit (including ones with no dimensions at all) is cheap
+  // and never introduces spurious history entries.
+  function updateAssociativeDimensions(entities) {
+    let byId = null;
+    let changed = false;
+    const next = entities.map(entity => {
+      if (entity.type !== 'DIM' || !entity.refs || (!entity.refs[0] && !entity.refs[1])) return entity;
+      byId ??= new Map(entities.map(candidate => [candidate.id, candidate]));
+      let p1 = entity.p1;
+      let p2 = entity.p2;
+      let dirty = false;
+      if (entity.refs[0]) {
+        const resolved = pointForReference(byId.get(entity.refs[0].entityId), entity.refs[0]);
+        if (resolved && (resolved.x !== p1.x || resolved.y !== p1.y)) { p1 = { ...resolved }; dirty = true; }
+      }
+      if (entity.refs[1]) {
+        const resolved = pointForReference(byId.get(entity.refs[1].entityId), entity.refs[1]);
+        if (resolved && (resolved.x !== p2.x || resolved.y !== p2.y)) { p2 = { ...resolved }; dirty = true; }
+      }
+      if (!dirty) return entity;
+      changed = true;
+      return { ...entity, p1, p2 };
+    });
+    return changed ? next : entities;
   }
 
   function buildDimension(dimType, p1, p2, linePoint, refs) {
@@ -1468,6 +1631,53 @@ kbd { font-size: 9px; opacity: .65; }
   // ---------------------------------------------------------------------------
   // model/entity.js
   // ---------------------------------------------------------------------------
+
+  // ---------------------------------------------------------------------------
+  // Text footprint
+  //
+  // No real glyph metrics exist outside a canvas context, so a text entity's
+  // on-screen box is approximated from its character count and height rather
+  // than measured — see TEXT_WIDTH_FACTOR. Used for bounding box, hit-testing,
+  // and zoom-extents; the renderer draws with a monospace font specifically to
+  // keep this approximation close to what actually appears.
+  // ---------------------------------------------------------------------------
+
+  function rotateAroundOrigin(point, angle) {
+    const cosine = Math.cos(angle);
+    const sine = Math.sin(angle);
+    return { x: point.x * cosine - point.y * sine, y: point.x * sine + point.y * cosine };
+  }
+
+  function textWidth(entity) {
+    return Math.max(entity.content.length, 1) * entity.height * TEXT_WIDTH_FACTOR;
+  }
+
+  // Corners of the text's footprint, in drawing order, position first. The box
+  // extends from a quarter-height descender below the baseline (position) to
+  // the full nominal height above it — an approximation of ascender/descender,
+  // not a measurement of this particular string's actual glyphs.
+  function textCorners(entity) {
+    const width = textWidth(entity);
+    const descent = entity.height * 0.25;
+    const local = [
+      { x: 0, y: -descent }, { x: width, y: -descent },
+      { x: width, y: entity.height }, { x: 0, y: entity.height },
+    ];
+    return local.map(point => {
+      const rotated = rotateAroundOrigin(point, entity.rotation);
+      return { x: entity.position.x + rotated.x, y: entity.position.y + rotated.y };
+    });
+  }
+
+  function textContainsPoint(entity, point) {
+    const local = rotateAroundOrigin(
+      { x: point.x - entity.position.x, y: point.y - entity.position.y },
+      -entity.rotation,
+    );
+    const width = textWidth(entity);
+    const descent = entity.height * 0.25;
+    return local.x >= 0 && local.x <= width && local.y >= -descent && local.y <= entity.height;
+  }
 
   function polygonArea(points) {
     if (!points.length) return 0;
@@ -1569,10 +1779,21 @@ kbd { font-size: 9px; opacity: .65; }
   // trimming to one, is never what anybody wants.
   function pickSegments(entity) {
     if (entity.type === 'DIM') return dimensionSegments(entity);
+    if (entity.type === 'TEXT') {
+      const corners = textCorners(entity);
+      return corners.map((point, index) => [point, corners[(index + 1) % corners.length]]);
+    }
     return entitySegments(entity);
   }
 
   function entityBBox(e) {
+    if (e.type === 'TEXT') {
+      const corners = textCorners(e);
+      return {
+        minX: Math.min(...corners.map(p => p.x)), maxX: Math.max(...corners.map(p => p.x)),
+        minY: Math.min(...corners.map(p => p.y)), maxY: Math.max(...corners.map(p => p.y)),
+      };
+    }
     if (e.type === 'CIRCLE') {
       return {
         minX: e.center.x - e.radius,
@@ -1922,10 +2143,11 @@ kbd { font-size: 9px; opacity: .65; }
     return { x: value.x, y: value.y };
   }
 
-  // References are validated but never resolved: see dimensionGeometry. A
-  // reference to a missing entity is accepted rather than rejected, because the
-  // dimension does not depend on it, and dropping it would lose the information
-  // that association would later need.
+  // Validation never resolves a reference against the entity table (see
+  // updateAssociativeDimensions for that). A reference to a missing entity is
+  // accepted rather than rejected: the dimension still measures its last
+  // committed points fine without it, and dropping the reference would
+  // permanently sever an association that a later undo/redo could restore.
   function cleanEntityRefs(value) {
     if (value === undefined || value === null) return { value: [null, null] };
     if (!Array.isArray(value) || value.length !== 2) return { error: 'must be a pair' };
@@ -1939,6 +2161,21 @@ kbd { font-size: 9px; opacity: .65; }
       if (ref.part === 'VERTEX') {
         if (!Number.isSafeInteger(ref.index) || ref.index < 0) return { error: 'has an invalid vertex index' };
         entry.index = ref.index;
+      }
+      if (ref.part === 'QUAD' || ref.part === 'POINT') {
+        if (!Number.isFinite(ref.angle)) return { error: `has an invalid ${ref.part.toLowerCase()} angle` };
+        entry.angle = ref.angle;
+      }
+      if (ref.part === 'SEGMENT') {
+        if (!Number.isFinite(ref.t)) return { error: 'has an invalid segment position' };
+        entry.t = ref.t;
+        // Only a polyline segment needs to say which one; a line has only one.
+        if (ref.segmentIndex !== undefined) {
+          if (!Number.isSafeInteger(ref.segmentIndex) || ref.segmentIndex < 0) {
+            return { error: 'has an invalid segment index' };
+          }
+          entry.segmentIndex = ref.segmentIndex;
+        }
       }
       cleaned.push(entry);
     }
@@ -2028,6 +2265,26 @@ kbd { font-size: 9px; opacity: .65; }
           radius: value.radius,
           startAngle,
           endAngle: startAngle + sweep,
+        },
+      };
+    }
+
+    if (type === 'TEXT') {
+      const position = cleanPoint(value.position);
+      if (!position || !Number.isFinite(value.height) || value.height <= 1e-9) {
+        return { error: 'has invalid text placement' };
+      }
+      if (!Number.isFinite(value.rotation)) return { error: 'has an invalid text rotation' };
+      if (typeof value.content !== 'string' || !value.content.trim() || value.content.length > 1000) {
+        return { error: 'has invalid text content' };
+      }
+      return {
+        entity: {
+          ...common,
+          position,
+          height: value.height,
+          rotation: normalizeAngle(value.rotation),
+          content: value.content,
         },
       };
     }
@@ -2175,32 +2432,6 @@ kbd { font-size: 9px; opacity: .65; }
     return null;
   }
 
-  // Build a complete candidate without mutating entities, IDs, history, or the
-  // command stage. Only a validated candidate may enter the undoable document.
-  function commitGeometry(entities, options = {}) {
-    const candidate = {
-      ...documentSnapshot(), entities,
-      nextId: options.nextId ?? state.nextId,
-      units: options.unitSettings ?? state.unitSettings,
-      dimStyles: options.dimStyles ?? state.dimStyles,
-    };
-    if (!Number.isSafeInteger(candidate.nextId) || candidate.nextId <= 0) {
-      updatePrompt('Edit rejected: no valid entity IDs remain.');
-      return false;
-    }
-    const checked = validateDocumentData(candidate);
-    if (checked.error) {
-      updatePrompt(`Edit rejected: ${checked.error}`);
-      return false;
-    }
-    pushHistory();
-    state.entities = checked.document.entities;
-    state.nextId = checked.document.nextId;
-    state.unitSettings = checked.document.unitSettings;
-    state.dimStyles = checked.document.dimStyles;
-    return true;
-  }
-
   // Report shape: [{ title, rows: [[label, value], ...], note }]
 
   // ---------------------------------------------------------------------------
@@ -2208,14 +2439,34 @@ kbd { font-size: 9px; opacity: .65; }
   // ---------------------------------------------------------------------------
 
   let autosaveTimer = null;
+
+  // The backup holds the drawing as it stood when the current one replaced it, and
+  // is written ONCE per document. Rotating it on every autosave gave a recovery
+  // window of a single edit, which is not a recovery window at all: decline the
+  // startup prompt, draw two lines, and the drawing you meant to keep was gone.
+  let backupPinned = false;
+
+  // Opening a file, starting a new drawing, or recovering makes the outgoing
+  // drawing the thing worth preserving, so the pin is released at those points.
+  function releaseBackupPin() {
+    backupPinned = false;
+  }
+
   function writeAutosave() {
     // Validate first: an invalid live document must not touch either saved copy.
     const text = exportDocumentText(false);
-    const previous = window.localStorage.getItem(AUTOSAVE_KEY);
-    if (previous && previous !== text && !parseDocumentText(previous).error) {
-      // Write the backup before replacing the primary. If storage is full or
-      // unavailable, leave the existing primary intact and report the failure.
-      window.localStorage.setItem(AUTOSAVE_BACKUP_KEY, previous);
+    if (!backupPinned) {
+      const previous = window.localStorage.getItem(AUTOSAVE_KEY);
+      if (previous && previous !== text && !parseDocumentText(previous).error) {
+        try {
+          window.localStorage.setItem(AUTOSAVE_BACKUP_KEY, previous);
+          backupPinned = true;
+        } catch {
+          // A full or unavailable store must not stop the primary autosave. The
+          // backup is a convenience; the primary is the drawing. Try again on the
+          // next write rather than failing the whole save.
+        }
+      }
     }
     window.localStorage.setItem(AUTOSAVE_KEY, text);
     return true;
@@ -2279,6 +2530,32 @@ kbd { font-size: 9px; opacity: .65; }
     markDirty();
   }
 
+  // Build a complete candidate without mutating entities, IDs, history, or the
+  // command stage. Only a validated candidate may enter the undoable document.
+  function commitGeometry(entities, options = {}) {
+    const candidate = {
+      ...documentSnapshot(), entities: updateAssociativeDimensions(entities),
+      nextId: options.nextId ?? state.nextId,
+      units: options.unitSettings ?? state.unitSettings,
+      dimStyles: options.dimStyles ?? state.dimStyles,
+    };
+    if (!Number.isSafeInteger(candidate.nextId) || candidate.nextId <= 0) {
+      updatePrompt('Edit rejected: no valid entity IDs remain.');
+      return false;
+    }
+    const checked = validateDocumentData(candidate);
+    if (checked.error) {
+      updatePrompt(`Edit rejected: ${checked.error}`);
+      return false;
+    }
+    pushHistory();
+    state.entities = checked.document.entities;
+    state.nextId = checked.document.nextId;
+    state.unitSettings = checked.document.unitSettings;
+    state.dimStyles = checked.document.dimStyles;
+    return true;
+  }
+
   function undo() {
     if (!state.history.length) return;
     state.future.push(editSnapshot());
@@ -2336,6 +2613,10 @@ kbd { font-size: 9px; opacity: .65; }
   //                    COMMAND_COMPLETE when the command finishes on activation
   //   prompt()         the command line text for the current stage
   //   acceptsPoint()   whether typed point input is valid in the current stage
+  //   capturesSpace()  whether Space must reach the command input as a literal
+  //                    character instead of acting as a command terminator —
+  //                    the one stage that needs this is free-text entry (TEXT
+  //                    content), where a word-breaking space is the whole point
   //   point(p)         a committed point
   //   distance(value)  consumes a typed distance with command-specific meaning
   //   keyword(text)    consumes a command-local keyword, ahead of alias lookup
@@ -2391,6 +2672,10 @@ kbd { font-size: 9px; opacity: .65; }
     return !command.acceptsPoint || Boolean(command.acceptsPoint());
   }
 
+  function commandCapturesSpace(command = activeCommand()) {
+    return command ? staged(command.capturesSpace, command) : false;
+  }
+
   function commandPreviewReady(command = activeCommand()) {
     if (!command?.preview) return false;
     // Most commands are ready to preview once a point exists; those that track
@@ -2413,7 +2698,7 @@ kbd { font-size: 9px; opacity: .65; }
   function commandInProgress() {
     return state.mode !== 'SELECT' ||
       state.currentPoints.length > 0 ||
-      Boolean(state.transform || state.offset || state.edit || state.grip || state.dimension);
+      Boolean(state.transform || state.offset || state.edit || state.grip || state.dimension || state.text);
   }
 
   // Refuse an out-of-band document change and say why. Returns true when the
@@ -2449,6 +2734,7 @@ kbd { font-size: 9px; opacity: .65; }
     state.grip = null;
     state.gripPress = false;
     state.circle = null;
+    state.text = null;
     state.snap = null;
     const command = activeCommand();
     const beginResult = command?.begin?.();
@@ -2464,6 +2750,7 @@ kbd { font-size: 9px; opacity: .65; }
       state.offset = null;
       state.dimension = null;
       state.circle = null;
+      state.text = null;
       state.grip = null;
     }
     // Match the command, falling back to the mode. DIMLINEAR and DIMALIGNED both
@@ -2625,6 +2912,9 @@ kbd { font-size: 9px; opacity: .65; }
         refs: entity.refs.map(ref => (ref ? { ...ref } : null)),
       };
     }
+    if (entity.type === 'TEXT') {
+      return { ...entity, id, position: { x: entity.position.x + dx, y: entity.position.y + dy } };
+    }
     return JSON.parse(JSON.stringify(entity));
   }
 
@@ -2683,6 +2973,14 @@ kbd { font-size: 9px; opacity: .65; }
         refs: entity.refs.map(ref => (ref ? { ...ref } : null)),
       };
     }
+    if (entity.type === 'TEXT') {
+      return {
+        ...entity,
+        id,
+        position: rotatePoint(entity.position, base, angle),
+        rotation: normalizeAngle(entity.rotation + angle),
+      };
+    }
     return JSON.parse(JSON.stringify(entity));
   }
 
@@ -2728,6 +3026,11 @@ kbd { font-size: 9px; opacity: .65; }
           ? { x: entity.textOffset.x * factor, y: entity.textOffset.y * factor } : null,
         refs: entity.refs.map(ref => (ref ? { ...ref } : null)),
       };
+    }
+    if (entity.type === 'TEXT') {
+      // Real CAD scales text height along with everything else, so a 2x SCALE
+      // on a wall and its label keeps them in visual proportion.
+      return { ...entity, id, position: scalePoint(entity.position, base, factor), height: entity.height * factor };
     }
     return JSON.parse(JSON.stringify(entity));
   }
@@ -3754,6 +4057,9 @@ kbd { font-size: 9px; opacity: .65; }
       ];
       return Math.min(...endpoints.map(point => dist(world, point))) * state.view.scale;
     }
+    // A click anywhere inside a text run's footprint should select it, the way
+    // a filled glyph area reads, rather than only near its outline.
+    if (entity.type === 'TEXT' && textContainsPoint(entity, world)) return 0;
     let best = Infinity;
     for (const [a, b] of pickSegments(entity)) {
       const q = pointOnSegmentClosest(world, a, b);
@@ -4036,6 +4342,9 @@ kbd { font-size: 9px; opacity: .65; }
         { kind: 'ARC_END', point: circularPoint(entity.center, entity.radius, entity.endAngle) },
       ];
     }
+    if (entity.type === 'TEXT') {
+      return [{ kind: 'TEXT_POSITION', point: entity.position }];
+    }
     return [];
   }
 
@@ -4159,6 +4468,10 @@ kbd { font-size: 9px; opacity: .65; }
           },
         };
       }
+    }
+
+    if (entity.type === 'TEXT' && descriptor.kind === 'TEXT_POSITION') {
+      return { entity: { ...entity, position: { ...point } } };
     }
 
     return { error: 'That grip cannot edit this entity.' };
@@ -4345,12 +4658,34 @@ kbd { font-size: 9px; opacity: .65; }
     }
   }
 
+  function drawText(e, preview, color) {
+    const screen = worldToScreen(e.position);
+    const heightPx = e.height * state.view.scale;
+    if (heightPx < 2) return; // Illegible below this; skip rather than draw a smear.
+    ctx.save();
+    ctx.translate(screen.x, screen.y);
+    // World Y and screen Y point opposite ways, so an un-mirrored rotation here
+    // would spin text the wrong direction relative to everything else drawn.
+    ctx.rotate(-e.rotation);
+    ctx.font = `${heightPx}px monospace`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = color;
+    if (preview) ctx.globalAlpha = 0.6;
+    ctx.fillText(e.content, 0, 0);
+    ctx.restore();
+  }
+
   function drawEntity(e, preview = false) {
     ctx.lineWidth = preview ? 1 : 1.35;
     const layerColor = getLayer(e.layerId)?.color || '#d6d6d6';
     ctx.strokeStyle = preview ? '#bdbdbd' : state.selected.has(e.id) ? '#ffffff' : layerColor;
     if (e.type === 'DIM') {
       drawDimension(e, preview, preview ? '#bdbdbd' : state.selected.has(e.id) ? '#ffffff' : layerColor);
+      return;
+    }
+    if (e.type === 'TEXT') {
+      drawText(e, preview, preview ? '#bdbdbd' : state.selected.has(e.id) ? '#ffffff' : layerColor);
       return;
     }
     if (preview) ctx.setLineDash([6,4]); else ctx.setLineDash([]);
@@ -5270,6 +5605,7 @@ kbd { font-size: 9px; opacity: .65; }
       );
     } else if (entity.type === 'DIM') {
       const geometry = dimensionGeometry(entity);
+      const referenced = entity.refs.filter(Boolean).length;
       rows.push(
         ['Dimension type', entity.dimType],
         ['Measurement', dimensionText(entity)],
@@ -5277,10 +5613,16 @@ kbd { font-size: 9px; opacity: .65; }
         ['From', describePoint(entity.p1)],
         ['To', describePoint(entity.p2)],
         ['Style', geometry.style.name],
-        ['Associative', 'No'],
+        ['Associative', referenced === 0 ? 'No' : referenced === 2 ? 'Yes' : 'Partial'],
+        ['References captured', `${referenced} of 2`],
       );
-      const referenced = entity.refs.filter(Boolean).length;
-      rows.push(['References captured', `${referenced} of 2`]);
+    } else if (entity.type === 'TEXT') {
+      rows.push(
+        ['Position', describePoint(entity.position)],
+        ['Height', formatLengthLabel(entity.height)],
+        ['Rotation', formatAngle(normalizeAngle(entity.rotation))],
+        ['Content', entity.content],
+      );
     } else if (entity.type === 'ARC') {
       rows.push(
         ['Center', describePoint(entity.center)],
@@ -5437,6 +5779,160 @@ kbd { font-size: 9px; opacity: .65; }
     entity.id = state.nextId;
     return commitGeometry([...state.entities, entity], { nextId: state.nextId + 1 });
   }
+
+  // ---------------------------------------------------------------------------
+  // TEXT
+  //
+  // Follows the AutoCAD single-line TEXT flow: insertion point, height,
+  // rotation, then the content itself. The first three are point/distance/angle
+  // entry like every other command; content is not, so it goes through value()
+  // instead of point() — acceptsPoint() shuts point/coordinate parsing off once
+  // content is being typed, so a string that happens to contain a comma or
+  // start with '@' is never mistaken for a coordinate.
+  // ---------------------------------------------------------------------------
+
+  function addText(position, height, rotation, content) {
+    if (!currentLayerIsEditable()) return false;
+    const entity = {
+      id: state.nextId,
+      type: 'TEXT',
+      layerId: state.currentLayerId,
+      position: { ...position },
+      height,
+      rotation,
+      content,
+    };
+    return commitGeometry([...state.entities, entity], { nextId: state.nextId + 1 });
+  }
+
+  // A style's textHeight is already the "what does normal annotation text look
+  // like in this drawing" answer — dimension text uses exactly this number —
+  // so plain TEXT defaults to it too rather than inventing a second default.
+  function defaultTextHeight() {
+    return dimSize(getDimStyle(DEFAULT_DIM_STYLE_ID), 'textHeight');
+  }
+
+  defineCommand('TEXT', {
+    creates: true,
+    usesOrtho: true,
+
+    takesDistance() {
+      return state.text?.stage === 'HEIGHT';
+    },
+
+    // A space typed while entering content is a word break, not Enter.
+    capturesSpace() {
+      return state.text?.stage === 'CONTENT';
+    },
+
+    begin() {
+      state.text = { stage: 'POINT', position: null, height: null, rotation: null };
+    },
+
+    prompt() {
+      const stage = state.text?.stage;
+      if (stage === 'HEIGHT') return `TEXT — Specify height <${formatLength(defaultTextHeight())}>:`;
+      if (stage === 'ROTATION') return 'TEXT — Specify rotation angle <0>:';
+      if (stage === 'CONTENT') return 'TEXT — Enter the text:';
+      return 'TEXT — Specify start point:';
+    },
+
+    acceptsPoint() {
+      return ['POINT', 'HEIGHT'].includes(state.text?.stage);
+    },
+
+    previewReady() {
+      return ['HEIGHT', 'ROTATION'].includes(state.text?.stage);
+    },
+
+    point(p) {
+      const operation = state.text;
+      if (operation.stage === 'POINT') {
+        operation.position = { ...p };
+        operation.stage = 'HEIGHT';
+        updatePrompt();
+        return;
+      }
+      if (operation.stage === 'HEIGHT') {
+        const height = dist(operation.position, p);
+        if (height <= 1e-9) { updatePrompt('Height must be greater than zero.'); return; }
+        operation.height = height;
+        operation.stage = 'ROTATION';
+        updatePrompt();
+      }
+    },
+
+    distance(value) {
+      const operation = state.text;
+      if (operation?.stage !== 'HEIGHT') return false;
+      if (value <= 1e-9) { updatePrompt('Height must be greater than zero.'); return true; }
+      operation.height = value;
+      operation.stage = 'ROTATION';
+      updatePrompt();
+      draw();
+      return true;
+    },
+
+    value(text) {
+      const operation = state.text;
+      if (operation?.stage === 'ROTATION') {
+        const match = text.trim().match(DEGREES);
+        if (!match) { updatePrompt('Invalid angle. Enter degrees.'); return true; }
+        operation.rotation = Number(match[1]) * Math.PI / 180;
+        operation.stage = 'CONTENT';
+        updatePrompt();
+        draw();
+        return true;
+      }
+      if (operation?.stage === 'CONTENT') {
+        if (!text) { updatePrompt('Enter the text to place:'); return true; }
+        if (addText(operation.position, operation.height, operation.rotation, text)) setMode('SELECT');
+        return true;
+      }
+      return false;
+    },
+
+    // Enter/Space with nothing typed accepts the bracketed default for the
+    // current stage, matching AutoCAD's <default> convention.
+    finish() {
+      const operation = state.text;
+      if (!operation || operation.stage === 'POINT') return false;
+      if (operation.stage === 'HEIGHT') {
+        operation.height = defaultTextHeight();
+        operation.stage = 'ROTATION';
+        updatePrompt();
+        draw();
+        return;
+      }
+      if (operation.stage === 'ROTATION') {
+        operation.rotation = 0;
+        operation.stage = 'CONTENT';
+        updatePrompt();
+        draw();
+        return;
+      }
+      // CONTENT: nothing typed yet, nothing to place.
+      updatePrompt('Enter the text to place:');
+      return false;
+    },
+
+    preview(p) {
+      const operation = state.text;
+      if (operation.stage === 'HEIGHT') {
+        drawEntity({ type: 'LINE', a: operation.position, b: p }, true);
+        return;
+      }
+      if (operation.stage === 'ROTATION') {
+        drawEntity({
+          type: 'TEXT',
+          position: operation.position,
+          height: operation.height,
+          rotation: Math.atan2(p.y - operation.position.y, p.x - operation.position.x),
+          content: '(text)',
+        }, true);
+      }
+    },
+  });
 
   // ---------------------------------------------------------------------------
   // interaction/input.js
@@ -6151,6 +6647,7 @@ kbd { font-size: 9px; opacity: .65; }
   // ---------------------------------------------------------------------------
 
   function applyDocument(documentData, dirty = true) {
+    releaseBackupPin();
     state.entities = JSON.parse(JSON.stringify(documentData.entities));
     state.layers = JSON.parse(JSON.stringify(documentData.layers));
     state.currentLayerId = documentData.currentLayerId;
@@ -6227,6 +6724,7 @@ kbd { font-size: 9px; opacity: .65; }
         !window.confirm('Start a new drawing? Use Save first if you need a separate copy of the current drawing.')) {
       return false;
     }
+    releaseBackupPin();
     state.entities = [];
     state.layers = createDefaultLayers();
     state.currentLayerId = '0';
@@ -6687,6 +7185,9 @@ kbd { font-size: 9px; opacity: .65; }
         refs: entity.refs.map(ref => (ref ? { ...ref } : null)),
       };
     }
+    // Text has one anchor point and no vertices of its own, so — like a circle
+    // or arc — it answers to that point: caught, it travels; missed, it stays.
+    if (entity.type === 'TEXT') return { ...entity, position: shift(entity.position) };
     return { ...entity };
   }
 
@@ -7097,6 +7598,7 @@ kbd { font-size: 9px; opacity: .65; }
     DLI:'DIMLINEAR', DIMLINEAR:'DIMLINEAR', DIMLIN:'DIMLINEAR',
     DAL:'DIMALIGNED', DIMALIGNED:'DIMALIGNED', DIMALI:'DIMALIGNED',
     DST:'DIMSTYLE', DIMSTYLE:'DIMSTYLE', DDIM:'DIMSTYLE',
+    T:'TEXT', TEXT:'TEXT', DT:'TEXT', DTEXT:'TEXT',
     AA:'AREA', AREA:'AREA',
     ID:'ID', LI:'LIST', LIST:'LIST',
   });
@@ -7558,8 +8060,11 @@ kbd { font-size: 9px; opacity: .65; }
     // Space is a command terminator in AutoCAD and QCAD, so it must never be a
     // literal character here. Mixed numbers are therefore typed with a hyphen —
     // 5'6-1/2" — exactly as AutoCAD requires, and parseDistance accepts both
-    // separators so pasted values still work.
+    // separators so pasted values still work. The one exception is a command
+    // stage that explicitly captures free text (TEXT content): a space there is
+    // a word break, not an Enter, so it is left to type normally instead.
     if (ev.key !== 'Enter' && ev.key !== ' ') return;
+    if (ev.key === ' ' && commandCapturesSpace()) return;
     ev.preventDefault();
     ev.stopPropagation();
     submitCommandInput();
