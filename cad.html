@@ -631,7 +631,12 @@ kbd { font-size: 9px; opacity: .65; }
   // near the base point and far from it.
   const POLAR_APERTURE_PX = 12;
 
-  const DIM_TYPES = ['ALIGNED', 'LINEAR'];
+  const DIM_TYPES = ['ALIGNED', 'LINEAR', 'RADIUS', 'DIAMETER'];
+
+  // What a radial dimension's text is prefixed with. Both measure a circle
+  // rather than a distance between two features, and the prefix is what tells
+  // the two apart on a drawing.
+  const DIM_TEXT_PREFIX = { RADIUS: 'R ', DIAMETER: '⌀ ' };
   const DIM_REF_PARTS = ['START', 'END', 'CENTER', 'MID', 'QUAD', 'VERTEX', 'POINT', 'SEGMENT'];
 
   // No real glyph metrics exist outside a canvas context, so a text entity's
@@ -1383,8 +1388,9 @@ kbd { font-size: 9px; opacity: .65; }
   function dimensionText(entity) {
     const geometry = dimensionGeometry(entity);
     const style = geometry.style;
-    if (style.precision === null) return formatLength(geometry.measure);
-    return formatLength(geometry.measure, { ...state.unitSettings, precision: style.precision });
+    const prefix = DIM_TEXT_PREFIX[entity.dimType] || '';
+    if (style.precision === null) return prefix + formatLength(geometry.measure);
+    return prefix + formatLength(geometry.measure, { ...state.unitSettings, precision: style.precision });
   }
 
   // The line work only, used for hit testing and bounds. Text is excluded on
@@ -1480,11 +1486,11 @@ kbd { font-size: 9px; opacity: .65; }
       }
       // Most points picked on a circle or arc are not one of the few named
       // candidates above — a NEAREST snap or a typed coordinate that happens to
-      // land on the curve is by far the common case when dimensioning a circle,
-      // since there is no dedicated radius/diameter dimension command. Any such
-      // point is still a real, trackable spot: its angle from the entity's
-      // centre. Checked last so an exact quadrant or arc endpoint still gets
-      // its more specific part instead of falling through to this.
+      // land on the curve is the common case, and it is also what DIMRADIUS and
+      // DIMDIAMETER produce, since the point their leader lands on is wherever
+      // the cursor was. Any such point is still a real, trackable spot: its
+      // angle from the entity's centre. Checked last so an exact quadrant or arc
+      // endpoint still gets its more specific part instead of falling through.
       if (entity.type === 'CIRCLE' || entity.type === 'ARC') {
         if (Math.abs(dist(point, entity.center) - entity.radius) > REFERENCE_TOLERANCE) continue;
         const angle = angleFromCenter(entity.center, point);
@@ -3035,6 +3041,99 @@ kbd { font-size: 9px; opacity: .65; }
     return JSON.parse(JSON.stringify(entity));
   }
 
+  // Reflecting a point across the line through axisA and axisB: split the offset
+  // from axisA into the component running along the axis and the component
+  // crossing it, then negate only the second.
+  function mirrorPoint(point, axisA, axisB) {
+    const axisX = axisB.x - axisA.x;
+    const axisY = axisB.y - axisA.y;
+    const axisLengthSq = axisX * axisX + axisY * axisY;
+    // Two coincident points name no direction to reflect across. The command
+    // rejects that before committing, so the point is handed back untouched
+    // rather than turned into NaN on the way to a preview.
+    if (axisLengthSq < 1e-18) return { x: point.x, y: point.y };
+    const dx = point.x - axisA.x;
+    const dy = point.y - axisA.y;
+    const projection = 2 * (dx * axisX + dy * axisY) / axisLengthSq;
+    return {
+      x: axisA.x + projection * axisX - dx,
+      y: axisA.y + projection * axisY - dy,
+    };
+  }
+
+  // A direction at angle θ reflected across an axis at angle φ comes back at
+  // 2φ − θ.
+  function mirrorAngle(angle, axisA, axisB) {
+    const axisAngle = Math.atan2(axisB.y - axisA.y, axisB.x - axisA.x);
+    return normalizeAngle(2 * axisAngle - angle);
+  }
+
+  function mirrorEntity(entity, axisA, axisB, id = entity.id) {
+    if (entity.type === 'LINE') {
+      return {
+        ...entity,
+        id,
+        a: mirrorPoint(entity.a, axisA, axisB),
+        b: mirrorPoint(entity.b, axisA, axisB),
+      };
+    }
+    if (entity.type === 'PLINE') {
+      return {
+        ...entity,
+        id,
+        points: entity.points.map(point => mirrorPoint(point, axisA, axisB)),
+      };
+    }
+    if (entity.type === 'CIRCLE') {
+      return { ...entity, id, center: mirrorPoint(entity.center, axisA, axisB) };
+    }
+    if (entity.type === 'ARC') {
+      // Reflection reverses the sense of rotation, so the mirrored arc runs
+      // counter-clockwise from the reflected end back to the reflected start.
+      // Sweeping the original magnitude from that reflected end lands on the
+      // reflected start and covers the mirrored span.
+      const sweep = arcSweep(entity);
+      const startAngle = mirrorAngle(entity.startAngle + sweep, axisA, axisB);
+      return {
+        ...entity,
+        id,
+        center: mirrorPoint(entity.center, axisA, axisB),
+        startAngle,
+        endAngle: startAngle + sweep,
+      };
+    }
+    if (entity.type === 'DIM') {
+      return {
+        ...entity,
+        id,
+        p1: mirrorPoint(entity.p1, axisA, axisB),
+        p2: mirrorPoint(entity.p2, axisA, axisB),
+        linePoint: mirrorPoint(entity.linePoint, axisA, axisB),
+        // A LINEAR dimension measures along a fixed direction, so that direction
+        // reflects with the geometry or the measurement silently changes.
+        rotation: mirrorAngle(entity.rotation, axisA, axisB),
+        // textOffset is a displacement rather than a place, so it reflects about
+        // the origin: only its direction is meant to change.
+        textOffset: entity.textOffset
+          ? mirrorPoint(
+            entity.textOffset,
+            { x: 0, y: 0 },
+            { x: axisB.x - axisA.x, y: axisB.y - axisA.y },
+          )
+          : null,
+        refs: entity.refs.map(ref => (ref ? { ...ref } : null)),
+      };
+    }
+    if (entity.type === 'TEXT') {
+      // AutoCAD's MIRRTEXT default, and for the same reason: the insertion point
+      // moves with everything else, but the lettering keeps its own angle rather
+      // than becoming a mirror image of itself. A note on a mirrored roof half
+      // still has to be readable.
+      return { ...entity, id, position: mirrorPoint(entity.position, axisA, axisB) };
+    }
+    return JSON.parse(JSON.stringify(entity));
+  }
+
   // ---------------------------------------------------------------------------
   // ui/dialogs/units.js
   // ---------------------------------------------------------------------------
@@ -4112,14 +4211,32 @@ kbd { font-size: 9px; opacity: .65; }
     draw();
   }
 
-  function deleteSelected() {
+  // The one implementation of "remove what is selected", shared by the Delete
+  // key and the ERASE command. It reports what it did so ERASE can say so at the
+  // prompt; the key press has nowhere to show that and ignores it.
+  function eraseSelection() {
     const deletable = new Set(state.entities
       .filter(entity => state.selected.has(entity.id) && isEntityEditable(entity))
       .map(entity => entity.id));
-    if (!deletable.size) return;
-    if (!commitGeometry(state.entities.filter(e => !deletable.has(e.id)))) return;
+    if (!deletable.size) return { error: 'No objects selected.', erased: 0 };
+    if (!commitGeometry(state.entities.filter(e => !deletable.has(e.id)))) {
+      return { error: 'That deletion was rejected.', erased: 0 };
+    }
     state.selected.clear();
     draw();
+    return { erased: deletable.size };
+  }
+
+  // A dimension whose geometry is erased freezes at its last measured value
+  // rather than disappearing, so the count names objects removed, not objects
+  // affected.
+  function eraseNote(result) {
+    if (!result.erased) return '';
+    return `Erased ${result.erased} object${result.erased === 1 ? '' : 's'}.`;
+  }
+
+  function deleteSelected() {
+    eraseSelection();
   }
 
   // ---------------------------------------------------------------------------
@@ -5781,6 +5898,149 @@ kbd { font-size: 9px; opacity: .65; }
   }
 
   // ---------------------------------------------------------------------------
+  // Radial dimensions
+  //
+  // RADIUS and DIAMETER measure one circular entity rather than the distance
+  // between two features, but they still fit the two-point definition every
+  // other dimension uses: the dimension line is laid along a radius, so p1/p2
+  // are simply the two ends of what is being measured — centre-to-edge for a
+  // radius, edge-to-edge for a diameter. Because both points then sit on the
+  // line through linePoint, the shared geometry produces no extension lines,
+  // which is exactly right for a radial dimension.
+  //
+  // Both points land on features resolveEntityReference already tracks (the
+  // centre, and an arbitrary angle on the curve), so radial dimensions are
+  // associative through the existing machinery with nothing added.
+  //
+  // DIAMETER is offered on circles only. On an arc the opposite end of the
+  // diameter is not on the arc, so its reference would not resolve and the
+  // dimension would distort the moment the arc moved — a silently wrong result
+  // is worse than saying DIMRADIUS is the command for an arc.
+  // ---------------------------------------------------------------------------
+
+  function radialTarget(world, dimType) {
+    const hit = hitTestSegment(world, 10, null, true);
+    if (!hit) return { error: 'No circle or arc there. Click one.' };
+    const entity = hit.entity;
+    if (entity.type !== 'CIRCLE' && entity.type !== 'ARC') {
+      return { error: `That is a ${entity.type}. Select a circle or arc.` };
+    }
+    if (dimType === 'DIAMETER' && entity.type === 'ARC') {
+      return { error: 'DIMDIAMETER measures a circle. Use DIMRADIUS on an arc.' };
+    }
+    return { entity };
+  }
+
+  // The cursor picks both which way the leader runs and how far the text sits
+  // along it, the way AutoCAD's radial dimensions behave.
+  function radialDimensionEntity(dimType, targetId, cursor) {
+    const target = state.entities.find(entity => entity.id === targetId);
+    if (!target || (target.type !== 'CIRCLE' && target.type !== 'ARC')) return null;
+    if (target.radius <= 1e-9) return null;
+
+    let angle = angleFromCenter(target.center, cursor);
+    // On an arc the leader has to land on the arc itself rather than on the
+    // empty part of the circle it belongs to.
+    if (target.type === 'ARC' && !angleOnArc(angle, target)) {
+      const sweep = target.endAngle - target.startAngle;
+      const past = normalizeAngle(angle - target.startAngle);
+      angle = past - sweep < TAU - past ? target.endAngle : target.startAngle;
+    }
+    const edge = circularPoint(target.center, target.radius, angle);
+    const p1 = dimType === 'RADIUS'
+      ? { ...target.center }
+      : circularPoint(target.center, target.radius, angle + Math.PI);
+    const refs = [resolveEntityReference(p1), resolveEntityReference(edge)];
+
+    // linePoint sits on the measured line itself, so the shared geometry
+    // projects p1/p2 onto themselves and draws the dimension line straight
+    // along the radius.
+    const entity = buildDimension(dimType, p1, edge, p1, refs);
+    const mid = { x: (p1.x + edge.x) / 2, y: (p1.y + edge.y) / 2 };
+    // The text follows the cursor, which is the only thing left for the second
+    // pick to say once the angle is taken from it.
+    entity.textOffset = { x: cursor.x - mid.x, y: cursor.y - mid.y };
+    return entity;
+  }
+
+  function addRadialDimension(dimType, targetId, cursor) {
+    if (!currentLayerIsEditable()) return false;
+    const entity = radialDimensionEntity(dimType, targetId, cursor);
+    if (!entity) {
+      updatePrompt('That circle is no longer in the drawing.');
+      return false;
+    }
+    if (dimensionGeometry(entity).measure <= 1e-9) {
+      updatePrompt('That circle is too small to dimension.');
+      return false;
+    }
+    entity.id = state.nextId;
+    return commitGeometry([...state.entities, entity], { nextId: state.nextId + 1 });
+  }
+
+  function radialDimensionCommand(dimType, label) {
+    return {
+      stateMode: 'DIM',
+      creates: true,
+
+      canBegin() {
+        if (currentLayerIsEditable()) return true;
+        updatePrompt('The current layer is locked or hidden.');
+        return false;
+      },
+
+      begin() {
+        state.dimension = { dimType, refs: [null, null], targetId: null };
+      },
+
+      // The first pick names which circle and the second names a direction
+      // around it. Neither is a place in the drawing, so a snap would only
+      // fight both.
+      usesSnap: false,
+
+      acceptsPoint() {
+        return false;
+      },
+
+      prompt() {
+        return state.dimension?.targetId
+          ? `${label} — Specify the dimension line location:`
+          : `${label} — Select a ${dimType === 'DIAMETER' ? 'circle' : 'circle or arc'}:`;
+      },
+
+      point(p) {
+        const operation = state.dimension;
+        if (!operation) return;
+        if (!operation.targetId) {
+          const picked = radialTarget(p, dimType);
+          if (picked.error) {
+            updatePrompt(picked.error);
+            draw();
+            return;
+          }
+          operation.targetId = picked.entity.id;
+          updatePrompt();
+          draw();
+          return;
+        }
+        if (addRadialDimension(dimType, operation.targetId, p)) setMode('SELECT');
+      },
+
+      previewReady() {
+        return Boolean(state.dimension?.targetId);
+      },
+
+      preview(p) {
+        const entity = radialDimensionEntity(state.dimension.dimType, state.dimension.targetId, p);
+        if (entity && dimensionGeometry(entity).measure > 1e-9) drawEntity(entity, true);
+      },
+    };
+  }
+
+  defineCommand('DIMRADIUS', radialDimensionCommand('RADIUS', 'DIMRADIUS'));
+  defineCommand('DIMDIAMETER', radialDimensionCommand('DIAMETER', 'DIMDIAMETER'));
+
+  // ---------------------------------------------------------------------------
   // TEXT
   //
   // Follows the AutoCAD single-line TEXT flow: insertion point, height,
@@ -6523,6 +6783,111 @@ kbd { font-size: 9px; opacity: .65; }
       drawTransformGuide(newLengthAnchor, p, label);
     },
   });
+  // The stages at which MIRROR is placing the mirror line. Both measure from
+  // the first picked point, and ORTHO applies to the second: a mirror axis in a
+  // building plan is very often exactly horizontal or vertical.
+  const MIRROR_AXIS_STAGES = ['BASE', 'SECOND'];
+
+  const YES_KEYWORDS = ['Y', 'YES'];
+  const NO_KEYWORDS = ['N', 'NO'];
+
+  defineCommand('MIRROR', {
+    ...transformStages('MIRROR', { second: null }),
+
+    usesOrtho() {
+      return state.transform?.stage === 'SECOND';
+    },
+
+    takesDistance() {
+      return state.transform?.stage === 'SECOND';
+    },
+
+    basePoint() {
+      return state.transform?.stage === 'SECOND' ? state.transform.base : null;
+    },
+
+    acceptsPoint() {
+      return MIRROR_AXIS_STAGES.includes(state.transform?.stage);
+    },
+
+    prompt() {
+      const stage = state.transform?.stage || 'SELECT';
+      if (stage === 'SELECT') return transformSelectionPrompt('MIRROR');
+      if (stage === 'BASE') return 'MIRROR — Specify first point of mirror line:';
+      if (stage === 'SECOND') return 'MIRROR — Specify second point of mirror line:';
+      return 'MIRROR — Erase source objects? [Yes/No] <No>:';
+    },
+
+    point(p) {
+      const operation = state.transform;
+      if (!operation) return;
+      if (operation.stage === 'BASE') {
+        operation.base = { ...p };
+        operation.stage = 'SECOND';
+        updatePrompt();
+        return;
+      }
+      if (operation.stage !== 'SECOND') return;
+      if (dist(operation.base, p) < 1e-9) {
+        updatePrompt('The mirror line needs two distinct points.');
+        return;
+      }
+      operation.second = { ...p };
+      operation.stage = 'CONFIRM';
+      updatePrompt();
+    },
+
+    keyword(text) {
+      const operation = state.transform;
+      if (operation?.stage !== 'CONFIRM') return false;
+      const answer = text.trim().toUpperCase();
+      if (YES_KEYWORDS.includes(answer)) {
+        applyMirror(true);
+        return true;
+      }
+      if (NO_KEYWORDS.includes(answer)) {
+        applyMirror(false);
+        return true;
+      }
+      return false;
+    },
+
+    previewReady() {
+      return ['SECOND', 'CONFIRM'].includes(state.transform?.stage);
+    },
+
+    preview(p) {
+      const operation = state.transform;
+      // Once the axis is fixed the cursor no longer defines it, so the committed
+      // second point drives the preview and the answer stage keeps showing the
+      // result the user is about to accept.
+      const axisEnd = operation.stage === 'CONFIRM' ? operation.second : p;
+      if (dist(operation.base, axisEnd) < 1e-9) return;
+      const ids = new Set(operation.ids);
+      for (const entity of state.entities) {
+        if (ids.has(entity.id) && isEntityEditable(entity)) {
+          drawEntity(mirrorEntity(entity, operation.base, axisEnd), true);
+        }
+      }
+      drawTransformGuide(
+        operation.base,
+        axisEnd,
+        `Mirror @ ${formatAngle(Math.atan2(axisEnd.y - operation.base.y, axisEnd.x - operation.base.x))}`,
+        true,
+      );
+    },
+
+    // Enter answers whichever question is open: the selection first, then the
+    // bracketed <No> default for erasing the source.
+    finish() {
+      if (state.transform?.stage === 'CONFIRM') {
+        applyMirror(false);
+        return true;
+      }
+      return acceptTransformSelection();
+    },
+  });
+
   function editableSelectionIds() {
     return state.entities
       .filter(entity => state.selected.has(entity.id) && isEntityEditable(entity))
@@ -6639,6 +7004,43 @@ kbd { font-size: 9px; opacity: .65; }
 
     if (!commitGeometry(state.entities.map(entity => scaled.get(entity.id) || entity))) return;
     state.selected = new Set(idSet);
+    setMode('SELECT');
+  }
+
+  function applyMirror(eraseSource) {
+    const operation = state.transform;
+    if (!operation?.base || operation.stage !== 'CONFIRM' || operation.type !== 'MIRROR') return;
+    if (!operation.second || dist(operation.base, operation.second) < 1e-9) {
+      updatePrompt('The mirror line needs two distinct points.');
+      return;
+    }
+
+    const idSet = new Set(state.entities
+      .filter(entity => operation.ids.includes(entity.id) && isEntityEditable(entity))
+      .map(entity => entity.id));
+    if (!idSet.size) {
+      updatePrompt('The selected objects are no longer editable.');
+      return;
+    }
+
+    if (eraseSource) {
+      const entities = state.entities.map(entity =>
+        idSet.has(entity.id) ? mirrorEntity(entity, operation.base, operation.second) : entity,
+      );
+      if (!commitGeometry(entities)) return;
+      state.selected = new Set(idSet);
+    } else {
+      // The reflected entities keep their original ids on the way into
+      // duplicateEntities, which is what lets a mirrored dimension be remapped
+      // onto the mirrored copy of the geometry it measures rather than left
+      // pointing at the original.
+      const reflected = state.entities
+        .filter(entity => idSet.has(entity.id))
+        .map(entity => mirrorEntity(entity, operation.base, operation.second));
+      const { entities: copies, nextId } = duplicateEntities(reflected, state.nextId);
+      if (!commitGeometry([...state.entities, ...copies], { nextId })) return;
+      state.selected = new Set(copies.map(entity => entity.id));
+    }
     setMode('SELECT');
   }
 
@@ -6993,6 +7395,250 @@ kbd { font-size: 9px; opacity: .65; }
     if (!commitGeometry([...state.entities, result], { nextId: state.nextId + 1 })) return;
     state.selected = new Set([result.id]);
     setMode('SELECT');
+  }
+
+  // ---------------------------------------------------------------------------
+  // geometry/fillet.js
+  // ---------------------------------------------------------------------------
+
+  // ---------------------------------------------------------------------------
+  // Fillet and chamfer
+  //
+  // Both rebuild the corner where two straight edges meet: FILLET with a tangent
+  // arc of a given radius, CHAMFER with a straight cut at given distances. Both
+  // trim or extend the two edges onto the new corner, which is why a radius of
+  // zero is not a special case but the everyday "close this corner exactly"
+  // cleanup — the tangent length falls out as zero and the two edges simply meet
+  // at their intersection.
+  //
+  // Only LINE/LINE corners are handled. Arcs, circles and polyline segments are
+  // refused by name rather than quietly skipped, per the roadmap's rule that an
+  // unsupported case is reported and the original geometry preserved.
+  // ---------------------------------------------------------------------------
+
+  const CORNER_TOLERANCE = 1e-9;
+
+  // Two directions this close to parallel have no usable corner: the
+  // intersection runs off towards infinity and the arithmetic stops meaning
+  // anything. Compared against the sine of the angle between unit vectors, so
+  // the test is about the angle rather than the size of the coordinates.
+  const CORNER_PARALLEL_SINE = 1e-9;
+
+  function cornerDirection(line) {
+    const dx = line.b.x - line.a.x;
+    const dy = line.b.y - line.a.y;
+    const length = Math.hypot(dx, dy);
+    if (length < CORNER_TOLERANCE) return null;
+    return { x: dx / length, y: dy / length };
+  }
+
+  // One side of the corner: which way the edge runs away from the intersection
+  // towards the part the user picked, and which endpoint therefore survives.
+  function cornerArm(line, corner, pick) {
+    const along = cornerDirection(line);
+    if (!along) return null;
+    const reach = (pick.x - corner.x) * along.x + (pick.y - corner.y) * along.y;
+    const endA = (line.a.x - corner.x) * along.x + (line.a.y - corner.y) * along.y;
+    const endB = (line.b.x - corner.x) * along.x + (line.b.y - corner.y) * along.y;
+    // A pick sitting on the corner itself names no side, so the longer half of
+    // the edge is kept: that is the piece the user can still see.
+    const forward = Math.abs(reach) > CORNER_TOLERANCE
+      ? reach > 0
+      : Math.abs(endA) < Math.abs(endB) ? endB > 0 : endA > 0;
+    const direction = forward ? along : { x: -along.x, y: -along.y };
+    const projectionA = forward ? endA : -endA;
+    const projectionB = forward ? endB : -endB;
+    return {
+      direction,
+      // The surviving endpoint is the one furthest along the kept direction.
+      // When the corner lies beyond both, this is the end the edge is stretched
+      // from to reach it.
+      far: projectionA >= projectionB ? line.a : line.b,
+      reach: Math.max(projectionA, projectionB),
+    };
+  }
+
+  function cornerFrame(first, second, pickFirst, pickSecond) {
+    const along1 = cornerDirection(first);
+    const along2 = cornerDirection(second);
+    if (!along1 || !along2) return { error: 'A line with no length has no direction to work from.' };
+    // Parallel and collinear are the same refusal, and it is made here, on unit
+    // directions, rather than on the crossing itself: a pair of edges a hair off
+    // parallel still produces a finite intersection, just one thousands of units
+    // away that no user pointed at.
+    const sine = along1.x * along2.y - along1.y * along2.x;
+    if (Math.abs(sine) < CORNER_PARALLEL_SINE) {
+      return { error: 'Those two lines are parallel, so they have no corner.' };
+    }
+
+    const corner = infiniteLineIntersection(first.a, first.b, second.a, second.b);
+    if (!corner) return { error: 'Those two lines are parallel, so they have no corner.' };
+    const arm1 = cornerArm(first, corner, pickFirst);
+    const arm2 = cornerArm(second, corner, pickSecond);
+    // Either kept side may run against its line's stored direction, so the
+    // enclosed angle is measured from the arms. It is the corner the user
+    // pointed into, not necessarily the smallest of the four the crossing makes.
+    const cosine = arm1.direction.x * arm2.direction.x + arm1.direction.y * arm2.direction.y;
+    const armSine = arm1.direction.x * arm2.direction.y - arm1.direction.y * arm2.direction.x;
+    return { corner, arm1, arm2, included: Math.atan2(Math.abs(armSine), cosine) };
+  }
+
+  // The arc belongs with the corner it closes, so it inherits the layer when
+  // both edges agree and falls back to the current layer when they do not.
+  function cornerLayerId(first, second) {
+    return first.layerId === second.layerId ? first.layerId : state.currentLayerId;
+  }
+
+  function filletCorner(first, second, pickFirst, pickSecond, radius) {
+    const frame = cornerFrame(first, second, pickFirst, pickSecond);
+    if (frame.error) return frame;
+    const { corner, arm1, arm2, included } = frame;
+
+    const half = included / 2;
+    // Distance back from the corner to where the arc becomes tangent. At radius
+    // zero this is zero and the edges meet at the corner with no arc at all.
+    const tangent = radius > 0 ? radius / Math.tan(half) : 0;
+    if (!Number.isFinite(tangent)) return { error: 'That radius does not fit this corner.' };
+    if (tangent > arm1.reach + CORNER_TOLERANCE || tangent > arm2.reach + CORNER_TOLERANCE) {
+      return { error: 'That radius is too large for these lines.' };
+    }
+
+    const t1 = { x: corner.x + tangent * arm1.direction.x, y: corner.y + tangent * arm1.direction.y };
+    const t2 = { x: corner.x + tangent * arm2.direction.x, y: corner.y + tangent * arm2.direction.y };
+
+    const edges = [
+      { ...first, a: { ...arm1.far }, b: t1 },
+      { ...second, a: { ...arm2.far }, b: t2 },
+    ];
+    if (radius <= 0) return { edges, arc: null };
+
+    // The centre sits on the bisector of the kept sides, far enough along it
+    // that the perpendicular distance to each edge is exactly the radius.
+    const bisectorX = arm1.direction.x + arm2.direction.x;
+    const bisectorY = arm1.direction.y + arm2.direction.y;
+    const bisectorLength = Math.hypot(bisectorX, bisectorY);
+    if (bisectorLength < CORNER_TOLERANCE) return { error: 'That radius does not fit this corner.' };
+    const offset = radius / Math.sin(half);
+    const center = {
+      x: corner.x + offset * bisectorX / bisectorLength,
+      y: corner.y + offset * bisectorY / bisectorLength,
+    };
+
+    // Arcs are stored counter-clockwise, so whichever tangent point comes first
+    // going that way becomes the start; the fillet is always the short way
+    // round, never the reflex remainder.
+    let startAngle = angleFromCenter(center, t1);
+    let sweep = normalizeAngle(angleFromCenter(center, t2) - startAngle);
+    if (sweep > Math.PI) {
+      startAngle = angleFromCenter(center, t2);
+      sweep = TAU - sweep;
+    }
+    if (sweep <= 1e-8) return { error: 'That radius does not fit this corner.' };
+
+    return {
+      edges,
+      arc: {
+        type: 'ARC',
+        layerId: cornerLayerId(first, second),
+        center,
+        radius,
+        startAngle,
+        endAngle: startAngle + sweep,
+      },
+    };
+  }
+
+  function chamferCorner(first, second, pickFirst, pickSecond, firstDistance, secondDistance) {
+    const frame = cornerFrame(first, second, pickFirst, pickSecond);
+    if (frame.error) return frame;
+    const { corner, arm1, arm2 } = frame;
+    if (firstDistance > arm1.reach + CORNER_TOLERANCE || secondDistance > arm2.reach + CORNER_TOLERANCE) {
+      return { error: 'Those chamfer distances are too large for these lines.' };
+    }
+
+    const t1 = { x: corner.x + firstDistance * arm1.direction.x, y: corner.y + firstDistance * arm1.direction.y };
+    const t2 = { x: corner.x + secondDistance * arm2.direction.x, y: corner.y + secondDistance * arm2.direction.y };
+    const edges = [
+      { ...first, a: { ...arm1.far }, b: t1 },
+      { ...second, a: { ...arm2.far }, b: t2 },
+    ];
+    // Both distances zero is the same corner-close FILLET 0 performs, and there
+    // is no cut line to draw between two coincident points.
+    if (firstDistance <= 0 && secondDistance <= 0) return { edges, cut: null };
+    return {
+      edges,
+      cut: { type: 'LINE', layerId: cornerLayerId(first, second), a: t1, b: t2 },
+    };
+  }
+
+  // Which edge the cursor is over, refusing anything that is not a plain line by
+  // name so the reason is visible rather than the click just doing nothing.
+  function cornerPick(world, excludedIds = null) {
+    const hit = hitTestSegment(world, 10, excludedIds, true);
+    if (!hit) return { error: 'No line there. Click a line.' };
+    const entity = hit.entity;
+    if (entity.type !== 'LINE') {
+      return { error: `${state.edit?.type || 'FILLET'} works on two lines; that is a ${entity.type}.` };
+    }
+    if (!isEntityEditable(entity)) return { error: 'That line is on a locked or hidden layer.' };
+    return { entity, point: hit.point };
+  }
+
+  function applyCorner(secondPick) {
+    const operation = state.edit;
+    if (!operation || !['FILLET', 'CHAMFER'].includes(operation.type)) return;
+
+    const picked = cornerPick(secondPick);
+    if (picked.error) {
+      updatePrompt(picked.error);
+      draw();
+      return;
+    }
+    const first = state.entities.find(entity => entity.id === operation.firstId);
+    if (!first) {
+      resetCornerPick('The first line is no longer in the drawing.');
+      return;
+    }
+    if (picked.entity.id === first.id) {
+      updatePrompt('Pick a second, different line.');
+      draw();
+      return;
+    }
+
+    const result = operation.type === 'FILLET'
+      ? filletCorner(first, picked.entity, operation.firstPoint, picked.point, operation.radius)
+      : chamferCorner(
+        first, picked.entity, operation.firstPoint, picked.point,
+        operation.firstDistance, operation.secondDistance,
+      );
+    if (result.error) {
+      resetCornerPick(result.error);
+      return;
+    }
+
+    const replaced = new Map(result.edges.map(edge => [edge.id, edge]));
+    const entities = state.entities.map(entity => replaced.get(entity.id) || entity);
+    const addition = result.arc || result.cut;
+    if (addition) {
+      if (!commitGeometry([...entities, { ...addition, id: state.nextId }], { nextId: state.nextId + 1 })) return;
+    } else if (!commitGeometry(entities)) {
+      return;
+    }
+    resetCornerPick();
+  }
+
+  // Back to waiting for a first line, so corners can be cleaned up one after
+  // another without retyping the command — the same repeat-until-dismissed shape
+  // TRIM and EXTEND already use. A refusal passes its reason through here rather
+  // than announcing it first, because resetting the stage rewrites the prompt
+  // and would otherwise wipe the explanation before it could be read.
+  function resetCornerPick(message) {
+    if (!state.edit) return;
+    state.edit.stage = 'FIRST';
+    state.edit.firstId = null;
+    state.edit.firstPoint = null;
+    updatePrompt(message);
+    draw();
   }
 
   // ---------------------------------------------------------------------------
@@ -7423,6 +8069,154 @@ kbd { font-size: 9px; opacity: .65; }
     },
   });
 
+  // FILLET and CHAMFER keep their settings between invocations, the way every
+  // CAD does: a plan is cleaned up one corner at a time at a radius chosen once.
+  const cornerSettings = { radius: 0, firstDistance: 0, secondDistance: 0 };
+
+  const RADIUS_KEYWORDS = ['R', 'RAD', 'RADIUS'];
+  const DISTANCE_KEYWORDS = ['D', 'DIST', 'DISTANCE'];
+
+  // FILLET and CHAMFER differ only in what replaces the corner and which
+  // settings they ask for, so they share every stage: optional settings, a first
+  // line, a second line, then straight back to the first line for the next
+  // corner.
+  function cornerCommand(type) {
+    const valueStages = type === 'FILLET' ? ['RADIUS'] : ['DISTANCE1', 'DISTANCE2'];
+
+    return {
+      begin() {
+        // The picks name which line and which side, never a place, so an
+        // unrelated selection would only be visual noise through the command.
+        state.selected.clear();
+        state.edit = { type, stage: 'FIRST', firstId: null, firstPoint: null, ...cornerSettings };
+      },
+
+      // Both picks say which edge and which side of the corner is meant. A snap
+      // would pull them onto an endpoint and change the answer to both.
+      usesSnap: false,
+
+      acceptsPoint() {
+        return false;
+      },
+
+      takesDistance() {
+        return valueStages.includes(state.edit?.stage);
+      },
+
+      prompt() {
+        const operation = state.edit;
+        const stage = operation?.stage || 'FIRST';
+        if (stage === 'RADIUS') return `FILLET — Specify fillet radius <${formatLengthLabel(operation.radius)}>:`;
+        if (stage === 'DISTANCE1') return `CHAMFER — Specify first chamfer distance <${formatLengthLabel(operation.firstDistance)}>:`;
+        if (stage === 'DISTANCE2') return `CHAMFER — Specify second chamfer distance <${formatLengthLabel(operation.secondDistance)}>:`;
+        if (stage === 'SECOND') return `${type} — Select the second line:`;
+        const setting = type === 'FILLET'
+          ? `radius ${formatLengthLabel(operation?.radius ?? 0)}`
+          : `${formatLengthLabel(operation?.firstDistance ?? 0)} × ${formatLengthLabel(operation?.secondDistance ?? 0)}`;
+        const option = type === 'FILLET' ? 'Radius' : 'Distance';
+        return `${type} — Select the first line or [${option}] (${setting}); Enter/right-click/Esc to finish:`;
+      },
+
+      keyword(text) {
+        const operation = state.edit;
+        if (operation?.stage !== 'FIRST') return false;
+        const answer = text.trim().toUpperCase();
+        if (type === 'FILLET' && RADIUS_KEYWORDS.includes(answer)) {
+          operation.stage = 'RADIUS';
+        } else if (type === 'CHAMFER' && DISTANCE_KEYWORDS.includes(answer)) {
+          operation.stage = 'DISTANCE1';
+        } else {
+          return false;
+        }
+        updatePrompt();
+        draw();
+        return true;
+      },
+
+      distance(value) {
+        const operation = state.edit;
+        if (!valueStages.includes(operation?.stage)) return false;
+        // A zero radius or distance is the ordinary "just close this corner"
+        // instruction, so only a negative one is refused.
+        if (value < 0) {
+          updatePrompt('That value cannot be negative.');
+          return true;
+        }
+        if (operation.stage === 'RADIUS') {
+          operation.radius = value;
+          cornerSettings.radius = value;
+          operation.stage = 'FIRST';
+        } else if (operation.stage === 'DISTANCE1') {
+          operation.firstDistance = value;
+          cornerSettings.firstDistance = value;
+          // The second distance follows the first unless it is changed, which is
+          // what makes an equal-sided chamfer a single answer.
+          operation.secondDistance = value;
+          cornerSettings.secondDistance = value;
+          operation.stage = 'DISTANCE2';
+        } else {
+          operation.secondDistance = value;
+          cornerSettings.secondDistance = value;
+          operation.stage = 'FIRST';
+        }
+        updatePrompt();
+        draw();
+        return true;
+      },
+
+      point(p) {
+        const operation = state.edit;
+        if (operation?.stage === 'FIRST') {
+          const picked = cornerPick(p);
+          if (picked.error) {
+            updatePrompt(picked.error);
+            draw();
+            return;
+          }
+          operation.firstId = picked.entity.id;
+          operation.firstPoint = { ...picked.point };
+          operation.stage = 'SECOND';
+          updatePrompt();
+          draw();
+          return;
+        }
+        if (operation?.stage === 'SECOND') applyCorner(p);
+      },
+
+      previewReady() {
+        return state.edit?.stage === 'SECOND';
+      },
+
+      preview(p) {
+        const operation = state.edit;
+        const first = state.entities.find(entity => entity.id === operation.firstId);
+        const picked = cornerPick(p);
+        if (!first || picked.error || picked.entity.id === first.id) return;
+        const result = operation.type === 'FILLET'
+          ? filletCorner(first, picked.entity, operation.firstPoint, picked.point, operation.radius)
+          : chamferCorner(
+            first, picked.entity, operation.firstPoint, picked.point,
+            operation.firstDistance, operation.secondDistance,
+          );
+        if (result.error) return;
+        for (const edge of result.edges) drawEntity(edge, true);
+        const addition = result.arc || result.cut;
+        if (addition) drawEntity(addition, true);
+      },
+
+      // One rule for Enter at every stage: the command is done. Abandoning a
+      // half-picked corner and leaving the command are the same instruction as
+      // far as the user is concerned, and Esc already cancels.
+      finish() {
+        setMode('SELECT');
+        return true;
+      },
+    };
+  }
+
+  defineCommand('FILLET', cornerCommand('FILLET'));
+  defineCommand('CHAMFER', cornerCommand('CHAMFER'));
+
   function selectionEditCommand(type, label, apply, note) {
     return {
       additiveSelection: true,
@@ -7468,6 +8262,10 @@ kbd { font-size: 9px; opacity: .65; }
 
   defineCommand('JOIN', selectionEditCommand('JOIN', 'join', joinSelection, joinNote));
   defineCommand('EXPLODE', selectionEditCommand('EXPLODE', 'explode', explodeSelection, explodeNote));
+  // ERASE reads a selection and nothing else, which is the shape JOIN and
+  // EXPLODE already have: act on a preselection at once, otherwise gather one
+  // and act on Enter. The Delete key stays as the shortcut for the same thing.
+  defineCommand('ERASE', selectionEditCommand('ERASE', 'erase', eraseSelection, eraseNote));
   defineCommand('STRETCH', {
     additiveSelection: true,
 
@@ -7587,8 +8385,10 @@ kbd { font-size: 9px; opacity: .65; }
     REC:'RECTANGLE', RECTANG:'RECTANGLE', RECTANGLE:'RECTANGLE', C:'CIRCLE', CIRCLE:'CIRCLE',
     A:'ARC', ARC:'ARC',
     M:'MOVE', MOVE:'MOVE', CO:'COPY', COPY:'COPY', CP:'COPY', RO:'ROTATE', ROTATE:'ROTATE',
-    SC:'SCALE', SCALE:'SCALE',
+    SC:'SCALE', SCALE:'SCALE', MI:'MIRROR', MIRROR:'MIRROR',
+    E:'ERASE', ERASE:'ERASE', DEL:'ERASE', DELETE:'ERASE',
     O:'OFFSET', OFFSET:'OFFSET',
+    F:'FILLET', FILLET:'FILLET', CHA:'CHAMFER', CHAMFER:'CHAMFER',
     TR:'TRIM', TRIM:'TRIM', EX:'EXTEND', EXTEND:'EXTEND', S:'SELECT', SELECT:'SELECT',
     J:'JOIN', JOIN:'JOIN', X:'EXPLODE', EXPLODE:'EXPLODE',
     ST:'STRETCH', STRETCH:'STRETCH',
@@ -7597,6 +8397,8 @@ kbd { font-size: 9px; opacity: .65; }
     DI:'DIST', DIST:'DIST', DISTANCE:'DIST',
     DLI:'DIMLINEAR', DIMLINEAR:'DIMLINEAR', DIMLIN:'DIMLINEAR',
     DAL:'DIMALIGNED', DIMALIGNED:'DIMALIGNED', DIMALI:'DIMALIGNED',
+    DRA:'DIMRADIUS', DIMRADIUS:'DIMRADIUS', DIMRAD:'DIMRADIUS',
+    DDI:'DIMDIAMETER', DIMDIAMETER:'DIMDIAMETER', DIMDIA:'DIMDIAMETER',
     DST:'DIMSTYLE', DIMSTYLE:'DIMSTYLE', DDIM:'DIMSTYLE',
     T:'TEXT', TEXT:'TEXT', DT:'TEXT', DTEXT:'TEXT',
     AA:'AREA', AREA:'AREA',
