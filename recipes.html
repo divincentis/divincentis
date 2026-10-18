@@ -22,15 +22,15 @@
     <div class="search-container">
         <input type="text" class="search-input" placeholder="Search recipes..." id="searchInput">
         <div id="tagFilters">
-            <span class="tag active" data-tag="all">All</span>
-            <span class="tag" data-tag="beverage">Beverage</span>
-            <span class="tag" data-tag="breakfast">Breakfast</span>
-            <span class="tag" data-tag="main">Main Dish</span>
-            <span class="tag" data-tag="side">Side Dish</span>
-            <span class="tag" data-tag="dessert">Dessert</span>
-            <span class="tag" data-tag="quick">Quick</span>
-            <span class="tag" data-tag="vegetarian">Vegetarian</span>
-            <span class="tag" data-tag="grill">Grilled</span>
+            <button type="button" class="tag active" data-tag="all" aria-pressed="true">All</button>
+            <button type="button" class="tag" data-tag="beverage" aria-pressed="false">Beverage</button>
+            <button type="button" class="tag" data-tag="breakfast" aria-pressed="false">Breakfast</button>
+            <button type="button" class="tag" data-tag="main" aria-pressed="false">Main Dish</button>
+            <button type="button" class="tag" data-tag="side" aria-pressed="false">Side Dish</button>
+            <button type="button" class="tag" data-tag="dessert" aria-pressed="false">Dessert</button>
+            <button type="button" class="tag" data-tag="quick" aria-pressed="false">Quick</button>
+            <button type="button" class="tag" data-tag="vegetarian" aria-pressed="false">Vegetarian</button>
+            <button type="button" class="tag" data-tag="grill" aria-pressed="false">Grilled</button>
         </div>
     </div>
 
@@ -109,7 +109,7 @@
                 <p class="text-muted">Mexican-inspired comfort food</p>
                 <div class="recipe-tags">
                     <span class="tag">main</span>
-            </div>
+                </div>
             </div>
             <div class="recipe-item" data-tags="main,grill">
                 <h3><a href="recipes/grilledchickenthighs.html">Grilled Chicken with White BBQ Sauce</a></h3>
@@ -145,32 +145,32 @@
 
     <section class="recipe-card">
         <h2>Side Dishes</h2>
-        <div class="recipe-item" data-tags="side,vegetarian,quick">
-            <h3><a href="recipes/pickledonions.html">Quick Pickled Red Onions</a></h3>
-            <p class="text-muted">Tangy, crisp condiment ready in 30 minutes</p>
-            <div class="recipe-tags">
-                <span class="tag">side</span>
-                <span class="tag">vegetarian</span>
-                <span class="tag">quick</span>
-            </div>
-        </div>
-        <div class="recipe-item" data-tags="side,vegetarian">
-            <h3><a href="recipes/mashedpotatoes.html">Mashed Potatoes</a></h3>
-            <p class="text-muted">Better than average</p>
-            <div class="recipe-tags">
-                <span class="tag">side</span>
-                <span class="tag">vegetarian</span>
-            </div>
-        </div>
-        <div class="recipe-item" data-tags="side,vegetarian">
-            <h3><a href="recipes/creamyrosemarypotatoes.html">Creamy Rosemary Potatoes</a></h3>
-            <p class="text-muted">Decadent au gratin with cream cheese, rosemary, and Parmesan</p>
-            <div class="recipe-tags">
-                <span class="tag">side</span>
-                <span class="tag">vegetarian</span>
-            </div>
-        </div>
         <div class="recipe-grid">
+            <div class="recipe-item" data-tags="side,vegetarian,quick">
+                <h3><a href="recipes/pickledonions.html">Quick Pickled Red Onions</a></h3>
+                <p class="text-muted">Tangy, crisp condiment ready in 30 minutes</p>
+                <div class="recipe-tags">
+                    <span class="tag">side</span>
+                    <span class="tag">vegetarian</span>
+                    <span class="tag">quick</span>
+                </div>
+            </div>
+            <div class="recipe-item" data-tags="side,vegetarian">
+                <h3><a href="recipes/mashedpotatoes.html">Mashed Potatoes</a></h3>
+                <p class="text-muted">Better than average</p>
+                <div class="recipe-tags">
+                    <span class="tag">side</span>
+                    <span class="tag">vegetarian</span>
+                </div>
+            </div>
+            <div class="recipe-item" data-tags="side,vegetarian">
+                <h3><a href="recipes/creamyrosemarypotatoes.html">Creamy Rosemary Potatoes</a></h3>
+                <p class="text-muted">Decadent au gratin with cream cheese, rosemary, and Parmesan</p>
+                <div class="recipe-tags">
+                    <span class="tag">side</span>
+                    <span class="tag">vegetarian</span>
+                </div>
+            </div>
             <div class="recipe-item" data-tags="side,vegetarian">
                 <h3><a href="recipes/mapledijoncarrots.html">Maple Dijon Roasted Carrots</a></h3>
                 <p class="text-muted">With miso paste</p>
@@ -265,8 +265,12 @@
         tagFilters.addEventListener('click', function(e) {
             if (e.target.classList.contains('tag')) {
                 // Update active tag
-                document.querySelectorAll('#tagFilters .tag').forEach(tag => tag.classList.remove('active'));
+                document.querySelectorAll('#tagFilters .tag').forEach(tag => {
+                    tag.classList.remove('active');
+                    tag.setAttribute('aria-pressed', 'false');
+                });
                 e.target.classList.add('active');
+                e.target.setAttribute('aria-pressed', 'true');
                 activeTag = e.target.dataset.tag;
                 filterRecipes();
             }
@@ -282,7 +286,8 @@
                 
                 const matchesSearch = searchTerm === '' || 
                                    title.includes(searchTerm) || 
-                                   description.includes(searchTerm);
+                                   description.includes(searchTerm) ||
+                                   tags.some(tag => tag.includes(searchTerm));
                                    
                 const matchesTag = activeTag === 'all' || tags.includes(activeTag);
                 
