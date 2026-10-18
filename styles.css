@@ -200,6 +200,17 @@ ol.checklist > li::before {
     text-decoration-color: var(--rule);
 }
 
+/* Ingredient amounts repeated inline in instruction steps */
+.qty {
+    font-weight: 600;
+    color: var(--accent);
+    white-space: nowrap;
+}
+
+.checklist li:has(input:checked) .qty {
+    color: inherit;
+}
+
 .reset-button {
     display: block;
     margin-top: 10px;
