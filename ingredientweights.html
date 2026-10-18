@@ -18,6 +18,31 @@
         .conversion-table tr:hover {
             background: var(--bg);
         }
+        .converter-row {
+            display: flex;
+            gap: 8px;
+        }
+        .converter-row .search-input {
+            flex: 1;
+            min-width: 0;
+        }
+        .converter-row select.search-input {
+            flex: 0 0 auto;
+            width: auto;
+            background: var(--bg);
+        }
+        .converter-result {
+            font-size: 28px;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+        .converter-result .text-muted {
+            font-size: 16px;
+            font-weight: normal;
+        }
+        #ingredientTable tr {
+            cursor: pointer;
+        }
         .result-count {
             margin-top: 0.5rem;
             font-size: 0.9rem;
@@ -38,16 +63,28 @@
     <div class="site-corner">divincentis.com</div>
     <nav>
         <ul>
-            <li><a href="../recipes.html">Home</a></li>
-            <li><a href="../recipes.html">Recipes</a></li>
-            <li><a href="../about.html">About</a></li>
+            <li><a href="recipes.html">Home</a></li>
+            <li><a href="recipes.html">Recipes</a></li>
         </ul>
     </nav>
 
     <article class="recipe-card">
         <h1>Ingredient Weights ⚖️</h1>
 
-        <p class="text-muted">A reference table for converting common baking and cooking ingredients between volume and weight. Use the search box to quickly find any ingredient.</p>
+        <p class="text-muted">A reference table for converting common baking and cooking ingredients between volume and weight. Use the converter for any amount, or search the table below. Tap a row to load it into the converter.</p>
+
+        <h2>Converter</h2>
+        <div class="converter">
+            <input type="text" class="search-input" id="convIngredient" list="ingredientList" placeholder="Ingredient (e.g. bread flour)" autocomplete="off">
+            <datalist id="ingredientList"></datalist>
+            <div class="converter-row">
+                <input type="text" class="search-input" id="convAmount" inputmode="decimal" value="1" placeholder="Amount (e.g. 2/3)" aria-label="Amount">
+                <select class="search-input" id="convUnit" aria-label="Unit"></select>
+            </div>
+            <div class="converter-result" id="convResult">Pick an ingredient</div>
+        </div>
+
+        <h2>Table</h2>
 
         <div class="search-container">
             <input type="text" class="search-input" placeholder="Search ingredients (e.g. flour, sugar, butter)..." id="ingredientSearch">
@@ -66,7 +103,6 @@
             <tbody id="ingredientTable">
                 <tr><td>'00' Pizza Flour</td><td>1 cup</td><td>116</td><td>4</td></tr>
                 <tr><td>Agave syrup</td><td>1/4 cup</td><td>84</td><td>3</td></tr>
-                <tr><td>All-Purpose Baking Mix</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
                 <tr><td>All-Purpose Flour</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
                 <tr><td>Almond butter</td><td>1/4 cup</td><td>68</td><td>2 1/3</td></tr>
                 <tr><td>Almond Flour</td><td>1 cup</td><td>96</td><td>3 3/8</td></tr>
@@ -81,24 +117,17 @@
                 <tr><td>Apples (peeled, sliced)</td><td>1 cup</td><td>113</td><td>4</td></tr>
                 <tr><td>Applesauce</td><td>1 cup</td><td>255</td><td>9</td></tr>
                 <tr><td>Apricots (dried, diced)</td><td>1/2 cup</td><td>64</td><td>2 1/4</td></tr>
-                <tr><td>Artisan Bread Flour</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
-                <tr><td>Artisan Bread Topping</td><td>1/4 cup</td><td>43</td><td>1 1/2</td></tr>
-                <tr><td>Baker's Cinnamon Filling</td><td>1 cup</td><td>152</td><td>5 3/8</td></tr>
-                <tr><td>Baker's Fruit Blend</td><td>1 cup</td><td>128</td><td>4 1/2</td></tr>
-                <tr><td>Baker's Special Sugar (superfine sugar, castor sugar)</td><td>1 cup</td><td>190</td><td>6 3/4</td></tr>
                 <tr><td>Baking powder</td><td>1 teaspoon</td><td>4</td><td>1/8</td></tr>
-                <tr><td>Baking soda</td><td>1/2 teaspoon</td><td>3</td><td>1/10</td></tr>
-                <tr><td>Baking Sugar Alternative</td><td>1 cup</td><td>170</td><td>6</td></tr>
+                <tr><td>Baking soda</td><td>1/2 teaspoon</td><td>3</td><td>0.1</td></tr>
                 <tr><td>Bananas (mashed)</td><td>1 cup</td><td>227</td><td>8</td></tr>
-                <tr><td>Barley (cooked)</td><td>1 cup</td><td>215</td><td>7 5/8</td></tr>
-                <tr><td>Barley (pearled)</td><td>1 cup</td><td>213</td><td>7 1/2</td></tr>
+                <tr><td>Barley (cooked)</td><td>1 cup</td><td>157</td><td>5 1/2</td></tr>
                 <tr><td>Barley flakes</td><td>1/2 cup</td><td>46</td><td>1 5/8</td></tr>
                 <tr><td>Barley flour</td><td>1 cup</td><td>85</td><td>3</td></tr>
-                <tr><td>Barley malt syrup</td><td>2 tablespoons</td><td>42</td><td>1 1/2</td></tr>
+                <tr><td>Barley malt syrup (malt syrup)</td><td>2 tablespoons</td><td>42</td><td>1 1/2</td></tr>
+                <tr><td>Barley (pearled)</td><td>1 cup</td><td>213</td><td>7 1/2</td></tr>
                 <tr><td>Basil pesto</td><td>2 tablespoons</td><td>28</td><td>1</td></tr>
                 <tr><td>Bell peppers (fresh)</td><td>1 cup</td><td>142</td><td>5</td></tr>
                 <tr><td>Berries (frozen)</td><td>1 cup</td><td>142</td><td>5</td></tr>
-                <tr><td>Better Cheddar Cheese Powder</td><td>1/2 cup</td><td>57</td><td>2</td></tr>
                 <tr><td>Blueberries (dried)</td><td>1 cup</td><td>156</td><td>5 1/2</td></tr>
                 <tr><td>Blueberries (fresh or frozen)</td><td>1 cup</td><td>140 to 170</td><td>5 to 6</td></tr>
                 <tr><td>Blueberry juice</td><td>1 cup</td><td>241</td><td>8 1/2</td></tr>
@@ -108,18 +137,17 @@
                 <tr><td>Breadcrumbs (dried)</td><td>1/4 cup</td><td>28</td><td>1</td></tr>
                 <tr><td>Breadcrumbs (fresh)</td><td>1/4 cup</td><td>21</td><td>3/4</td></tr>
                 <tr><td>Breadcrumbs (Japanese Panko)</td><td>1 cup</td><td>50</td><td>1 3/4</td></tr>
-                <tr><td>Brown rice (cooked)</td><td>1 cup</td><td>170</td><td>6</td></tr>
+                <tr><td>Brown rice (cooked)</td><td>1 cup</td><td>195</td><td>6 7/8</td></tr>
                 <tr><td>Brown rice flour</td><td>1 cup</td><td>128</td><td>4 1/2</td></tr>
                 <tr><td>Brown sugar (dark or light, packed)</td><td>1 cup</td><td>213</td><td>7 1/2</td></tr>
-                <tr><td>Buckwheat (whole)</td><td>1 cup</td><td>170</td><td>6</td></tr>
                 <tr><td>Buckwheat Flour</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
+                <tr><td>Buckwheat (whole)</td><td>1 cup</td><td>170</td><td>6</td></tr>
                 <tr><td>Bulgur</td><td>1 cup</td><td>152</td><td>5 3/8</td></tr>
                 <tr><td>Butter</td><td>8 tablespoons (1/2 cup)</td><td>113</td><td>4</td></tr>
-                <tr><td>Buttermilk</td><td>1 cup</td><td>227</td><td>8</td></tr>
-                <tr><td>Buttermilk Biscuit Flour Blend</td><td>1 cup</td><td>110</td><td>3 7/8</td></tr>
+                <tr><td>Buttermilk</td><td>1 cup</td><td>245</td><td>8 5/8</td></tr>
                 <tr><td>Buttermilk powder</td><td>2 tablespoons</td><td>18</td><td>2/3</td></tr>
                 <tr><td>Cacao nibs</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
-                <tr><td>Cake Enhancer</td><td>2 tablespoons</td><td>14</td><td>1/2</td></tr>
+                <tr><td>Cake flour</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
                 <tr><td>Candied Lemon Peel</td><td>1/4 cup</td><td>37</td><td>1 1/3</td></tr>
                 <tr><td>Candied Orange Peel</td><td>1/4 cup</td><td>25</td><td>7/8</td></tr>
                 <tr><td>Caramel (14-16 individual pieces, 1" squares)</td><td>1/2 cup</td><td>142</td><td>5</td></tr>
@@ -134,7 +162,7 @@
                 <tr><td>Cheese (Feta)</td><td>1/2 cup</td><td>57</td><td>2</td></tr>
                 <tr><td>Cheese (grated cheddar, jack, mozzarella, or Swiss)</td><td>1 cup</td><td>113</td><td>4</td></tr>
                 <tr><td>Cheese (grated Parmesan)</td><td>1/2 cup</td><td>50</td><td>1 3/4</td></tr>
-                <tr><td>Cheese (Ricotta)</td><td>1 cup</td><td>227</td><td>8</td></tr>
+                <tr><td>Cheese (Ricotta)</td><td>1 cup</td><td>246</td><td>8 5/8</td></tr>
                 <tr><td>Cherries (candied)</td><td>1/4 cup</td><td>50</td><td>1 3/4</td></tr>
                 <tr><td>Cherries (dried)</td><td>1/2 cup</td><td>71</td><td>2 1/2</td></tr>
                 <tr><td>Cherries (fresh, pitted, chopped)</td><td>1/2 cup</td><td>80</td><td>2 7/8</td></tr>
@@ -143,26 +171,23 @@
                 <tr><td>Chia seeds</td><td>1/4 cup</td><td>37</td><td>1 1/3</td></tr>
                 <tr><td>Chickpea flour</td><td>1 cup</td><td>85</td><td>3</td></tr>
                 <tr><td>Chives (fresh)</td><td>1/2 cup</td><td>21</td><td>3/4</td></tr>
-                <tr><td>Chocolate (chopped)</td><td>1 cup</td><td>170</td><td>6</td></tr>
                 <tr><td>Chocolate Chips</td><td>1 cup</td><td>170</td><td>6</td></tr>
+                <tr><td>Chocolate (chopped)</td><td>1 cup</td><td>170</td><td>6</td></tr>
                 <tr><td>Chocolate Chunks</td><td>1 cup</td><td>170</td><td>6</td></tr>
-                <tr><td>Chocolate Mousse Mix</td><td>1/4 cup</td><td>28</td><td>1</td></tr>
-                <tr><td>Cinnamon Sweet Bits</td><td>1/4 cup</td><td>35</td><td>1 1/4</td></tr>
                 <tr><td>Cinnamon-Sugar</td><td>1/4 cup</td><td>50</td><td>1 3/4</td></tr>
-                <tr><td>Climate Blend Flour</td><td>1 cup</td><td>115</td><td>4</td></tr>
                 <tr><td>Cocoa (unsweetened)</td><td>1/2 cup</td><td>42</td><td>1 1/2</td></tr>
+                <tr><td>Coconut cream (unsweetened)</td><td>1 cup</td><td>284</td><td>10</td></tr>
+                <tr><td>Coconut Flour</td><td>1 cup</td><td>128</td><td>4 1/2</td></tr>
+                <tr><td>Coconut milk; canned, well shaken</td><td>1 cup</td><td>241</td><td>8 1/2</td></tr>
+                <tr><td>Coconut milk (evaporated)</td><td>1 cup</td><td>242</td><td>8 1/2</td></tr>
+                <tr><td>Coconut Milk Powder</td><td>1/2 cup</td><td>57</td><td>2</td></tr>
+                <tr><td>Coconut oil</td><td>1/2 cup</td><td>109</td><td>3 7/8</td></tr>
+                <tr><td>Coconut sugar</td><td>1/2 cup</td><td>77</td><td>2 3/4</td></tr>
                 <tr><td>Coconut (sweetened, shredded)</td><td>1 cup</td><td>85</td><td>3</td></tr>
                 <tr><td>Coconut (toasted)</td><td>1 cup</td><td>85</td><td>3</td></tr>
                 <tr><td>Coconut (unsweetened, desiccated)</td><td>1 cup</td><td>85</td><td>3</td></tr>
                 <tr><td>Coconut (unsweetened, large flakes)</td><td>1 cup</td><td>60</td><td>2 1/8</td></tr>
                 <tr><td>Coconut (unsweetened, shredded)</td><td>1 cup</td><td>53</td><td>1 7/8</td></tr>
-                <tr><td>Coconut cream (unsweetened)</td><td>1 cup</td><td>284</td><td>10</td></tr>
-                <tr><td>Coconut Flour</td><td>1 cup</td><td>128</td><td>4 1/2</td></tr>
-                <tr><td>Coconut milk (evaporated)</td><td>1 cup</td><td>242</td><td>8 1/2</td></tr>
-                <tr><td>Coconut Milk Powder</td><td>1/2 cup</td><td>57</td><td>2</td></tr>
-                <tr><td>Coconut milk; canned, well shaken</td><td>1 cup</td><td>241</td><td>8 1/2</td></tr>
-                <tr><td>Coconut oil</td><td>1/2 cup</td><td>113</td><td>4</td></tr>
-                <tr><td>Coconut sugar</td><td>1/2 cup</td><td>77</td><td>2 3/4</td></tr>
                 <tr><td>Confectioners' sugar (unsifted)</td><td>1 cup</td><td>113</td><td>4</td></tr>
                 <tr><td>Cookie butter</td><td>1/4 cup</td><td>72</td><td>2 1/2</td></tr>
                 <tr><td>Cookie crumbs</td><td>1 cup</td><td>85</td><td>3</td></tr>
@@ -176,80 +201,58 @@
                 <tr><td>Cracked wheat</td><td>1 cup</td><td>149</td><td>5 1/4</td></tr>
                 <tr><td>Cranberries (dried)</td><td>1/2 cup</td><td>57</td><td>2</td></tr>
                 <tr><td>Cranberries (fresh or frozen)</td><td>1 cup</td><td>99</td><td>3 1/2</td></tr>
-                <tr><td>Cream (heavy cream, light cream, or half & half)</td><td>1 cup</td><td>227</td><td>8</td></tr>
-                <tr><td>Cream cheese</td><td>1 cup</td><td>227</td><td>8</td></tr>
+                <tr><td>Cream cheese</td><td>1 cup</td><td>232</td><td>8 1/8</td></tr>
+                <tr><td>Cream (heavy cream, light cream, or half & half)</td><td>1 cup</td><td>240</td><td>8 1/2</td></tr>
                 <tr><td>Cream of coconut</td><td>1/2 cup</td><td>142</td><td>5</td></tr>
                 <tr><td>Crème fraiche</td><td>1/2 cup</td><td>113</td><td>4</td></tr>
+                <tr><td>Crystallized ginger (diced)</td><td>1/2 cup</td><td>73</td><td>2 1/2</td></tr>
                 <tr><td>Currants</td><td>1 cup</td><td>142</td><td>5</td></tr>
                 <tr><td>Dates (chopped)</td><td>1 cup</td><td>149</td><td>5 1/4</td></tr>
                 <tr><td>Demerara sugar</td><td>1 cup</td><td>220</td><td>7 3/4</td></tr>
                 <tr><td>Dried Blueberry Powder</td><td>1/4 cup</td><td>28</td><td>1</td></tr>
-                <tr><td>Dried milk (Baker's Special Dry Milk)</td><td>1/4 cup</td><td>28</td><td>1</td></tr>
                 <tr><td>Dried nonfat milk (powdered)</td><td>1/4 cup</td><td>28</td><td>1</td></tr>
                 <tr><td>Dried potato flakes (instant mashed potatoes)</td><td>1/2 cup</td><td>43</td><td>1 1/2</td></tr>
                 <tr><td>Dried whole milk (powdered)</td><td>1/2 cup</td><td>50</td><td>1 3/4</td></tr>
                 <tr><td>Durum Flour</td><td>1 cup</td><td>124</td><td>4 3/8</td></tr>
-                <tr><td>Easy Roll Dough Improver</td><td>2 tablespoons</td><td>18</td><td>5/8</td></tr>
                 <tr><td>Egg (fresh)</td><td>1 large</td><td>50</td><td>1 3/4</td></tr>
                 <tr><td>Egg white (fresh)</td><td>1 large</td><td>30 to 35</td><td>1 to 1 1/4</td></tr>
                 <tr><td>Egg whites (dried)</td><td>2 tablespoons</td><td>11</td><td>3/8</td></tr>
                 <tr><td>Egg yolk (fresh)</td><td>1 large</td><td>14</td><td>1/2</td></tr>
                 <tr><td>Espresso Powder</td><td>1 tablespoon</td><td>7</td><td>1/4</td></tr>
-                <tr><td>Everything Bagel Topping</td><td>1/4 cup</td><td>35</td><td>1 1/4</td></tr>
+                <tr><td>Everything bagel seasoning</td><td>1/4 cup</td><td>35</td><td>1 1/4</td></tr>
                 <tr><td>Figs (dried, chopped)</td><td>1 cup</td><td>149</td><td>5 1/4</td></tr>
                 <tr><td>First Clear Flour</td><td>1 cup</td><td>106</td><td>3 3/4</td></tr>
                 <tr><td>Flax meal</td><td>1/2 cup</td><td>50</td><td>1 3/4</td></tr>
                 <tr><td>Flaxseed</td><td>1/4 cup</td><td>35</td><td>1 1/4</td></tr>
-                <tr><td>Formaggio Italiano Cheese and Herb Blend</td><td>1/4 cup</td><td>30</td><td>1</td></tr>
-                <tr><td>French-Style Flour</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
-                <tr><td>Fruitcake Fruit Blend</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
                 <tr><td>Garlic (cloves, in skin for roasting)</td><td>1 large head</td><td>113</td><td>4</td></tr>
                 <tr><td>Garlic (minced)</td><td>2 tablespoons</td><td>28</td><td>1</td></tr>
                 <tr><td>Garlic (peeled and sliced)</td><td>1 cup</td><td>149</td><td>5 1/4</td></tr>
-                <tr><td>Ghee</td><td>1/4 cup</td><td>44</td><td>1 1/2</td></tr>
+                <tr><td>Ghee</td><td>1/4 cup</td><td>53</td><td>1 7/8</td></tr>
                 <tr><td>Ginger (fresh, sliced)</td><td>1/4 cup</td><td>57</td><td>2</td></tr>
-                <tr><td>Gluten-Free All-Purpose Baking Mix</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
+                <tr><td>Gluten-free 1:1 flour (cup-for-cup)</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
                 <tr><td>Gluten-Free All-Purpose Flour</td><td>1 cup</td><td>156</td><td>5 1/2</td></tr>
-                <tr><td>Gluten-Free Bread Flour</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
-                <tr><td>Gluten-Free Measure for Measure Flour</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
-                <tr><td>Gluten-Free Pizza Flour</td><td>1 cup</td><td>100</td><td>3 1/2</td></tr>
-                <tr><td>Gluten-Free sourdough starter (made with Gluten-Free Bread Flour)</td><td>1 cup</td><td>170 to 185</td><td>6 to 6 1/2</td></tr>
-                <tr><td>Gluten-Free sourdough starter (made with Gluten-Free Measure for Measure Flour)</td><td>1 cup</td><td>227 to 241</td><td>8 to 8 1/2</td></tr>
+                <tr><td>Gluten-free sourdough starter (1:1 flour)</td><td>1 cup</td><td>227 to 241</td><td>8 to 8 1/2</td></tr>
                 <tr><td>Glutinous rice flour</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
-                <tr><td>Golden Wheat Flour</td><td>1 cup</td><td>113</td><td>4</td></tr>
                 <tr><td>Graham cracker crumbs (store-bought or crushed from whole)</td><td>1 cup (6 to 7 crackers)</td><td>100</td><td>3 1/2</td></tr>
                 <tr><td>Granola</td><td>1 cup</td><td>113</td><td>4</td></tr>
                 <tr><td>Grape Nuts</td><td>1/2 cup</td><td>57</td><td>2</td></tr>
                 <tr><td>Guava paste</td><td>1/4 cup</td><td>100</td><td>3 1/2</td></tr>
-                <tr><td>Harvest Grains Blend</td><td>1/2 cup</td><td>74</td><td>2 5/8</td></tr>
                 <tr><td>Hazelnut flour</td><td>1 cup</td><td>89</td><td>3 1/8</td></tr>
                 <tr><td>Hazelnut Praline Paste</td><td>1/2 cup</td><td>156</td><td>5 1/2</td></tr>
-                <tr><td>Hazelnut spread</td><td>1/2 cup</td><td>160</td><td>5 5/8</td></tr>
+                <tr><td>Hazelnut spread (Nutella)</td><td>1/2 cup</td><td>149</td><td>5 1/4</td></tr>
                 <tr><td>Hazelnuts (whole)</td><td>1 cup</td><td>142</td><td>5</td></tr>
-                <tr><td>Hi-Maize Natural Fiber</td><td>1/4 cup</td><td>32</td><td>1 1/8</td></tr>
                 <tr><td>High-Gluten Flour</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
                 <tr><td>Honey</td><td>1 tablespoon</td><td>21</td><td>3/4</td></tr>
                 <tr><td>Instant Clearjel</td><td>1 tablespoon</td><td>11</td><td>3/8</td></tr>
-                <tr><td>Irish-Style Flour</td><td>1 cup</td><td>110</td><td>3 7/8</td></tr>
                 <tr><td>Italian Herb Seasoning</td><td>2 tablespoons</td><td>14</td><td>1/2</td></tr>
-                <tr><td>Italian-Style Flour</td><td>1 cup</td><td>106</td><td>3 3/4</td></tr>
                 <tr><td>Jam or preserves</td><td>1/4 cup</td><td>85</td><td>3</td></tr>
-                <tr><td>Jammy Bits</td><td>1 cup</td><td>184</td><td>6 1/2</td></tr>
-                <tr><td>Keto Wheat Flour</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
-                <tr><td>Keto Wheat Pizza Crust Mix</td><td>1 cup</td><td>110</td><td>3 7/8</td></tr>
-                <tr><td>Key Lime Juice</td><td>1 cup</td><td>227</td><td>8</td></tr>
-                <tr><td>Lard</td><td>1/2 cup</td><td>113</td><td>4</td></tr>
+                <tr><td>Key Lime Juice</td><td>1 cup</td><td>244</td><td>8 5/8</td></tr>
+                <tr><td>Lard</td><td>1/2 cup</td><td>103</td><td>3 5/8</td></tr>
                 <tr><td>Leeks (diced)</td><td>1 cup</td><td>92</td><td>3 1/4</td></tr>
-                <tr><td>Lemon Crumbles</td><td>1 cup</td><td>180</td><td>6 1/3</td></tr>
-                <tr><td>Lemon Curd</td><td>1/2 cup</td><td>113</td><td>4</td></tr>
-                <tr><td>Lemon juice</td><td>1 tablespoon</td><td>14</td><td>1/2</td></tr>
-                <tr><td>Lemon Juice Powder</td><td>2 tablespoons</td><td>18</td><td>5/8</td></tr>
-                <tr><td>Lime Juice Powder</td><td>2 tablespoons</td><td>18</td><td>5/8</td></tr>
+                <tr><td>Lemon Curd</td><td>1/2 cup</td><td>160</td><td>5 5/8</td></tr>
+                <tr><td>Lemon juice</td><td>1 tablespoon</td><td>15</td><td>1/2</td></tr>
                 <tr><td>Macadamia nuts (whole)</td><td>1 cup</td><td>149</td><td>5 1/4</td></tr>
-                <tr><td>Malt syrup</td><td>2 tablespoons</td><td>43</td><td>1 1/2</td></tr>
                 <tr><td>Malted Milk Powder</td><td>1/4 cup</td><td>35</td><td>1 1/4</td></tr>
-                <tr><td>Malted Wheat Flakes</td><td>1/2 cup</td><td>64</td><td>2 1/4</td></tr>
-                <tr><td>Maple Cinnamon French Toast Sugar</td><td>1/4 cup</td><td>48</td><td>1 2/3</td></tr>
                 <tr><td>Maple Cream</td><td>2 tablespoons</td><td>42</td><td>1 1/2</td></tr>
                 <tr><td>Maple sugar</td><td>1/2 cup</td><td>78</td><td>2 3/4</td></tr>
                 <tr><td>Maple syrup</td><td>1/2 cup</td><td>156</td><td>5 1/2</td></tr>
@@ -266,29 +269,23 @@
                 <tr><td>Mayonnaise</td><td>1/2 cup</td><td>113</td><td>4</td></tr>
                 <tr><td>Medium Rye Flour</td><td>1 cup</td><td>106</td><td>3 3/4</td></tr>
                 <tr><td>Meringue powder</td><td>1/4 cup</td><td>43</td><td>1 1/2</td></tr>
-                <tr><td>Milk (evaporated)</td><td>1/2 cup</td><td>113</td><td>4</td></tr>
-                <tr><td>Milk (fresh)</td><td>1 cup</td><td>227</td><td>8</td></tr>
+                <tr><td>Milk (evaporated)</td><td>1/2 cup</td><td>126</td><td>4 1/2</td></tr>
+                <tr><td>Milk (fresh)</td><td>1 cup</td><td>244</td><td>8 5/8</td></tr>
                 <tr><td>Millet (whole)</td><td>1/2 cup</td><td>103</td><td>3 5/8</td></tr>
                 <tr><td>Mini chocolate chips</td><td>1 cup</td><td>177</td><td>6 1/4</td></tr>
-                <tr><td>Mini Diced Ginger</td><td>1/2 cup</td><td>73</td><td>2 1/2</td></tr>
                 <tr><td>Molasses</td><td>1/4 cup</td><td>85</td><td>3</td></tr>
                 <tr><td>Mushrooms (sliced)</td><td>1 cup</td><td>78</td><td>2 3/4</td></tr>
                 <tr><td>Non-Diastatic Malt Powder</td><td>2 tablespoons</td><td>18</td><td>5/8</td></tr>
-                <tr><td>Nutella</td><td>1/2 cup</td><td>149</td><td>5 1/4</td></tr>
                 <tr><td>Oat bran</td><td>1/2 cup</td><td>53</td><td>1 7/8</td></tr>
                 <tr><td>Oat Flour</td><td>1 cup</td><td>92</td><td>3 1/4</td></tr>
-                <tr><td>Oats (King Arthur Rolled)</td><td>1 cup</td><td>113</td><td>4</td></tr>
                 <tr><td>Oats (old-fashioned or quick-cooking)</td><td>1 cup</td><td>89</td><td>3 1/8</td></tr>
                 <tr><td>Oats (prepared)</td><td>1 cup</td><td>147</td><td>5 1/8</td></tr>
-                <tr><td>Olive oil</td><td>1/4 cup</td><td>50</td><td>1 3/4</td></tr>
+                <tr><td>Olive oil</td><td>1/4 cup</td><td>54</td><td>1 7/8</td></tr>
                 <tr><td>Olives (sliced)</td><td>1 cup</td><td>142</td><td>5</td></tr>
                 <tr><td>Onions (fresh, diced)</td><td>1 cup</td><td>142</td><td>5</td></tr>
-                <tr><td>Paleo Baking Flour</td><td>1 cup</td><td>104</td><td>3 5/8</td></tr>
                 <tr><td>Palm shortening</td><td>1/4 cup</td><td>45</td><td>1 1/2</td></tr>
-                <tr><td>Passion fruit purée</td><td>1/3 cup</td><td>60</td><td>2 1/8</td></tr>
-                <tr><td>Pasta Flour Blend</td><td>1 cup</td><td>145</td><td>5 1/8</td></tr>
+                <tr><td>Passion fruit purée</td><td>1/3 cup</td><td>83</td><td>2 7/8</td></tr>
                 <tr><td>Pastry Flour</td><td>1 cup</td><td>106</td><td>3 3/4</td></tr>
-                <tr><td>Pastry Flour Blend</td><td>1 cup</td><td>113</td><td>4</td></tr>
                 <tr><td>Peaches (peeled and diced)</td><td>1 cup</td><td>170</td><td>6</td></tr>
                 <tr><td>Peanut butter</td><td>1/2 cup</td><td>135</td><td>4 3/4</td></tr>
                 <tr><td>Peanuts (whole, shelled)</td><td>1 cup</td><td>142</td><td>5</td></tr>
@@ -296,39 +293,34 @@
                 <tr><td>Pecan Meal</td><td>1 cup</td><td>80</td><td>2 3/4</td></tr>
                 <tr><td>Pecans (diced)</td><td>1/2 cup</td><td>57</td><td>2</td></tr>
                 <tr><td>Pecans (whole)</td><td>1 cup</td><td>105</td><td>3 3/4</td></tr>
-                <tr><td>Pie Filling Enhancer</td><td>1/4 cup</td><td>46</td><td>1 5/8</td></tr>
                 <tr><td>Pine nuts</td><td>1/2 cup</td><td>71</td><td>2 1/2</td></tr>
                 <tr><td>Pineapple (crushed, drained)</td><td>1 cup</td><td>256</td><td>9</td></tr>
                 <tr><td>Pineapple (dried)</td><td>1/2 cup</td><td>71</td><td>2 1/2</td></tr>
                 <tr><td>Pineapple (fresh or canned, diced)</td><td>1 cup</td><td>170</td><td>6</td></tr>
                 <tr><td>Pistachio nuts (shelled)</td><td>1/2 cup</td><td>60</td><td>2 1/8</td></tr>
                 <tr><td>Pistachio Paste</td><td>1/4 cup</td><td>78</td><td>2 3/4</td></tr>
-                <tr><td>Pizza Dough Flavor</td><td>2 tablespoons</td><td>12</td><td>2/5</td></tr>
-                <tr><td>Pizza Flour Blend</td><td>1 cup</td><td>124</td><td>4 3/8</td></tr>
-                <tr><td>Pizza sauce</td><td>1/4 cup</td><td>57</td><td>2</td></tr>
+                <tr><td>Pizza sauce</td><td>1/4 cup</td><td>63</td><td>2 1/4</td></tr>
                 <tr><td>Pizza Seasoning</td><td>2 tablespoons</td><td>10</td><td>1/3</td></tr>
                 <tr><td>Polenta (coarse ground cornmeal)</td><td>1 cup</td><td>163</td><td>5 3/4</td></tr>
                 <tr><td>Poppy seeds</td><td>2 tablespoons</td><td>18</td><td>5/8</td></tr>
                 <tr><td>Potato Flour</td><td>1/4 cup</td><td>46</td><td>1 5/8</td></tr>
                 <tr><td>Potato starch</td><td>1 cup</td><td>152</td><td>5 3/8</td></tr>
                 <tr><td>Pumpernickel Flour</td><td>1 cup</td><td>106</td><td>3 3/4</td></tr>
-                <tr><td>Pumpkin purée</td><td>1 cup</td><td>227</td><td>8</td></tr>
+                <tr><td>Pumpkin purée</td><td>1 cup</td><td>245</td><td>8 5/8</td></tr>
                 <tr><td>Pumpkin seeds</td><td>1/4 cup</td><td>40</td><td>1 3/8</td></tr>
                 <tr><td>Queso fresco</td><td>1/2 cup</td><td>57</td><td>2</td></tr>
                 <tr><td>Quinoa (cooked)</td><td>1 cup</td><td>184</td><td>6 1/2</td></tr>
-                <tr><td>Quinoa (whole)</td><td>1 cup</td><td>177</td><td>6 1/4</td></tr>
                 <tr><td>Quinoa flour</td><td>1 cup</td><td>110</td><td>3 7/8</td></tr>
+                <tr><td>Quinoa (whole)</td><td>1 cup</td><td>177</td><td>6 1/4</td></tr>
                 <tr><td>Raisins (loose)</td><td>1 cup</td><td>149</td><td>5 1/4</td></tr>
                 <tr><td>Raisins (packed)</td><td>1/2 cup</td><td>85</td><td>3</td></tr>
                 <tr><td>Raspberries (fresh)</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
                 <tr><td>Rhubarb (sliced, 1/2" slices)</td><td>1 cup</td><td>120 to 140</td><td>4 1/4 to 5</td></tr>
-                <tr><td>Rice (long grain, dry)</td><td>1/2 cup</td><td>99</td><td>3 1/2</td></tr>
                 <tr><td>Rice flour (white)</td><td>1 cup</td><td>142</td><td>5</td></tr>
                 <tr><td>Rice Krispies</td><td>1 cup</td><td>28</td><td>1</td></tr>
-                <tr><td>Rye Bread Improver</td><td>2 tablespoons</td><td>14</td><td>1/2</td></tr>
+                <tr><td>Rice (long grain, dry)</td><td>1/2 cup</td><td>99</td><td>3 1/2</td></tr>
                 <tr><td>Rye Chops</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
                 <tr><td>Rye flakes</td><td>1 cup</td><td>124</td><td>4 3/8</td></tr>
-                <tr><td>Rye Flour Blend</td><td>1 cup</td><td>106</td><td>3 3/4</td></tr>
                 <tr><td>Salt (Kosher, Diamond Crystal)</td><td>1 tablespoon</td><td>8</td><td>1/4</td></tr>
                 <tr><td>Salt (Kosher, Morton's)</td><td>1 tablespoon</td><td>16</td><td>1/2</td></tr>
                 <tr><td>Salt (table)</td><td>1 tablespoon</td><td>18</td><td>2/3</td></tr>
@@ -337,23 +329,20 @@
                 <tr><td>Semolina Flour</td><td>1 cup</td><td>163</td><td>5 3/4</td></tr>
                 <tr><td>Sesame seeds</td><td>1/2 cup</td><td>71</td><td>2 1/2</td></tr>
                 <tr><td>Shallots (peeled and sliced)</td><td>1 cup</td><td>156</td><td>5 1/2</td></tr>
-                <tr><td>Six-Grain Blend</td><td>1 cup</td><td>128</td><td>4 1/2</td></tr>
-                <tr><td>Snow White Non-Melting Topping Sugar</td><td>1/2 cup</td><td>57</td><td>2</td></tr>
                 <tr><td>Sorghum flour</td><td>1 cup</td><td>138</td><td>4 7/8</td></tr>
-                <tr><td>Sour cream</td><td>1 cup</td><td>227</td><td>8</td></tr>
+                <tr><td>Sour cream</td><td>1 cup</td><td>230</td><td>8 1/8</td></tr>
                 <tr><td>Sourdough starter</td><td>1 cup</td><td>227 to 241</td><td>8 to 8 1/2</td></tr>
                 <tr><td>Soy flour</td><td>1/4 cup</td><td>35</td><td>1 1/4</td></tr>
                 <tr><td>Sparkling Sugar</td><td>1/4 cup</td><td>57</td><td>2</td></tr>
                 <tr><td>Spelt Flour</td><td>1 cup</td><td>99</td><td>3 1/2</td></tr>
                 <tr><td>Sprouted Wheat Flour</td><td>1 cup</td><td>113</td><td>4</td></tr>
                 <tr><td>Steel cut oats</td><td>1/2 cup</td><td>70</td><td>2 1/2</td></tr>
-                <tr><td>Sticky Bun Sugar</td><td>1 cup</td><td>99</td><td>3 1/2</td></tr>
                 <tr><td>Strawberries (fresh sliced)</td><td>1 cup</td><td>167</td><td>5 7/8</td></tr>
                 <tr><td>Sugar (granulated white)</td><td>1 cup</td><td>198</td><td>7</td></tr>
                 <tr><td>Sugar substitute (Splenda)</td><td>1 cup</td><td>25</td><td>7/8</td></tr>
                 <tr><td>Sundried tomatoes (dry pack)</td><td>1 cup</td><td>170</td><td>6</td></tr>
                 <tr><td>Sunflower seeds</td><td>1/4 cup</td><td>35</td><td>1 1/4</td></tr>
-                <tr><td>Super 10 Blend</td><td>1 cup</td><td>106</td><td>3 3/4</td></tr>
+                <tr><td>Superfine sugar (caster sugar)</td><td>1 cup</td><td>190</td><td>6 3/4</td></tr>
                 <tr><td>Swedish Pearl Sugar</td><td>1/4 cup</td><td>49</td><td>1 3/4</td></tr>
                 <tr><td>Sweetened condensed coconut milk</td><td>1 cup</td><td>288</td><td>10 1/8</td></tr>
                 <tr><td>Sweetened condensed milk</td><td>1/4 cup</td><td>78</td><td>2 3/4</td></tr>
@@ -361,33 +350,28 @@
                 <tr><td>Tapioca (quick cooking)</td><td>2 tablespoons</td><td>21</td><td>3/4</td></tr>
                 <tr><td>Tapioca starch or flour</td><td>1 cup</td><td>113</td><td>4</td></tr>
                 <tr><td>Teff flour</td><td>1 cup</td><td>135</td><td>4 3/4</td></tr>
-                <tr><td>The Works Bread Topping</td><td>1/4 cup</td><td>35</td><td>1 1/4</td></tr>
-                <tr><td>Toasted Almond Flour</td><td>1 cup</td><td>96</td><td>3 3/8</td></tr>
                 <tr><td>Toffee chunks</td><td>1 cup</td><td>156</td><td>5 1/2</td></tr>
-                <tr><td>Tomato paste</td><td>2 tablespoons</td><td>29</td><td>1</td></tr>
-                <tr><td>Tropical Fruit Blend</td><td>1 cup</td><td>128 to 142</td><td>4 1/2 to 5</td></tr>
+                <tr><td>Tomato paste</td><td>2 tablespoons</td><td>33</td><td>1 1/8</td></tr>
                 <tr><td>Turbinado sugar (raw)</td><td>1 cup</td><td>180</td><td>6 3/8</td></tr>
-                <tr><td>Unbleached Cake Flour</td><td>1 cup</td><td>120</td><td>4 1/4</td></tr>
-                <tr><td>Vanilla Extract</td><td>1 tablespoon</td><td>14</td><td>1/2</td></tr>
-                <tr><td>Vegetable oil</td><td>1 cup</td><td>198</td><td>7</td></tr>
-                <tr><td>Vegetable shortening</td><td>1/4 cup</td><td>46</td><td>1 5/8</td></tr>
+                <tr><td>Vanilla Extract</td><td>1 tablespoon</td><td>13</td><td>1/2</td></tr>
+                <tr><td>Vegetable oil</td><td>1 cup</td><td>218</td><td>7 3/4</td></tr>
+                <tr><td>Vegetable shortening</td><td>1/4 cup</td><td>51</td><td>1 3/4</td></tr>
                 <tr><td>Vital Wheat Gluten</td><td>2 tablespoons</td><td>18</td><td>5/8</td></tr>
                 <tr><td>Walnuts (chopped)</td><td>1 cup</td><td>113</td><td>4</td></tr>
                 <tr><td>Walnuts (whole)</td><td>1/2 cup</td><td>64</td><td>2 1/4</td></tr>
-                <tr><td>Water</td><td>1 cup</td><td>227</td><td>8</td></tr>
+                <tr><td>Water</td><td>1 cup</td><td>237</td><td>8 3/8</td></tr>
                 <tr><td>Wheat berries (red)</td><td>1 cup</td><td>184</td><td>6 1/2</td></tr>
                 <tr><td>Wheat bran</td><td>1/2 cup</td><td>32</td><td>1 1/8</td></tr>
                 <tr><td>Wheat germ</td><td>1/4 cup</td><td>28</td><td>1</td></tr>
                 <tr><td>White Chocolate Chips</td><td>1 cup</td><td>170</td><td>6</td></tr>
                 <tr><td>White Rye Flour</td><td>1 cup</td><td>106</td><td>3 3/4</td></tr>
-                <tr><td>Whole Grain Flour Blend</td><td>1 cup</td><td>113</td><td>4</td></tr>
-                <tr><td>Whole Wheat Flour (Premium 100%)</td><td>1 cup</td><td>113</td><td>4</td></tr>
+                <tr><td>White whole wheat flour</td><td>1 cup</td><td>113</td><td>4</td></tr>
+                <tr><td>Whole wheat flour</td><td>1 cup</td><td>113</td><td>4</td></tr>
                 <tr><td>Whole Wheat Pastry Flour / Graham Flour</td><td>1 cup</td><td>96</td><td>3 3/8</td></tr>
-                <tr><td>Yeast (instant)</td><td>2 teaspoons</td><td>6</td><td>1/5</td></tr>
+                <tr><td>Yeast (instant)</td><td>2 teaspoons</td><td>6</td><td>0.2</td></tr>
                 <tr><td>Yeast (instant)</td><td>2 1/4 teaspoons</td><td>7</td><td>1/4</td></tr>
                 <tr><td>Yeast (instant)</td><td>1 tablespoon</td><td>9</td><td>1/3</td></tr>
-                <tr><td>Yogurt</td><td>1 cup</td><td>227</td><td>8</td></tr>
-                <tr><td>Yuletide Cheer Fruit Blend</td><td>1 cup</td><td>130</td><td>4 1/2</td></tr>
+                <tr><td>Yogurt</td><td>1 cup</td><td>245</td><td>8 5/8</td></tr>
                 <tr><td>Zucchini (shredded)</td><td>1 cup</td><td>121 to 150</td><td>4 1/4 to 5 1/4</td></tr>
             </tbody>
         </table>
@@ -402,7 +386,7 @@
 
     <footer class="text-center text-muted">
         <hr>
-        <p class="text-small">Ingredient weights reference, adapted from King Arthur Flour</p>
+        <p class="text-small">Adapted from King Arthur Baking's ingredient weight chart, with liquid and fat weights corrected to what the volume actually weighs.</p>
     </footer>
 
     <script>
@@ -412,20 +396,73 @@
             const resultCount = document.getElementById('resultCount');
             const totalCount = rows.length;
 
+            // Other names people search by; used by the search box and the converter
+            const ALIASES = {
+                "All-Purpose Flour": ['AP flour', 'plain flour'],
+                "Baking soda": ['bicarbonate of soda'],
+                "Cheese (grated Parmesan)": ['parmigiano'],
+                "Chickpea flour": ['garbanzo flour', 'gram flour', 'besan'],
+                "Confectioners' sugar (unsifted)": ['powdered sugar', 'icing sugar'],
+                "Corn syrup": ['Karo'],
+                "Cornstarch": ['cornflour'],
+                "Cream (heavy cream, light cream, or half & half)": ['half and half', 'whipping cream'],
+                "Instant Clearjel": ['clear jel'],
+                "Marshmallow Fluff®": ['marshmallow creme'],
+                "Oats (old-fashioned or quick-cooking)": ['rolled oats', 'oatmeal'],
+                "Pumpkin purée": ['canned pumpkin'],
+                "Rice Krispies": ['puffed rice'],
+                "Scallions (sliced)": ['green onions'],
+                "Sugar (granulated white)": ['white sugar', 'table sugar'],
+                "Superfine sugar (caster sugar)": ['castor sugar'],
+                "Vegetable shortening": ['Crisco'],
+                "Yeast (instant)": ['rapid rise yeast'],
+                "Yogurt": ['yoghurt']
+            };
+
+            // "Crème fraîche" -> ['creme', 'fraiche']; drops apostrophes so "confectioners'" matches "confectioners"
+            function words(text) {
+                return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+                    .replace(/['’®]/g, '').split(/[^a-z0-9]+/).filter(Boolean);
+            }
+
+            // Rough singular so "eggs" finds "Egg" and "cherry" finds "Cherries"
+            function stem(word) {
+                if (word.length > 4 && word.endsWith('ies')) return word.slice(0, -3) + 'y';
+                if (word.length > 4 && word.endsWith('oes')) return word.slice(0, -2);
+                if (word.length > 3 && word.endsWith('s') && !word.endsWith('ss')) return word.slice(0, -1);
+                return word;
+            }
+
+            // Every typed word must start some word in the name or its aliases, in any order
+            function matches(nameWords, terms) {
+                return terms.every(function(term) {
+                    return nameWords.some(function(word) {
+                        return word.startsWith(term) || stem(word).startsWith(stem(term));
+                    });
+                });
+            }
+
+            const rowWords = new Map();
+            rows.forEach(function(row) {
+                const name = row.querySelector('td').textContent.trim();
+                rowWords.set(row, words(name + ' ' + (ALIASES[name] || []).join(' ')));
+            });
+
             function updateCount(visible) {
                 if (searchInput.value.trim() === '') {
                     resultCount.textContent = totalCount + ' ingredients';
+                } else if (visible === 0) {
+                    resultCount.textContent = 'No ingredients match \u201c' + searchInput.value.trim() + '\u201d';
                 } else {
                     resultCount.textContent = visible + ' of ' + totalCount + ' ingredients';
                 }
             }
 
             searchInput.addEventListener('input', function() {
-                const term = searchInput.value.toLowerCase().trim();
+                const terms = words(searchInput.value);
                 let visible = 0;
                 rows.forEach(function(row) {
-                    const text = row.textContent.toLowerCase();
-                    if (term === '' || text.includes(term)) {
+                    if (terms.length === 0 || matches(rowWords.get(row), terms)) {
                         row.classList.remove('hidden');
                         visible++;
                     } else {
@@ -436,6 +473,139 @@
             });
 
             updateCount(totalCount);
+
+            // Converter: grams for any amount of any ingredient in the table
+            const convIngredient = document.getElementById('convIngredient');
+            const convAmount = document.getElementById('convAmount');
+            const convUnit = document.getElementById('convUnit');
+            const convResult = document.getElementById('convResult');
+            const datalist = document.getElementById('ingredientList');
+
+            const TSP_PER = { cup: 48, tablespoon: 3, teaspoon: 1 };
+            const VOLUME_UNITS = [['cup', 'cups'], ['tablespoon', 'tbsp'], ['teaspoon', 'tsp']];
+            const UNICODE_FRACTIONS = { '½': ' 1/2', '⅓': ' 1/3', '⅔': ' 2/3', '¼': ' 1/4', '¾': ' 3/4', '⅛': ' 1/8', '⅜': ' 3/8', '⅝': ' 5/8', '⅞': ' 7/8' };
+
+            // "1 1/2", "2/3", "0.5", "1½" -> number (NaN if unreadable)
+            function parseQty(text) {
+                const parts = text.replace(/[½⅓⅔¼¾⅛⅜⅝⅞]/g, function(c) { return UNICODE_FRACTIONS[c]; }).trim().split(/\s+/);
+                if (parts[0] === '') return NaN;
+                let total = 0;
+                for (const part of parts) {
+                    const frac = part.match(/^(\d+)\/(\d+)$/);
+                    if (frac) total += Number(frac[1]) / Number(frac[2]);
+                    else if (/^\d*\.?\d+$/.test(part)) total += Number(part);
+                    else return NaN;
+                }
+                return total;
+            }
+
+            // Each ingredient: grams per teaspoon (or per item for eggs/garlic), as [low, high]
+            const ingredients = new Map();
+            rows.forEach(function(row) {
+                const cells = row.querySelectorAll('td');
+                const name = cells[0].textContent.trim();
+                const volume = cells[1].textContent.replace(/\(.*\)/, '').trim();
+                const grams = cells[2].textContent.split('to').map(Number);
+                const m = volume.match(/^([\d\s\/]+?)\s+(cups?|tablespoons?|teaspoons?|large(?: head)?)$/);
+                if (!m) return;
+                const qty = parseQty(m[1]);
+                const unit = m[2].replace(/s$/, '');
+                const isCount = unit.startsWith('large');
+                const size = isCount ? qty : qty * TSP_PER[unit];
+                const existing = ingredients.get(name);
+                // Duplicate names (instant yeast): keep the largest measure, it rounds least
+                if (existing && existing.size >= size) return;
+                ingredients.set(name, {
+                    size: size,
+                    count: isCount ? unit : null,
+                    low: grams[0] / size,
+                    high: (grams[1] || grams[0]) / size
+                });
+            });
+
+            // Aliases go in the autocomplete too and resolve to their ingredient
+            const aliasTo = new Map();
+            ingredients.forEach(function(info, name) {
+                [name].concat(ALIASES[name] || []).forEach(function(label) {
+                    aliasTo.set(label.toLowerCase(), info);
+                    const option = document.createElement('option');
+                    option.value = label;
+                    datalist.appendChild(option);
+                });
+            });
+
+            function findIngredient(text) {
+                return aliasTo.get(text.trim().toLowerCase()) || null;
+            }
+
+            function setUnits(info) {
+                const options = info && info.count ? [[info.count, info.count]] : VOLUME_UNITS;
+                const current = convUnit.value;
+                convUnit.innerHTML = '';
+                options.forEach(function(opt) {
+                    const option = document.createElement('option');
+                    option.value = opt[0];
+                    option.textContent = opt[1];
+                    convUnit.appendChild(option);
+                });
+                if (options.some(function(opt) { return opt[0] === current; })) convUnit.value = current;
+            }
+
+            function formatGrams(g) {
+                return g < 10 ? String(Math.round(g * 10) / 10) : String(Math.round(g));
+            }
+
+            function convert() {
+                const info = findIngredient(convIngredient.value);
+                const qty = parseQty(convAmount.value);
+                if (!info) {
+                    convResult.textContent = convIngredient.value.trim() ? 'Pick an ingredient from the list' : 'Pick an ingredient';
+                    return;
+                }
+                if (!(qty > 0)) {
+                    convResult.textContent = 'Enter an amount like 1, 2/3 or 1 1/2';
+                    return;
+                }
+                const multiplier = info.count ? qty : qty * TSP_PER[convUnit.value];
+                const low = info.low * multiplier;
+                const high = info.high * multiplier;
+                const grams = low === high ? formatGrams(low) : formatGrams(low) + '–' + formatGrams(high);
+                const ounces = (low + high) / 2 / 28.3495;
+                convResult.innerHTML = '';
+                convResult.append(grams + ' g ');
+                const oz = document.createElement('span');
+                oz.className = 'text-muted';
+                oz.textContent = '(' + (Math.round(ounces * 100) / 100) + ' oz)';
+                convResult.appendChild(oz);
+            }
+
+            convIngredient.addEventListener('input', function() {
+                setUnits(findIngredient(convIngredient.value));
+                convert();
+            });
+            convAmount.addEventListener('input', convert);
+            convUnit.addEventListener('change', convert);
+
+            // Tapping a table row loads it into the converter at its listed amount
+            rows.forEach(function(row) {
+                row.addEventListener('click', function() {
+                    const name = row.querySelector('td').textContent.trim();
+                    const volume = row.querySelectorAll('td')[1].textContent.replace(/\(.*\)/, '').trim();
+                    const m = volume.match(/^([\d\s\/]+?)\s+(cups?|tablespoons?|teaspoons?)$/);
+                    convIngredient.value = name;
+                    setUnits(findIngredient(name));
+                    if (m) {
+                        convAmount.value = m[1].trim();
+                        convUnit.value = m[2].replace(/s$/, '');
+                    } else {
+                        convAmount.value = '1';
+                    }
+                    convert();
+                    convIngredient.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                });
+            });
+
+            setUnits(null);
         });
     </script>
 </body>
