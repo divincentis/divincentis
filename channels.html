@@ -2,10 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>D Radio Channel Reference</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg:        #0d1117;
@@ -25,11 +23,41 @@
     --tag-ham-b: #3fb950;
     --tag-rep-b: #d29922;
     --tag-tac-b: #bc6de8;
-    --mono:      'Share Tech Mono', monospace;
-    --sans:      'Barlow', sans-serif;
-    --cond:      'Barlow Condensed', sans-serif;
+    --mono:      ui-monospace, 'SF Mono', Menlo, Consolas, 'Roboto Mono', monospace;
+    --sans:      system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --cond:      'Roboto Condensed', 'Arial Narrow', system-ui, sans-serif;
     --radius:    8px;
-    --bright:    #ffff00
+    --bright:    #ffff00;
+    --icon:      #58a6ff;
+    --mark:      rgba(88,166,255,0.3);
+    --toast:     #238636;
+    --toast-fg:  #fff;
+  }
+
+  /* Red night mode: preserves dark-adapted vision */
+  :root[data-theme="night"] {
+    --bg:        #000;
+    --bg2:       #0c0000;
+    --bg3:       #180000;
+    --border:    #3d0b0b;
+    --text:      #ff4a4a;
+    --muted:     #b02a2a;
+    --accent:    #ff6a6a;
+    --accent2:   #d03030;
+    --warn:      #d03030;
+    --tag-gmrs:  rgba(255,60,60,0.10);
+    --tag-ham:   rgba(255,60,60,0.10);
+    --tag-rep:   rgba(255,60,60,0.10);
+    --tag-tac:   rgba(255,60,60,0.10);
+    --tag-gmrs-b:#e04040;
+    --tag-ham-b: #e04040;
+    --tag-rep-b: #e04040;
+    --tag-tac-b: #e04040;
+    --bright:    #ff3030;
+    --icon:      #c03030;
+    --mark:      rgba(255,60,60,0.3);
+    --toast:     #500000;
+    --toast-fg:  #ff6a6a;
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -61,6 +89,7 @@
   }
 
   .header-icon {
+    color: var(--icon);
     width: 32px;
     height: 32px;
     flex-shrink: 0;
@@ -83,6 +112,23 @@
     font-family: var(--mono);
     margin-top: 2px;
   }
+
+  #theme-btn {
+    margin-left: auto;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--muted);
+    font-family: var(--cond);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 6px 10px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  #theme-btn[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
 
   /* ── Search ── */
   .search-row {
@@ -174,13 +220,17 @@
   }
 
   .channel-card {
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    color: inherit;
     background: var(--bg2);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 12px 14px;
     display: grid;
     grid-template-columns: 44px 1fr auto;
-    grid-template-rows: auto auto;
+    grid-template-rows: auto auto auto;
     gap: 2px 10px;
     align-items: start;
     cursor: pointer;
@@ -188,13 +238,15 @@
     -webkit-tap-highlight-color: transparent;
     position: relative;
   }
+  .channel-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .channel-card:active {
     background: var(--bg3);
     border-color: var(--accent);
   }
 
   .ch-num {
-    grid-row: 1 / 3;
+    grid-column: 1;
+    grid-row: 1 / -1;
     font-family: var(--mono);
     font-size: 22px;
     font-weight: 600;
@@ -202,6 +254,16 @@
     line-height: 1;
     align-self: center;
     text-align: center;
+  }
+
+  .ch-head {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    min-width: 0;
   }
 
   .ch-name {
@@ -214,6 +276,8 @@
   }
 
   .ch-freq {
+    grid-column: 3;
+    grid-row: 1 / 3;
     font-family: var(--mono);
     font-size: 15px;
     color: var(--accent);
@@ -233,24 +297,31 @@
   }
 
   .ch-type {
+    grid-column: 2;
+    grid-row: 2;
     font-size: 12px;
-    color: #9ba8b4;
+    color: var(--muted);
     line-height: 1.3;
+  }
+
+  .ch-also {
+    grid-column: 2 / 4;
+    grid-row: 3;
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--muted);
+    opacity: 0.85;
+    margin-top: 2px;
   }
 
   /* type tags */
   .ch-tags {
-    position: absolute;
-    top: 10px;
-    right: 86px;
     display: flex;
     gap: 4px;
-    pointer-events: none;
     flex-wrap: wrap;
-    justify-content: flex-end;
-    max-width: 120px;
   }
   .ch-tag {
+    display: inline-block;
     font-size: 10px;
     font-weight: 600;
     font-family: var(--cond);
@@ -270,8 +341,8 @@
     bottom: 24px;
     left: 50%;
     transform: translateX(-50%) translateY(60px);
-    background: #238636;
-    color: #fff;
+    background: var(--toast);
+    color: var(--toast-fg);
     font-family: var(--mono);
     font-size: 13px;
     padding: 10px 20px;
@@ -298,6 +369,7 @@
     display: none;
   }
   .no-results.visible { display: block; }
+  mark { background: var(--mark); color: inherit; border-radius: 2px; }
   .no-results .nr-icon { font-size: 40px; margin-bottom: 12px; }
 
   /* ── Desktop tweak ── */
@@ -316,17 +388,18 @@
 <header>
   <div class="header-top">
     <svg class="header-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="32" height="32" rx="6" fill="#1c2333"/>
-      <path d="M16 6 L16 11" stroke="#58a6ff" stroke-width="2" stroke-linecap="round"/>
-      <circle cx="16" cy="16" r="7" stroke="#58a6ff" stroke-width="1.5" fill="none"/>
-      <circle cx="16" cy="16" r="3" fill="#58a6ff"/>
-      <path d="M9 16 L6 16 M23 16 L26 16 M16 23 L16 26" stroke="#58a6ff" stroke-width="1.5" stroke-linecap="round"/>
-      <path d="M10.9 10.9 L8.8 8.8 M21.1 21.1 L23.2 23.2 M21.1 10.9 L23.2 8.8 M10.9 21.1 L8.8 23.2" stroke="#30363d" stroke-width="1.2" stroke-linecap="round"/>
+      <rect width="32" height="32" rx="6" style="fill:var(--bg3)"/>
+      <path d="M16 6 L16 11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="16" cy="16" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
+      <circle cx="16" cy="16" r="3" fill="currentColor"/>
+      <path d="M9 16 L6 16 M23 16 L26 16 M16 23 L16 26" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M10.9 10.9 L8.8 8.8 M21.1 21.1 L23.2 23.2 M21.1 10.9 L23.2 8.8 M10.9 21.1 L8.8 23.2" style="stroke:var(--border)" stroke-width="1.2" stroke-linecap="round"/>
     </svg>
     <div>
       <div class="header-title">D Radio Channels Ref.</div>
       <div class="header-sub">Colorado Front Range</div>
     </div>
+    <button id="theme-btn" aria-pressed="false" aria-label="Red night mode">Night</button>
   </div>
   <div class="search-row">
     <input id="search" type="search" placeholder="Search name, frequency, type…" autocomplete="off" autocorrect="off" spellcheck="false">
@@ -335,22 +408,22 @@
 </header>
 
 <div class="filter-row">
-  <button class="pill active-all" data-filter="all">All</button>
-  <button class="pill" data-filter="gmrs">GMRS / FRS</button>
-  <button class="pill" data-filter="tac">TAC</button>
-  <button class="pill" data-filter="rep">Repeaters</button>
-  <button class="pill" data-filter="ham">Ham</button>
+  <button class="pill active-all" data-filter="all" aria-pressed="true">All</button>
+  <button class="pill" data-filter="gmrs" aria-pressed="false">GMRS / FRS</button>
+  <button class="pill" data-filter="tac" aria-pressed="false">TAC</button>
+  <button class="pill" data-filter="rep" aria-pressed="false">Repeaters</button>
+  <button class="pill" data-filter="ham" aria-pressed="false">Ham</button>
 </div>
 
 <div class="count-bar" id="count-bar">41 channels</div>
 
 <div class="channel-list" id="channel-list"></div>
-<div class="no-results" id="no-results">
+<div class="no-results" id="no-results" role="status">
   <div class="nr-icon">📻</div>
   No channels match your search.
 </div>
 
-<div id="toast">Frequency copied!</div>
+<div id="toast" role="status" aria-live="polite">Frequency copied!</div>
 
 <script>
 const channels = [
@@ -409,30 +482,46 @@ const countBar  = document.getElementById("count-bar");
 const searchEl  = document.getElementById("search");
 const clearBtn  = document.getElementById("clear-btn");
 const toast     = document.getElementById("toast");
+const themeBtn  = document.getElementById("theme-btn");
 let toastTimer;
 
 function cats(c) { return Array.isArray(c.cat) ? c.cat : [c.cat]; }
 
+// Other channels on the same frequency, keyed by channel number
+const sharedFreq = {};
+channels.forEach(c => {
+  sharedFreq[c.ch] = channels.filter(o => o !== c && o.freq === c.freq).map(o => o.name);
+});
+
 function render() {
   const q = searchVal.toLowerCase().trim();
+  // lets "4626" match 462.6250
+  const qDigits = /^[\d.]+$/.test(q) ? q.replace(/\./g, "") : "";
   const filtered = channels.filter(c => {
     const catMatch = activeFilter === "all" || cats(c).includes(activeFilter);
-    const textMatch = !q || [c.name, c.freq, c.type, String(c.ch)].some(s => s.toLowerCase().includes(q));
+    const textMatch = !q
+      || [c.name, c.freq, c.type, String(c.ch)].some(s => s.toLowerCase().includes(q))
+      || (qDigits.length >= 3 && c.freq.replace(".", "").includes(qDigits));
     return catMatch && textMatch;
   });
 
   list.innerHTML = filtered.map(c => {
     const tagsHtml = cats(c).map(k =>
-      `<div class="ch-tag ${tagClass[k]}">${tagLabel[k]}</div>`
+      `<span class="ch-tag ${tagClass[k]}">${tagLabel[k]}</span>`
     ).join("");
+    const also = sharedFreq[c.ch];
+    const alsoHtml = also.length ? `<span class="ch-also">Also on ${c.freq}: ${also.join(", ")}</span>` : "";
     return `
-    <div class="channel-card" data-freq="${c.freq}" data-name="${c.name}">
-      <div class="ch-num">${c.ch}</div>
-      <div class="ch-name">${highlight(c.name, q)}</div>
-      <div class="ch-freq">${c.freq}<span>MHz</span></div>
-      <div class="ch-type">${highlight(c.type, q)}</div>
-      <div class="ch-tags">${tagsHtml}</div>
-    </div>`;
+    <button type="button" class="channel-card" data-freq="${c.freq}" data-name="${c.name}">
+      <span class="ch-num">${c.ch}</span>
+      <span class="ch-head">
+        <span class="ch-name">${highlight(c.name, q)}</span>
+        <span class="ch-tags">${tagsHtml}</span>
+      </span>
+      <span class="ch-freq">${highlight(c.freq, q)}<span>MHz</span></span>
+      <span class="ch-type">${highlight(c.type, q)}</span>
+      ${alsoHtml}
+    </button>`;
   }).join("");
 
   countBar.textContent = filtered.length === channels.length
@@ -440,19 +529,35 @@ function render() {
     : `${filtered.length} of ${channels.length} channels`;
 
   noResults.classList.toggle("visible", filtered.length === 0);
+}
 
-  // tap to copy frequency
-  list.querySelectorAll(".channel-card").forEach(card => {
-    card.addEventListener("click", () => {
-      const freq = card.dataset.freq;
-      const name = card.dataset.name;
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(freq).then(() => showToast(`Copied ${freq} MHz`));
-      } else {
-        showToast(`${name}: ${freq} MHz`);
-      }
-    });
-  });
+// Tap to copy frequency. navigator.clipboard needs a secure context, so fall back
+// to execCommand (works over plain http / file://), then to just showing it.
+list.addEventListener("click", e => {
+  const card = e.target.closest(".channel-card");
+  if (!card) return;
+  const { freq, name } = card.dataset;
+  const copied = () => showToast(`Copied ${freq} MHz`);
+  const fallback = () => legacyCopy(freq) ? copied() : showToast(`${name}: ${freq} MHz`);
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(freq).then(copied, fallback);
+  } else {
+    fallback();
+  }
+});
+
+function legacyCopy(text) {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.setAttribute("readonly", "");
+  ta.style.position = "fixed";
+  ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.select();
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch (_) {}
+  ta.remove();
+  return ok;
 }
 
 function highlight(text, q) {
@@ -460,7 +565,7 @@ function highlight(text, q) {
   const idx = text.toLowerCase().indexOf(q);
   if (idx < 0) return text;
   return text.slice(0, idx)
-    + `<mark style="background:rgba(88,166,255,0.3);color:inherit;border-radius:2px;">${text.slice(idx, idx+q.length)}</mark>`
+    + `<mark>${text.slice(idx, idx+q.length)}</mark>`
     + text.slice(idx + q.length);
 }
 
@@ -491,14 +596,24 @@ document.querySelectorAll(".pill").forEach(pill => {
   pill.addEventListener("click", () => {
     activeFilter = pill.dataset.filter;
     document.querySelectorAll(".pill").forEach(p => {
-      p.className = "pill";
-      if (p.dataset.filter === activeFilter) {
-        p.classList.add(`active-${activeFilter}`);
-      }
+      const on = p.dataset.filter === activeFilter;
+      p.className = on ? `pill active-${activeFilter}` : "pill";
+      p.setAttribute("aria-pressed", on);
     });
     render();
   });
 });
+
+// Night mode (remembered per device)
+function setTheme(night) {
+  document.documentElement.toggleAttribute("data-theme", night);
+  if (night) document.documentElement.dataset.theme = "night";
+  themeBtn.setAttribute("aria-pressed", night);
+  themeBtn.textContent = night ? "Day" : "Night";
+  try { localStorage.setItem("theme", night ? "night" : "day"); } catch (_) {}
+}
+themeBtn.addEventListener("click", () => setTheme(document.documentElement.dataset.theme !== "night"));
+try { if (localStorage.getItem("theme") === "night") setTheme(true); } catch (_) {}
 
 render();
 </script>
