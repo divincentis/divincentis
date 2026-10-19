@@ -101,14 +101,19 @@ a {
 a:hover { text-decoration: underline; }
 
 /* Site header and navigation */
+/* Family mark: navy on light, white on dark (swapped by <picture>) */
 .site-corner {
-    font-family: var(--sans);
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--muted);
+    display: inline-block;
+    margin-bottom: 4px;
 }
+
+.site-corner img {
+    display: block;
+    width: 180px;
+    height: auto;
+}
+
+.site-corner-home img { width: 300px; }
 
 nav {
     margin: 6px 0 0;
