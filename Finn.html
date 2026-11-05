@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Finn's Big Wheel Bash</title>
+<meta name="description" content="Finn is turning 5! Bikes, berms, big wheels and birthday fun at Bates-Logan Park, Saturday Nov 14 at 11 AM.">
+<meta property="og:title" content="Finn's Big Wheel Bash — Finn is turning 5!">
+<meta property="og:description" content="Saturday, Nov 14 · 11 AM · Bates-Logan Park, Englewood. Bring a bike & helmet!">
+<meta name="theme-color" content="#ff6a13">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1d1410; --dirt:#6b4426; --dirt-dk:#4a2d18; --sand:#fbeed3; --paper:#fffaf0;
+    --orange:#ff6a13; --yellow:#ffcc1f; --teal:#14a89a; --sky:#9fdcff; --sky2:#e3f6ff;
+    --green:#4caf50; --muted:#6d5a4b;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; font-family:'Nunito',system-ui,sans-serif; color:var(--ink); font-weight:600;
+    background:var(--sand);
+    background-image:radial-gradient(rgba(107,68,38,.13) 1.6px,transparent 1.8px);
+    background-size:14px 14px; overflow-x:hidden;
+  }
+  h1,h2,h3,.display{font-family:'Bungee',Impact,'Arial Black',sans-serif;font-weight:400;letter-spacing:.5px;margin:0}
+  a{color:inherit}
+  .wrap{max-width:720px;margin:0 auto;padding:0 16px 40px}
+
+  /* ---------- HERO ---------- */
+  .hero{position:relative;overflow:hidden;background:linear-gradient(var(--sky) 0%,var(--sky2) 70%);border-bottom:6px solid var(--ink);padding:28px 16px 0;text-align:center}
+  .cloud{position:absolute;background:#fff;border-radius:999px;opacity:.9;animation:drift linear infinite}
+  .cloud::before,.cloud::after{content:"";position:absolute;background:#fff;border-radius:50%}
+  .cloud::before{width:55%;height:160%;left:15%;top:-70%}
+  .cloud::after{width:40%;height:130%;right:12%;top:-45%}
+  @keyframes drift{from{transform:translateX(-200px)}to{transform:translateX(110vw)}}
+  .stamp{display:inline-block;background:var(--ink);color:var(--yellow);font-family:'Bungee',sans-serif;font-size:13px;padding:6px 14px;border-radius:999px;transform:rotate(-3deg);position:relative;z-index:2}
+  .hero h1{position:relative;z-index:2;line-height:.95;margin-top:12px}
+  .hero h1 .who{display:block;font-size:clamp(44px,13vw,84px);color:var(--orange);
+    text-shadow:3px 3px 0 var(--ink),-2px -2px 0 var(--ink),2px -2px 0 var(--ink),-2px 2px 0 var(--ink),7px 7px 0 rgba(0,0,0,.18)}
+  .hero h1 .what{display:block;font-size:clamp(26px,7.4vw,48px);color:var(--yellow);
+    text-shadow:2px 2px 0 var(--ink),-2px -2px 0 var(--ink),2px -2px 0 var(--ink),-2px 2px 0 var(--ink),5px 5px 0 rgba(0,0,0,.18)}
+  .tire-badge{position:absolute;z-index:3;right:max(10px,calc(50% - 330px));top:18px;width:88px;height:88px}
+  .tire-badge .ring{position:absolute;inset:0;border-radius:50%;background:var(--ink);
+    background-image:repeating-conic-gradient(#3a302b 0 10deg,var(--ink) 10deg 20deg);animation:spin 6s linear infinite}
+  .tire-badge .hub{position:absolute;inset:16px;border-radius:50%;background:var(--yellow);border:4px solid #c9c2b8;display:grid;place-items:center;text-align:center}
+  .tire-badge .hub b{font-family:'Bungee',sans-serif;font-size:30px;line-height:1;display:block}
+  .tire-badge .hub small{font-size:9px;font-weight:900;display:block;margin-top:-2px}
+  .tag{position:relative;z-index:2;font-weight:900;font-size:clamp(16px,4.4vw,21px);margin:12px 0 0}
+  .loves{position:relative;z-index:2;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:12px 0 0}
+  .loves span{background:#fff;border:3px solid var(--ink);border-radius:999px;padding:4px 12px;font-weight:900;font-size:14px;box-shadow:3px 3px 0 var(--ink)}
+
+  .scene{position:relative;height:190px;margin:10px -16px 0}
+  .mtn{position:absolute;left:0;right:0;bottom:44px;width:100%;height:120px}
+  .ground{position:absolute;left:0;right:0;bottom:0;height:52px;background:var(--dirt);border-top:5px solid var(--dirt-dk)}
+  .ground::after{content:"";position:absolute;left:0;right:0;top:20px;height:6px;
+    background:repeating-linear-gradient(90deg,var(--yellow) 0 30px,transparent 30px 60px);animation:lane 1s linear infinite;opacity:.8}
+  @keyframes lane{to{background-position:-60px 0}}
+  .ramp{position:absolute;bottom:52px;left:calc(40vw + 40px);width:70px;height:28px;background:var(--dirt-dk);clip-path:polygon(0 100%,100% 0,100% 100%)}
+  .truck-run{position:absolute;bottom:34px;left:0;width:180px;animation:drive 9s linear infinite;z-index:2}
+  .truck-air{animation:air 9s linear infinite;transform-origin:50% 100%}
+  .truck-body{animation:bob .32s ease-in-out infinite alternate}
+  .wheel{transform-box:fill-box;transform-origin:center;animation:spin .55s linear infinite}
+  @keyframes drive{from{transform:translateX(-220px)}to{transform:translateX(calc(100vw + 40px))}}
+  @keyframes air{0%,40%{transform:translateY(0) rotate(0)}46%{transform:translateY(-62px) rotate(-9deg)}53%{transform:translateY(-70px) rotate(3deg)}59%{transform:translateY(0) rotate(4deg)}62%,100%{transform:translateY(0) rotate(0)}}
+  @keyframes bob{to{transform:translateY(-3px)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .dust{position:absolute;left:-6px;bottom:6px;width:14px;height:14px;border-radius:50%;background:#c9a27a;opacity:0;animation:puff 0.9s ease-out infinite}
+  .dust:nth-child(2){animation-delay:.3s;bottom:12px}
+  .dust:nth-child(3){animation-delay:.6s;bottom:3px}
+  @keyframes puff{0%{opacity:.8;transform:translate(0,0) scale(.6)}100%{opacity:0;transform:translate(-40px,-14px) scale(2)}}
+
+  /* ---------- COUNTDOWN ---------- */
+  .countdown{position:relative;z-index:4;margin:-34px auto 0;max-width:520px;padding:0 16px}
+  .cd-card{background:var(--ink);color:#fff;border-radius:18px;padding:14px 12px 12px;box-shadow:6px 6px 0 var(--orange);text-align:center}
+  .cd-label{font-family:'Bungee',sans-serif;color:var(--yellow);font-size:14px;margin-bottom:8px}
+  .cd-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .cd-tile{background:#2f2520;border-radius:12px;padding:8px 2px}
+  .cd-tile b{display:block;font-family:'Bungee',sans-serif;font-size:clamp(26px,8vw,38px);line-height:1.05;color:#fff}
+  .cd-tile span{font-size:11px;font-weight:900;letter-spacing:1px;color:#cbb9a8;text-transform:uppercase}
+  .cd-live{font-family:'Bungee',sans-serif;font-size:22px;color:var(--yellow);padding:10px 0}
+
+  /* ---------- CARDS ---------- */
+  .card{background:var(--paper);border:4px solid var(--ink);border-radius:20px;box-shadow:6px 6px 0 var(--ink);padding:20px;margin:26px 0;position:relative}
+  .card h2{font-size:clamp(22px,6vw,28px);margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .burst{display:inline-grid;place-items:center;font-family:'Bungee',sans-serif;font-size:12px;color:var(--ink);background:var(--yellow);
+    width:76px;height:44px;clip-path:polygon(50% 0,61% 22%,86% 6%,78% 34%,100% 42%,80% 58%,96% 86%,68% 76%,55% 100%,44% 78%,16% 96%,22% 66%,0 56%,20% 40%,8% 12%,36% 22%);transform:rotate(-6deg)}
+  .burst.o{background:var(--orange);color:#fff}
+  .burst.t{background:var(--teal);color:#fff}
+
+  .facts{display:grid;gap:12px}
+  .fact{display:grid;grid-template-columns:52px 1fr;gap:12px;align-items:center;background:#fff;border:3px solid var(--ink);border-radius:14px;padding:12px}
+  .fact .ico{width:52px;height:52px;border-radius:12px;display:grid;place-items:center;font-size:28px;background:var(--yellow);border:3px solid var(--ink)}
+  .fact:nth-child(2) .ico{background:var(--orange)}
+  .fact:nth-child(3) .ico{background:var(--teal)}
+  .fact .k{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:900}
+  .fact .v{font-size:18px;font-weight:900;line-height:1.2}
+  .fact .s{font-size:14px;color:var(--muted)}
+
+  .zones{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:520px){.zones{grid-template-columns:1fr}}
+  .zone{border:3px solid var(--ink);border-radius:16px;padding:16px;background:#fff;position:relative;overflow:hidden}
+  .zone h3{font-size:18px;margin:6px 0}
+  .zone p{margin:0;font-size:15px;line-height:1.45}
+  .zone .big{font-size:40px;line-height:1}
+  .zone.bike{background:linear-gradient(135deg,#fff 60%,#ffe7d6)}
+  .zone.play{background:linear-gradient(135deg,#fff 60%,#d9f4f1)}
+  .note{margin-top:12px;font-size:14px;background:#fff3c4;border:2px dashed var(--ink);border-radius:12px;padding:10px 12px}
+
+  /* weather */
+  .wx{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .wx .emoji{font-size:64px;line-height:1;animation:float 3s ease-in-out infinite}
+  @keyframes float{50%{transform:translateY(-6px)}}
+  .wx .temp{font-family:'Bungee',sans-serif;font-size:44px;line-height:1}
+  .wx .desc{font-weight:900;font-size:17px}
+  .wx .meta{font-size:14px;color:var(--muted)}
+  .wx-tip{margin-top:12px;font-size:15px}
+
+  /* checklist */
+  .checks{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+  .checks li{display:flex;align-items:center;gap:12px;background:#fff;border:3px solid var(--ink);border-radius:14px;padding:12px;cursor:pointer;user-select:none;transition:transform .12s, background .2s}
+  .checks li:active{transform:scale(.98)}
+  .checks .box{flex:0 0 30px;height:30px;border:3px solid var(--ink);border-radius:8px;display:grid;place-items:center;font-size:18px;background:#fff}
+  .checks li.done{background:#e6f7e6}
+  .checks li.done .box{background:var(--green);color:#fff}
+  .checks li.done .txt{text-decoration:line-through;text-decoration-thickness:3px;color:var(--muted)}
+  .checks .txt b{display:block;font-size:16px}
+  .checks .txt small{font-size:13px;color:var(--muted)}
+  .req{font-family:'Bungee',sans-serif;font-size:10px;background:var(--orange);color:#fff;border-radius:6px;padding:2px 6px;margin-left:6px;vertical-align:middle}
+  .progress{height:16px;border:3px solid var(--ink);border-radius:999px;background:#fff;margin:4px 0 14px;overflow:hidden}
+  .progress i{display:block;height:100%;width:0;background:repeating-linear-gradient(45deg,var(--orange) 0 10px,var(--yellow) 10px 20px);transition:width .4s}
+
+  /* map */
+  .map{width:100%;height:240px;border:3px solid var(--ink);border-radius:14px;display:block;background:#e9e2d4}
+  .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .btn{appearance:none;border:3px solid var(--ink);border-radius:14px;background:var(--yellow);color:var(--ink);font-family:'Bungee',sans-serif;font-size:15px;padding:12px 16px;box-shadow:4px 4px 0 var(--ink);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:transform .1s, box-shadow .1s}
+  .btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+  .btn.o{background:var(--orange);color:#fff}
+  .btn.t{background:var(--teal);color:#fff}
+  .btn.w{background:#fff}
+  .btn.grow{flex:1 1 200px;justify-content:center}
+
+  /* game */
+  .game-wrap{position:relative}
+  #game{width:100%;height:220px;display:block;border:3px solid var(--ink);border-radius:14px;background:var(--sky2);touch-action:manipulation;cursor:pointer}
+  .score-row{display:flex;justify-content:space-between;font-family:'Bungee',sans-serif;font-size:14px;margin-top:8px}
+
+  .honk-row{text-align:center;margin:28px 0 6px}
+  .honk{font-size:20px;padding:16px 26px}
+  footer{text-align:center;color:var(--muted);font-size:14px;padding:10px 0 30px}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(120px);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-weight:900;z-index:60;transition:transform .3s}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  #confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
+  .pop{position:fixed;z-index:55;pointer-events:none;font-family:'Bungee',sans-serif;font-size:42px;color:var(--yellow);
+    text-shadow:3px 3px 0 var(--ink),-2px -2px 0 var(--ink),2px -2px 0 var(--ink),-2px 2px 0 var(--ink);animation:popup .9s ease-out forwards}
+  @keyframes popup{0%{transform:translate(-50%,-50%) scale(.3) rotate(-10deg);opacity:1}60%{transform:translate(-50%,-90%) scale(1.15) rotate(4deg);opacity:1}100%{transform:translate(-50%,-130%) scale(1) rotate(0);opacity:0}}
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity .6s, transform .6s}
+  .reveal.in{opacity:1;transform:none}
+  [hidden]{display:none!important}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation:none!important;transition:none!important}
+    .truck-run{left:20%}
+    .reveal{opacity:1;transform:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="cloud" style="top:30px;width:90px;height:26px;animation-duration:60s;animation-delay:-20s"></div>
+  <div class="cloud" style="top:90px;width:60px;height:18px;animation-duration:45s;animation-delay:-5s"></div>
+  <div class="cloud" style="top:150px;width:110px;height:30px;animation-duration:75s;animation-delay:-50s"></div>
+
+  <div class="tire-badge" aria-label="Turning 5">
+    <div class="ring"></div>
+    <div class="hub"><div><b>5</b><small>TODAY!</small></div></div>
+  </div>
+
+  <div class="stamp">You're invited to</div>
+  <h1><span class="who" id="heroName">Finn's</span><span class="what">Big Wheel Bash</span></h1>
+  <p class="tag">🚲 Bikes. 🏁 Berms. 🛞 Big wheels. 🎂 Birthday!</p>
+  <div class="loves" aria-label="Things Finn loves">
+    <span>🚲 Bikes</span><span>🛻 Monster Trucks</span><span>🦸 Superheroes</span>
+  </div>
+
+  <div class="scene" aria-hidden="true">
+    <svg class="mtn" viewBox="0 0 800 120" preserveAspectRatio="none">
+      <polygon points="0,120 90,40 160,85 250,20 330,80 420,30 520,95 610,25 700,70 800,35 800,120" fill="#7fa7c9"/>
+      <polygon points="250,20 228,40 262,38 272,34" fill="#fff"/>
+      <polygon points="610,25 590,45 618,42 630,40" fill="#fff"/>
+      <polygon points="420,30 402,46 430,44" fill="#fff"/>
+      <polygon points="0,120 70,80 150,105 240,70 340,100 450,65 560,105 680,72 800,95 800,120" fill="#5f8a5a"/>
+    </svg>
+    <div class="ground"></div>
+    <div class="ramp"></div>
+    <div class="truck-run">
+      <i class="dust"></i><i class="dust"></i><i class="dust"></i>
+      <div class="truck-air">
+        <svg viewBox="0 0 220 140" width="180">
+          <g class="truck-body">
+            <rect x="58" y="70" width="10" height="26" fill="#888" stroke="#1d1410" stroke-width="3"/>
+            <rect x="152" y="70" width="10" height="26" fill="#888" stroke="#1d1410" stroke-width="3"/>
+            <path d="M74 44 L86 14 H140 L158 44 Z" fill="#ffcc1f" stroke="#1d1410" stroke-width="4" stroke-linejoin="round"/>
+            <path d="M92 20 H136 L148 40 H84 Z" fill="#bfe9ff" stroke="#1d1410" stroke-width="3" stroke-linejoin="round"/>
+            <rect x="22" y="42" width="178" height="36" rx="9" fill="#ff6a13" stroke="#1d1410" stroke-width="4"/>
+            <path d="M30 66 Q60 52 80 64 Q100 50 122 62 Q140 52 160 62" fill="none" stroke="#ffcc1f" stroke-width="5" stroke-linecap="round"/>
+            <circle cx="110" cy="58" r="13" fill="#fff" stroke="#1d1410" stroke-width="3"/>
+            <text x="110" y="64" text-anchor="middle" font-family="Bungee, Impact, sans-serif" font-size="17" fill="#1d1410">5</text>
+            <rect x="192" y="48" width="12" height="9" rx="3" fill="#fff7b0" stroke="#1d1410" stroke-width="3"/>
+            <rect x="14" y="48" width="10" height="9" rx="3" fill="#e8452c" stroke="#1d1410" stroke-width="3"/>
+          </g>
+          <g class="wheel">
+            <circle cx="62" cy="104" r="32" fill="#1d1410"/>
+            <circle cx="62" cy="104" r="28" fill="none" stroke="#4a403a" stroke-width="7" stroke-dasharray="7 6"/>
+            <circle cx="62" cy="104" r="13" fill="#c9c2b8" stroke="#1d1410" stroke-width="3"/>
+            <path d="M62 91 V117 M49 104 H75" stroke="#1d1410" stroke-width="3"/>
+          </g>
+          <g class="wheel">
+            <circle cx="160" cy="104" r="32" fill="#1d1410"/>
+            <circle cx="160" cy="104" r="28" fill="none" stroke="#4a403a" stroke-width="7" stroke-dasharray="7 6"/>
+            <circle cx="160" cy="104" r="13" fill="#c9c2b8" stroke="#1d1410" stroke-width="3"/>
+            <path d="M160 91 V117 M147 104 H173" stroke="#1d1410" stroke-width="3"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="countdown">
+  <div class="cd-card" id="cd">
+    <div class="cd-label">🏁 Engines start in</div>
+    <div class="cd-tiles">
+      <div class="cd-tile"><b id="cdD">0</b><span>Days</span></div>
+      <div class="cd-tile"><b id="cdH">0</b><span>Hours</span></div>
+      <div class="cd-tile"><b id="cdM">0</b><span>Mins</span></div>
+      <div class="cd-tile"><b id="cdS">0</b><span>Secs</span></div>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <section class="card reveal" id="details">
+    <h2>The Details <span class="burst">ZOOM!</span></h2>
+    <div class="facts">
+      <div class="fact">
+        <div class="ico">🗓️</div>
+        <div><div class="k">When</div><div class="v" id="whenText">Saturday, Nov 14 · 11:00 AM</div><div class="s" id="whenSub">Wheels down at 11 sharp!</div></div>
+      </div>
+      <div class="fact">
+        <div class="ico">📍</div>
+        <div><div class="k">Where</div><div class="v">Bates-Logan Park</div><div class="s">2938 S Logan St, Englewood, CO 80113</div></div>
+      </div>
+      <div class="fact">
+        <div class="ico">🎉</div>
+        <div><div class="k">What</div><div class="v">Finn's 5th birthday ride-a-thon</div><div class="s">Bike tracks, playground &amp; birthday treats</div></div>
+      </div>
+    </div>
+    <div class="note" id="extraNotes" hidden></div>
+  </section>
+
+  <section class="card reveal">
+    <h2>Pick Your Zone <span class="burst o">POW!</span></h2>
+    <div class="zones">
+      <div class="zone bike">
+        <div class="big">🚵</div>
+        <h3>The Bike Tracks</h3>
+        <p>This is what the birthday boy asked for! The park has a <b>pump track</b> and a <b>bike park</b> with berms for all skill levels. Bikes, balance bikes, trikes and scooters are all welcome.</p>
+      </div>
+      <div class="zone play">
+        <div class="big">🛝</div>
+        <h3>The Playground</h3>
+        <p>Not feeling the wheels today? No problem! There's an awesome <b>all-inclusive playground</b> right there for climbing, sliding and running wild.</p>
+      </div>
+    </div>
+    <div class="note">⛑️ <b>Helmets are required</b> on the bike course (park rules), and it's human-powered only — no motorized rides.</div>
+  </section>
+
+  <section class="card reveal" id="weather">
+    <h2>Party Forecast <span class="burst t">BRRR?</span></h2>
+    <div class="wx" id="wx">
+      <div class="emoji" id="wxEmoji">🌤️</div>
+      <div>
+        <div class="temp" id="wxTemp">--°</div>
+        <div class="desc" id="wxDesc">Checking the skies…</div>
+        <div class="meta" id="wxMeta"></div>
+      </div>
+    </div>
+    <div class="wx-tip" id="wxTip">November in Colorado can go either way — layers are your friend!</div>
+  </section>
+
+  <section class="card reveal">
+    <h2>Pit Crew Checklist <span class="burst">GO!</span></h2>
+    <div class="progress" aria-hidden="true"><i id="prog"></i></div>
+    <ul class="checks" id="checks"></ul>
+  </section>
+
+  <section class="card reveal" id="map">
+    <h2>Find the Track <span class="burst o">VROOM!</span></h2>
+    <iframe class="map" loading="lazy" title="Map to Bates-Logan Park"
+      src="https://maps.google.com/maps?q=Bates-Logan%20Park%2C%202938%20S%20Logan%20St%2C%20Englewood%2C%20CO%2080113&z=16&output=embed"></iframe>
+    <div class="note">🅿️ <b>Parking:</b> there's a lot (with accessible spots) off S Pennsylvania St, plus street parking around the park.</div>
+    <div class="btns">
+      <a class="btn grow" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=Bates-Logan%20Park%2C%202938%20S%20Logan%20St%2C%20Englewood%2C%20CO%2080113">🗺️ Google Maps</a>
+      <a class="btn w grow" target="_blank" rel="noopener" href="https://maps.apple.com/?daddr=2938%20S%20Logan%20St%2C%20Englewood%2C%20CO%2080113&q=Bates-Logan%20Park">🍎 Apple Maps</a>
+    </div>
+  </section>
+
+  <section class="card reveal" id="rsvp">
+    <h2>Save Your Spot <span class="burst t">YES!</span></h2>
+    <p id="rsvpText" style="margin:0 0 4px;font-size:16px"></p>
+    <div class="btns" id="rsvpBtns"></div>
+    <div class="btns">
+      <button class="btn o grow" id="icsBtn">📅 Add to Calendar</button>
+      <a class="btn w grow" id="gcalBtn" target="_blank" rel="noopener">📆 Google Calendar</a>
+      <button class="btn t grow" id="shareBtn">📣 Share This Page</button>
+    </div>
+  </section>
+
+  <section class="card reveal">
+    <h2>Warm-Up Lap <span class="burst">JUMP!</span></h2>
+    <p style="margin:0 0 12px">Help Finn's truck jump the cones! <b>Tap</b> the track (or hit <b>space</b>) to jump.</p>
+    <div class="game-wrap"><canvas id="game" aria-label="Monster truck jumping game"></canvas></div>
+    <div class="score-row"><span>Score: <span id="score">0</span></span><span>Best: <span id="best">0</span></span></div>
+  </section>
+
+  <div class="honk-row">
+    <button class="btn o honk" id="honk">📯 Honk for Finn!</button>
+  </div>
+
+  <footer>Built with 🛞 &amp; 🎂 for Finn's 5th birthday</footer>
+</main>
+
+<canvas id="confetti"></canvas>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   PARTY SETTINGS — edit these and everything updates
+   ========================================================= */
+const PARTY = {
+  kid: "Finn",
+  age: 5,
+  start: "2026-11-14T11:00:00-07:00",   // Mountain Time
+  endLabel: "",            // e.g. "1:00 PM" — shown on the page if filled in
+  calendarHours: 2,        // length used for calendar invites
+  place: "Bates-Logan Park",
+  address: "2938 S Logan St, Englewood, CO 80113",
+  lat: 39.6636, lon: -104.9814,
+  rsvpName: "Matt",
+  rsvpPhone: "",           // e.g. "303-555-1234" — turns on the RSVP text buttons
+  rsvpBy: "",              // e.g. "Tuesday, Nov 10"
+  notes: [                 // extra lines for the details card, e.g. "🍕 Pizza & cake provided!"
+  ]
+};
+
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+const store = {
+  get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+};
+const startDate = new Date(PARTY.start);
+const endDate = new Date(startDate.getTime() + PARTY.calendarHours * 3600e3);
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),2200); }
+
+/* ---------- details ---------- */
+if (PARTY.endLabel) $('whenText').textContent = `Saturday, Nov 14 · 11:00 AM – ${PARTY.endLabel}`;
+if (PARTY.notes.length){ const n=$('extraNotes'); n.innerHTML = PARTY.notes.map(x=>`<div>${x}</div>`).join(''); n.hidden=false; }
+
+/* ---------- countdown ---------- */
+function tick(){
+  const now = new Date();
+  const cd = $('cd');
+  if (now >= endDate){ cd.innerHTML = `<div class="cd-live">🏆 Thanks for celebrating with ${PARTY.kid}!</div>`; return; }
+  if (now >= startDate){ cd.innerHTML = `<div class="cd-live">🎉 The party is ON right now!</div>`; return; }
+  let s = Math.floor((startDate - now)/1000);
+  const d = Math.floor(s/86400); s%=86400;
+  const h = Math.floor(s/3600); s%=3600;
+  const m = Math.floor(s/60); s%=60;
+  $('cdD').textContent=d; $('cdH').textContent=h; $('cdM').textContent=m; $('cdS').textContent=s;
+  setTimeout(tick, 1000);
+}
+tick();
+
+/* ---------- weather (Open-Meteo, no key needed) ---------- */
+const WX = [
+  [[0],'☀️','Sunny & clear'],[[1,2],'⛅','Partly cloudy'],[[3],'☁️','Cloudy'],[[45,48],'🌫️','Foggy'],
+  [[51,53,55,56,57],'🌦️','Drizzly'],[[61,63,65,66,67],'🌧️','Rainy'],[[71,73,75,77],'🌨️','Snowy'],
+  [[80,81,82],'🌦️','Rain showers'],[[85,86],'🌨️','Snow showers'],[[95,96,99],'⛈️','Thunderstorms']
+];
+function wxInfo(code){ for (const [codes,e,t] of WX) if (codes.includes(code)) return {e,t}; return {e:'🌤️',t:'Mixed skies'}; }
+async function loadWeather(){
+  const day = PARTY.start.slice(0,10);
+  const daysOut = (startDate - new Date())/86400e3;
+  if (daysOut > 15){ $('wxDesc').textContent='Forecast unlocks closer to party day'; $('wxMeta').textContent='Check back the week of the party!'; return; }
+  if (daysOut < -1){ $('weather').hidden = true; return; }
+  try{
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${PARTY.lat}&longitude=${PARTY.lon}` +
+      `&hourly=temperature_2m,precipitation_probability,weather_code,wind_speed_10m` +
+      `&daily=temperature_2m_max,temperature_2m_min` +
+      `&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FDenver&start_date=${day}&end_date=${day}`;
+    const r = await fetch(url); const j = await r.json();
+    if (!j.hourly) throw new Error('no data');
+    const i = Math.max(0, j.hourly.time.findIndex(t=>t.endsWith('T11:00')));
+    const temp = Math.round(j.hourly.temperature_2m[i]);
+    const pop = j.hourly.precipitation_probability[i];
+    const wind = Math.round(j.hourly.wind_speed_10m[i]);
+    const code = j.hourly.weather_code[i];
+    const {e,t} = wxInfo(code);
+    $('wxEmoji').textContent = e;
+    $('wxTemp').textContent = temp + '°F';
+    $('wxDesc').textContent = t + ' at 11 AM';
+    $('wxMeta').textContent = `High ${Math.round(j.daily.temperature_2m_max[0])}° · Low ${Math.round(j.daily.temperature_2m_min[0])}° · ${pop ?? 0}% precip · wind ${wind} mph`;
+    let tip = 'Looks like great riding weather — see you on the track!';
+    if (temp < 40) tip = '🧤 Chilly! Bundle up — warm gloves help little hands grip the handlebars.';
+    else if (temp < 55) tip = '🧥 Jacket weather. Layers are perfect — kids warm up fast once they ride!';
+    if ([71,73,75,77,85,86].includes(code) || (pop ?? 0) >= 50) tip += ' If the weather turns, check back here the morning of for any updates.';
+    $('wxTip').textContent = tip;
+  }catch(err){
+    $('wxDesc').textContent='Forecast not available right now';
+    $('wxMeta').textContent='Peek at your weather app the morning of!';
+  }
+}
+loadWeather();
+
+/* ---------- checklist ---------- */
+const ITEMS = [
+  ['helmet','⛑️ Helmet','Required on the bike course', true],
+  ['bike','🚲 Bike, balance bike, trike or scooter','Whatever wheels your kiddo rides'],
+  ['layers','🧥 Warm layers','November mornings can be crisp'],
+  ['gloves','🧤 Gloves','Warm hands = better grip'],
+  ['water','💧 Water bottle','Riding is thirsty work'],
+  ['energy','⚡ Your best birthday cheers','For Finn on the berms!']
+];
+function renderChecks(){
+  const ul = $('checks'); let done = 0;
+  ul.innerHTML = '';
+  ITEMS.forEach(([k,title,sub,req])=>{
+    const on = store.get('finn-chk-'+k)==='1'; if (on) done++;
+    const li = document.createElement('li'); if (on) li.classList.add('done');
+    li.setAttribute('role','checkbox'); li.setAttribute('aria-checked',on); li.tabIndex=0;
+    li.innerHTML = `<span class="box">${on?'✓':''}</span><span class="txt"><b>${title}${req?'<span class="req">Must</span>':''}</b><small>${sub}</small></span>`;
+    const toggle = ()=>{
+      store.set('finn-chk-'+k, on?'0':'1');
+      if (!on){ const r=li.getBoundingClientRect(); burst(r.left+30, r.top+r.height/2, 25); }
+      renderChecks();
+    };
+    li.addEventListener('click', toggle);
+    li.addEventListener('keydown', e=>{ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); toggle(); }});
+    ul.appendChild(li);
+  });
+  $('prog').style.width = (done/ITEMS.length*100)+'%';
+  if (done===ITEMS.length && !renderChecks._cheered){ renderChecks._cheered=true; toast('🏁 Pit crew ready to roll!'); burst(innerWidth/2, innerHeight/2, 120); }
+  if (done<ITEMS.length) renderChecks._cheered=false;
+}
+renderChecks();
+
+/* ---------- RSVP ---------- */
+(function(){
+  const t = $('rsvpText'), b = $('rsvpBtns');
+  if (PARTY.rsvpPhone){
+    const by = PARTY.rsvpBy ? ` by <b>${PARTY.rsvpBy}</b>` : '';
+    t.innerHTML = `Let ${PARTY.rsvpName} know if you're coming${by} so we have enough cake! 🎂`;
+    const tel = PARTY.rsvpPhone.replace(/[^\d+]/g,'');
+    const yes = encodeURIComponent(`We'll be at ${PARTY.kid}'s birthday on 11/14! 🚲 Count us in — ___ kids & ___ adults.`);
+    const no  = encodeURIComponent(`So sorry, we can't make ${PARTY.kid}'s birthday on 11/14. Happy birthday, ${PARTY.kid}! 🎉`);
+    b.innerHTML = `<a class="btn grow" href="sms:${tel}?&body=${yes}">👍 We'll be there!</a>
+                   <a class="btn w grow" href="sms:${tel}?&body=${no}">😢 Can't make it</a>`;
+  } else {
+    t.innerHTML = `Mark your calendar and bring your wheels! 🎂`;
+  }
+})();
+
+/* ---------- calendar & share ---------- */
+const fmtUTC = d => d.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
+const evTitle = `${PARTY.kid}'s ${PARTY.age}th Birthday — Big Wheel Bash!`;
+const evDesc = `Bike tracks + playground at ${PARTY.place}. Bring a bike & helmet! Details: ${location.href}`;
+$('gcalBtn').href = 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
+  '&text=' + encodeURIComponent(evTitle) +
+  '&dates=' + fmtUTC(startDate) + '/' + fmtUTC(endDate) +
+  '&location=' + encodeURIComponent(PARTY.place + ', ' + PARTY.address) +
+  '&details=' + encodeURIComponent(evDesc);
+$('icsBtn').addEventListener('click', ()=>{
+  const esc = s => s.replace(/\\/g,'\\\\').replace(/,/g,'\\,').replace(/;/g,'\\;');
+  const ics = [
+    'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Finn Party//EN','CALSCALE:GREGORIAN','BEGIN:VEVENT',
+    'UID:finn-bday-' + fmtUTC(startDate) + '@party',
+    'DTSTAMP:' + fmtUTC(new Date()),
+    'DTSTART:' + fmtUTC(startDate),'DTEND:' + fmtUTC(endDate),
+    'SUMMARY:' + esc(evTitle),
+    'LOCATION:' + esc(PARTY.place + ', ' + PARTY.address),
+    'DESCRIPTION:' + esc(evDesc),
+    'BEGIN:VALARM','TRIGGER:-PT2H','ACTION:DISPLAY','DESCRIPTION:Grab the bikes & helmets!','END:VALARM',
+    'END:VEVENT','END:VCALENDAR'
+  ].join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([ics], {type:'text/calendar'}));
+  a.download = `${PARTY.kid}-Birthday.ics`;
+  document.body.appendChild(a); a.click(); a.remove();
+  toast('📅 Calendar invite downloaded!');
+});
+$('shareBtn').addEventListener('click', async ()=>{
+  const data = {title: evTitle, text: `${PARTY.kid} is turning ${PARTY.age}! Sat Nov 14, 11 AM at ${PARTY.place}. Bring a bike & helmet! 🚲`, url: location.href};
+  try{
+    if (navigator.share) await navigator.share(data);
+    else { await navigator.clipboard.writeText(location.href); toast('🔗 Link copied!'); }
+  }catch(e){}
+});
+
+/* ---------- confetti ---------- */
+const cf = $('confetti'), cfx = cf.getContext('2d');
+let parts = [], cfRun = false;
+function sizeCf(){ const d=devicePixelRatio||1; cf.width=innerWidth*d; cf.height=innerHeight*d; cfx.setTransform(d,0,0,d,0,0); }
+sizeCf(); addEventListener('resize', sizeCf);
+const COLORS = ['#ff6a13','#ffcc1f','#14a89a','#1d1410','#ffffff','#e8452c'];
+function burst(x,y,n=80){
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  for (let i=0;i<n;i++){
+    const a = Math.random()*Math.PI*2, sp = 3+Math.random()*7;
+    parts.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-4,r:Math.random()*6.28,vr:(Math.random()-.5)*.3,
+      w:6+Math.random()*6,h:4+Math.random()*4,c:COLORS[i%COLORS.length],life:0,round:Math.random()<.3});
+  }
+  if (!cfRun){ cfRun = true; requestAnimationFrame(cfLoop); }
+}
+function cfLoop(){
+  cfx.clearRect(0,0,innerWidth,innerHeight);
+  parts = parts.filter(p=>p.y < innerHeight+20 && p.life < 240);
+  for (const p of parts){
+    p.vy += .18; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.r += p.vr; p.life++;
+    cfx.save(); cfx.translate(p.x,p.y); cfx.rotate(p.r); cfx.fillStyle=p.c;
+    if (p.round){ cfx.beginPath(); cfx.arc(0,0,p.h/1.5,0,6.28); cfx.fill(); }
+    else cfx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+    cfx.restore();
+  }
+  if (parts.length) requestAnimationFrame(cfLoop); else { cfRun=false; cfx.clearRect(0,0,innerWidth,innerHeight); }
+}
+function popWord(word,x,y){
+  const el=document.createElement('div'); el.className='pop'; el.textContent=word;
+  el.style.left=x+'px'; el.style.top=y+'px'; document.body.appendChild(el);
+  setTimeout(()=>el.remove(),950);
+}
+addEventListener('load', ()=> setTimeout(()=>burst(innerWidth/2, innerHeight*0.3, 140), 400));
+
+/* ---------- honk! ---------- */
+let actx;
+function honk(){
+  try{
+    actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+    const now = actx.currentTime;
+    [0, .32].forEach(off=>{
+      [392, 494].forEach(f=>{
+        const o=actx.createOscillator(), g=actx.createGain();
+        o.type='square'; o.frequency.value=f;
+        g.gain.setValueAtTime(0, now+off); g.gain.linearRampToValueAtTime(.07, now+off+.02);
+        g.gain.setValueAtTime(.07, now+off+.22); g.gain.linearRampToValueAtTime(0, now+off+.28);
+        o.connect(g).connect(actx.destination); o.start(now+off); o.stop(now+off+.3);
+      });
+    });
+  }catch(e){}
+}
+$('honk').addEventListener('click', e=>{
+  honk(); const r=e.currentTarget.getBoundingClientRect();
+  burst(r.left+r.width/2, r.top, 110);
+  popWord(['HONK!','VROOM!','HAPPY 5TH!','GO FINN!'][Math.floor(Math.random()*4)], r.left+r.width/2, r.top-10);
+});
+document.querySelector('.tire-badge').addEventListener('click', e=>{ burst(e.clientX,e.clientY,60); popWord('FIVE!',e.clientX,e.clientY); });
+
+/* ---------- reveal on scroll ---------- */
+const io = new IntersectionObserver(es=>es.forEach(en=>{ if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target);} }),{threshold:.12});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+/* ---------- mini game: jump the cones ---------- */
+(function(){
+  const cv = $('game'), cx = cv.getContext('2d');
+  let W=0,H=0,GY=0, state='ready', truck, obs, speed, score, best=+(store.get('finn-best')||0), nextGap, last=0, scroll=0, wheelRot=0;
+  $('best').textContent = best;
+  function size(){ const r=cv.getBoundingClientRect(), d=devicePixelRatio||1; W=r.width; H=r.height; cv.width=W*d; cv.height=H*d; cx.setTransform(d,0,0,d,0,0); GY=H-34; draw(); }
+  function reset(){ truck={x:36,y:0,vy:0}; obs=[]; speed=4.2; score=0; nextGap=260; $('score').textContent=0; }
+  function jump(){
+    if (state!=='run'){ reset(); state='run'; last=performance.now(); requestAnimationFrame(loop); return; }
+    if (truck.y===0){ truck.vy=13.2; }
+  }
+  cv.addEventListener('pointerdown', e=>{ e.preventDefault(); jump(); });
+  addEventListener('keydown', e=>{
+    if (e.code==='Space'){ const r=cv.getBoundingClientRect(); if (r.top<innerHeight && r.bottom>0){ e.preventDefault(); jump(); } }
+  });
+  function loop(ts){
+    if (state!=='run') return;
+    const dt = Math.min(2.2, (ts-last)/16.67); last=ts;
+    truck.y += truck.vy*dt; truck.vy -= .78*dt; if (truck.y<=0){ truck.y=0; truck.vy=0; }
+    speed = Math.min(9.5, speed + .0016*dt); scroll += speed*dt; wheelRot += speed*dt*.08;
+    nextGap -= speed*dt;
+    if (nextGap<=0){
+      const tire = Math.random()<.35;
+      obs.push({x:W+10, w: tire?28:22, h: tire?30:26, tire, passed:false});
+      nextGap = 230 + Math.random()*260 + speed*14;
+    }
+    for (const o of obs){
+      o.x -= speed*dt;
+      if (!o.passed && o.x + o.w < truck.x){ o.passed=true; score++; $('score').textContent=score;
+        if (score%5===0){ const r=cv.getBoundingClientRect(); burst(r.left+truck.x+30, r.top+GY-truck.y-40, 30); } }
+      const tl=truck.x+6, tr=truck.x+60, tb=GY-truck.y;
+      if (o.x < tr && o.x+o.w > tl && tb > GY-o.h+4){ crash(); }
+    }
+    obs = obs.filter(o=>o.x>-40);
+    draw();
+    if (state==='run') requestAnimationFrame(loop);
+  }
+  function crash(){
+    state='over';
+    if (score>best){ best=score; store.set('finn-best',best); $('best').textContent=best; toast('🏆 New best score: '+best+'!'); }
+    draw();
+  }
+  function drawTruck(x,y){
+    const by = GY - y;
+    cx.lineWidth=3; cx.strokeStyle='#1d1410';
+    // cab
+    cx.fillStyle='#ffcc1f'; cx.beginPath(); cx.moveTo(x+20,by-34); cx.lineTo(x+26,by-48); cx.lineTo(x+44,by-48); cx.lineTo(x+52,by-34); cx.closePath(); cx.fill(); cx.stroke();
+    cx.fillStyle='#bfe9ff'; cx.fillRect(x+29,by-45,13,9);
+    // body
+    cx.fillStyle='#ff6a13'; roundRect(x,by-36,66,16,5); cx.fill(); cx.stroke();
+    // wheels
+    [x+14, x+52].forEach(wx=>{
+      cx.fillStyle='#1d1410'; cx.beginPath(); cx.arc(wx,by-12,12,0,6.28); cx.fill();
+      cx.fillStyle='#c9c2b8'; cx.beginPath(); cx.arc(wx,by-12,5,0,6.28); cx.fill();
+      cx.strokeStyle='#4a403a'; cx.lineWidth=2;
+      for (let k=0;k<4;k++){ const a=wheelRot+k*Math.PI/2; cx.beginPath(); cx.moveTo(wx+Math.cos(a)*6,by-12+Math.sin(a)*6); cx.lineTo(wx+Math.cos(a)*11,by-12+Math.sin(a)*11); cx.stroke(); }
+      cx.strokeStyle='#1d1410'; cx.lineWidth=3;
+    });
+  }
+  function roundRect(x,y,w,h,r){ cx.beginPath(); cx.moveTo(x+r,y); cx.arcTo(x+w,y,x+w,y+h,r); cx.arcTo(x+w,y+h,x,y+h,r); cx.arcTo(x,y+h,x,y,r); cx.arcTo(x,y,x+w,y,r); cx.closePath(); }
+  function draw(){
+    if (!W) return;
+    cx.clearRect(0,0,W,H);
+    const g = cx.createLinearGradient(0,0,0,H); g.addColorStop(0,'#9fdcff'); g.addColorStop(1,'#e3f6ff');
+    cx.fillStyle=g; cx.fillRect(0,0,W,H);
+    // mountains (parallax)
+    cx.fillStyle='#7fa7c9'; cx.beginPath(); cx.moveTo(0,GY);
+    for (let i=-1;i<W/80+2;i++){ const bx=i*80 - (scroll*.2)%80; cx.lineTo(bx+40, GY-60-(i%2?20:0)); cx.lineTo(bx+80, GY); }
+    cx.lineTo(W,GY); cx.fill();
+    // ground
+    cx.fillStyle='#6b4426'; cx.fillRect(0,GY,W,H-GY);
+    cx.fillStyle='#4a2d18'; cx.fillRect(0,GY,W,4);
+    cx.fillStyle='#ffcc1f';
+    for (let i=-1;i<W/50+1;i++){ cx.fillRect(i*50 - scroll%50, GY+15, 24, 4); }
+    // obstacles
+    for (const o of obs){
+      if (o.tire){
+        cx.fillStyle='#1d1410';
+        cx.beginPath(); cx.ellipse(o.x+o.w/2,GY-8,o.w/2,8,0,0,6.28); cx.fill();
+        cx.beginPath(); cx.ellipse(o.x+o.w/2,GY-22,o.w/2,8,0,0,6.28); cx.fill();
+        cx.fillStyle='#4a403a'; cx.beginPath(); cx.ellipse(o.x+o.w/2,GY-22,o.w/4,3,0,0,6.28); cx.fill();
+      } else {
+        cx.fillStyle='#ff6a13'; cx.strokeStyle='#1d1410'; cx.lineWidth=2.5;
+        cx.beginPath(); cx.moveTo(o.x,GY); cx.lineTo(o.x+o.w/2,GY-o.h); cx.lineTo(o.x+o.w,GY); cx.closePath(); cx.fill(); cx.stroke();
+        cx.fillStyle='#fff'; cx.fillRect(o.x+o.w*.3,GY-o.h*.55,o.w*.4,4);
+      }
+    }
+    drawTruck(truck ? truck.x : 36, truck ? truck.y : 0);
+    // overlay text
+    if (state!=='run'){
+      cx.fillStyle='rgba(29,20,16,.72)'; cx.fillRect(0,0,W,H);
+      cx.textAlign='center'; cx.fillStyle='#ffcc1f'; cx.font='22px Bungee, Impact, sans-serif';
+      cx.fillText(state==='ready' ? 'TAP TO START!' : 'CRASH!', W/2, H/2-10);
+      cx.fillStyle='#fff'; cx.font='800 15px Nunito, sans-serif';
+      cx.fillText(state==='ready' ? 'Tap again to jump the cones 🚧' : `You jumped ${score} — tap to ride again!`, W/2, H/2+18);
+    }
+  }
+  reset(); state='ready';
+  addEventListener('resize', size);
+  document.fonts && document.fonts.ready.then(size);
+  size();
+})();
+</script>
+</body>
+</html>
