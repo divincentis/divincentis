@@ -156,14 +156,15 @@
   .pop{position:fixed;z-index:55;pointer-events:none;font-family:'Bungee',sans-serif;font-size:42px;color:var(--yellow);
     text-shadow:3px 3px 0 var(--ink),-2px -2px 0 var(--ink),2px -2px 0 var(--ink),-2px 2px 0 var(--ink);animation:popup .9s ease-out forwards}
   @keyframes popup{0%{transform:translate(-50%,-50%) scale(.3) rotate(-10deg);opacity:1}60%{transform:translate(-50%,-90%) scale(1.15) rotate(4deg);opacity:1}100%{transform:translate(-50%,-130%) scale(1) rotate(0);opacity:0}}
-  .reveal{opacity:0;transform:translateY(24px);transition:opacity .6s, transform .6s}
-  .reveal.in{opacity:1;transform:none}
+  /* cards only start hidden once the scroll-reveal script is running, so a script hiccup can never blank the page */
+  .reveal-on .reveal{opacity:0;transform:translateY(24px);transition:opacity .6s, transform .6s}
+  .reveal-on .reveal.in{opacity:1;transform:none}
   [hidden]{display:none!important}
 
   @media (prefers-reduced-motion: reduce){
     *,*::before,*::after{animation:none!important;transition:none!important}
     .truck-run{left:20%}
-    .reveal{opacity:1;transform:none}
+    .reveal-on .reveal{opacity:1;transform:none}
   }
 </style>
 </head>
@@ -443,7 +444,7 @@ const ITEMS = [
   ['appetite','🍕 A big appetite','Pizza & hot cocoa are on us!'],
   ['energy','⚡ Your best birthday cheers','For Finn on the berms!']
 ];
-function renderChecks(){
+function renderChecks(fromUser){
   const ul = $('checks'); let done = 0;
   ul.innerHTML = '';
   ITEMS.forEach(([k,title,sub,req])=>{
@@ -454,15 +455,15 @@ function renderChecks(){
     const toggle = ()=>{
       store.set('finn-chk-'+k, on?'0':'1');
       if (!on){ const r=li.getBoundingClientRect(); burst(r.left+30, r.top+r.height/2, 25); }
-      renderChecks();
+      renderChecks(true);
     };
     li.addEventListener('click', toggle);
     li.addEventListener('keydown', e=>{ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); toggle(); }});
     ul.appendChild(li);
   });
   $('prog').style.width = (done/ITEMS.length*100)+'%';
-  if (done===ITEMS.length && !renderChecks._cheered){ renderChecks._cheered=true; toast('🏁 Pit crew ready to roll!'); burst(innerWidth/2, innerHeight/2, 120); }
-  if (done<ITEMS.length) renderChecks._cheered=false;
+  // Only celebrate when someone checks the last box — not when the page loads with a saved, finished list
+  if (fromUser && done===ITEMS.length){ toast('🏁 Pit crew ready to roll!'); burst(innerWidth/2, innerHeight/2, 120); }
 }
 renderChecks();
 
@@ -577,6 +578,7 @@ $('honk').addEventListener('click', e=>{
 document.querySelector('.tire-badge').addEventListener('click', e=>{ burst(e.clientX,e.clientY,60); popWord('FIVE!',e.clientX,e.clientY); });
 
 /* ---------- reveal on scroll ---------- */
+document.documentElement.classList.add('reveal-on');
 const io = new IntersectionObserver(es=>es.forEach(en=>{ if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target);} }),{threshold:.12});
 document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
 
